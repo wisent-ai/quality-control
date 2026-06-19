@@ -25,14 +25,8 @@ function runGh(args, options = {}) {
 }
 
 function getRepositoryId() {
-  const json = runGh([
-    "repo",
-    "view",
-    `${ORG}/${HOST_REPO}`,
-    "--json",
-    "databaseId",
-  ]);
-  return JSON.parse(json).databaseId;
+  const value = runGh(["api", `/repos/${ORG}/${HOST_REPO}`, "--jq", ".id"]);
+  return Number(value);
 }
 
 function installRuleset(repositoryId) {
