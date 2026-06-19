@@ -1,0 +1,36 @@
+# Wisent quality control
+
+Central PR quality checks for `wisent-ai` repositories.
+
+The first check rejects pull requests whose commit subjects are too vague to audit later. Examples that fail:
+
+- `fix`
+- `update`
+- `wip`
+- `more changes`
+- `fix bug`
+
+Examples that pass:
+
+- `Add Apple Ads credential connector`
+- `fix: persist Google Ads account chooser`
+- `Improve Swiatowid transcript provider grouping`
+
+## How it is enforced
+
+GitHub supports organization rulesets that require a workflow to pass before pull requests merge. The required workflow lives in this repository at `.github/workflows/required-pr-quality.yml`.
+
+The intended organization ruleset targets the default branch of every `wisent-ai` repository except this host repo. It requires pull requests and requires the workflow in this repository to pass.
+
+Install it with an org-admin token:
+
+```bash
+gh auth refresh -h github.com -s admin:org
+node scripts/install-org-ruleset.mjs
+```
+
+## Local test
+
+```bash
+npm test
+```

@@ -1,0 +1,13 @@
+{
+  "name": "@wisent-ai/quality-control",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Central GitHub PR quality checks for Wisent repositories.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

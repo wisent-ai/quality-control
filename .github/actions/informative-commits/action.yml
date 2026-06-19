@@ -1,0 +1,19 @@
+name: Informative commit messages
+description: Fails a pull request when commit messages are too vague to audit later.
+inputs:
+  github-token:
+    description: GitHub token used to read pull request commits.
+    required: true
+  min-informative-words:
+    description: Minimum number of non-generic words required in each commit subject.
+    required: false
+    default: "2"
+runs:
+  using: composite
+  steps:
+    - name: Check commit messages
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        MIN_INFORMATIVE_WORDS: ${{ inputs.min-informative-words }}
+      run: node "$GITHUB_ACTION_PATH/check-informative-commits.mjs"
