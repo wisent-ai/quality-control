@@ -16,6 +16,10 @@ Examples that pass:
 - `fix: persist Google Ads account chooser`
 - `Improve Swiatowid transcript provider grouping`
 
+The second check rejects pull requests that introduce keyword-driven lexical logic. It runs `scripts/check-no-keyword-logic.mjs` against the PR diff, the same guard used by the local git hook.
+
+This catches introduced identifiers such as `keywords`, word-list gates, phrase/prefix/pattern lists wired into contains/match checks, and regex alternations over natural-language tokens.
+
 ## How it is enforced
 
 GitHub supports organization rulesets that require a workflow to pass before pull requests merge. The required workflow lives in this repository at `.github/workflows/required-pr-quality.yml`.

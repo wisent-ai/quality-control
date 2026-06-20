@@ -17,3 +17,35 @@ jobs:
         uses: wisent-ai/quality-control/.github/actions/informative-commits@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  lexical-policy:
+    name: Lexical policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out quality-control scripts
+        uses: actions/checkout@v4
+        with:
+          repository: wisent-ai/quality-control
+          ref: main
+          path: .quality-control
+
+      - name: Run lexical policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          guard="$(find .quality-control/scripts -maxdepth 1 -name 'check-no-*-logic.mjs' -print -quit)"
+          if [ -z "$guard" ]; then
+            echo "quality-control guard not found" >&2
+            exit 2
+          fi
+
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            node "$guard" --range "${{ github.event.merge_group.base_sha }}..${{ github.event.merge_group.head_sha }}"
+          else
+            node "$guard" --base "${{ github.event.pull_request.base.sha }}"
+          fi
