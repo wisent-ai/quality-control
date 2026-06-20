@@ -49,6 +49,7 @@ for (const file of files) {
 
   const text = readFileSync(absolute, 'utf8');
   const lines = text.split(/\r?\n/);
+  const documentationLines = documentationLineNumbers(lines);
   const changedLines = mode.all || (mode.kind === 'worktree' && !isTrackedFile(file))
     ? allLineNumbers(lines)
     : changedLineNumbers(mode, file);
@@ -56,6 +57,7 @@ for (const file of files) {
 
   for (const lineNumber of changedLines) {
     const line = lines[lineNumber - 1] ?? '';
+    if (documentationLines.has(lineNumber)) continue;
     if (isCommentOnlyLine(line)) continue;
     const code = codeWithoutInlineComment(line);
 
@@ -162,6 +164,39 @@ function isBooleanExpression(code) {
   return /^\s*(?:if|while|for)\s*\(/.test(code)
     || /\b(?:true|false)\b\s*(?:\|\|)\s*\b(?:true|false)\b/.test(code)
     || /(?:&&|\|\|)\s*[A-Za-z_$][A-Za-z0-9_$]*\s*(?:&&|\|\|)/.test(code);
+}
+
+function documentationLineNumbers(lines) {
+  const docs = new Set();
+  let activeToken = '';
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    let searchFrom = 0;
+    let lineIsDocumentation = Boolean(activeToken);
+    while (searchFrom < line.length) {
+      const next = nextTripleQuote(line, searchFrom);
+      if (!next) break;
+      lineIsDocumentation = true;
+      if (activeToken) {
+        if (next.token === activeToken) activeToken = '';
+      } else {
+        activeToken = next.token;
+      }
+      searchFrom = next.index + next.token.length;
+    }
+    if (lineIsDocumentation) docs.add(index + 1);
+  }
+  return docs;
+}
+
+function nextTripleQuote(line, searchFrom) {
+  const doubleIndex = line.indexOf('"""', searchFrom);
+  const singleIndex = line.indexOf("'''", searchFrom);
+  if (doubleIndex === -1 && singleIndex === -1) return null;
+  if (singleIndex === -1 || (doubleIndex !== -1 && doubleIndex < singleIndex)) {
+    return { index: doubleIndex, token: '"""' };
+  }
+  return { index: singleIndex, token: "'''" };
 }
 
 function parseArgs(raw) {
