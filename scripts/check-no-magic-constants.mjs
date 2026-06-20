@@ -30,7 +30,7 @@ const EXCLUDED_PREFIXES = [
 
 const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|`([^`\\]*(?:\\.[^`\\]*)*)`/g;
 const NUMBER_LITERAL_RE = /(?<![A-Za-z0-9_$])[-+]?(?:\d+\.\d+|\d+)(?:e[-+]?\d+)?(?![A-Za-z0-9_$])/gi;
-const NAMED_CONSTANT_RE = /^\s*(?:(?:export\s+)?(?:const|let|var|static\s+let|static\s+var)\s+)?[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
+const NAMED_CONSTANT_RE = /^\s*(?:(?:export\s+)?(?:const|let|var|static\s+let|static\s+var)\s+)?_?[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
 const IMPORT_RE = /^\s*(?:import|export)\b.*\bfrom\b|^\s*(?:import|require)\s*\(/;
 const LOCAL_LITERAL_ASSIGN_RE = /^\s*(?:const|let|var)?\s*[a-z_][A-Za-z0-9_]*\s*(?::[^=]+)?=\s*(?:["'`]|[-+]?(?:\d+\.\d+|\d+)(?:e[-+]?\d+)?\b)/i;
 const LOGIC_LITERAL_RE = /^\s*(?:if|elif|while|for|return|assert)\b|(?:[=!<>]=|[<>])|[-+*/%]=|\b(?:range|sleep|timeout|limit|max|min)\s*\(/;
