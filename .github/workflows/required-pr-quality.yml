@@ -49,3 +49,55 @@ jobs:
           else
             node "$guard" --base "${{ github.event.pull_request.base.sha }}"
           fi
+
+  fallback-policy:
+    name: Fallback policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out quality-control scripts
+        uses: actions/checkout@v4
+        with:
+          repository: wisent-ai/quality-control
+          ref: main
+          path: .quality-control
+
+      - name: Run fallback policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            node .quality-control/scripts/check-no-fallbacks.mjs --range "${{ github.event.merge_group.base_sha }}..${{ github.event.merge_group.head_sha }}"
+          else
+            node .quality-control/scripts/check-no-fallbacks.mjs --base "${{ github.event.pull_request.base.sha }}"
+          fi
+
+  constants-policy:
+    name: Constants policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out quality-control scripts
+        uses: actions/checkout@v4
+        with:
+          repository: wisent-ai/quality-control
+          ref: main
+          path: .quality-control
+
+      - name: Run constants policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            node .quality-control/scripts/check-no-magic-constants.mjs --range "${{ github.event.merge_group.base_sha }}..${{ github.event.merge_group.head_sha }}"
+          else
+            node .quality-control/scripts/check-no-magic-constants.mjs --base "${{ github.event.pull_request.base.sha }}"
+          fi

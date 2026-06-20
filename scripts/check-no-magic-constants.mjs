@@ -12,14 +12,9 @@ const SOURCE_EXTENSIONS = new Set([
   '.ts',
   '.tsx',
   '.py',
-  '.sh',
-  '.yml',
-  '.yaml',
-  '.json'
+  '.sh'
 ]);
 const EXCLUDED_FILES = new Set([
-  '.github/workflows/no-fallbacks.yml',
-  '.github/workflows/no-keyword-logic.yml',
   'scripts/check-no-fallbacks.mjs',
   'scripts/check-no-keyword-logic.mjs',
   'scripts/check-no-magic-constants.mjs'
@@ -30,16 +25,15 @@ const EXCLUDED_PREFIXES = [
   '.swiftpm/',
   '.work/',
   'Tests/',
+  'test/',
   'node_modules/'
 ];
 
-const KEYWORD_IDENTIFIER_RE = /\b[A-Za-z_][A-Za-z0-9_]*(?:keyword|keywords)[A-Za-z0-9_]*\b/i;
-const SUSPICIOUS_LIST_NAME_RE = /\b(?:signals?|fragments?|phrases?|prefixes?|suffixes?|triggers?|words?|terms?|markers?|patterns?)\b/i;
-const DECLARES_LIST_RE = /\b(?:let|var|const|static\s+let|static\s+var)\s+[A-Za-z_][A-Za-z0-9_]*\s*(?::[^=]+)?=\s*(?:\[|Set\s*\(|new\s+Set\s*\()/;
 const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|`([^`\\]*(?:\\.[^`\\]*)*)`/g;
-const LEXICAL_GATE_RE = /\.(?:contains|hasPrefix|hasSuffix|localizedCaseInsensitiveContains|range|includes|startsWith|endsWith|some|every|test|match)\b|\b(?:contains|hasPrefix|startswith|endswith|includes|re\.search|RegExp|NSRegularExpression|localizedLowercase|lowercased|toLowerCase|lower)\b/;
-const DIRECT_LITERAL_GATE_RE = /\.(?:contains|hasPrefix|hasSuffix|localizedCaseInsensitiveContains|includes|startsWith|endsWith|test|match)\s*\(\s*(["'`])([^"'`]{3,})\1/;
-const REGEX_ALTERNATION_RE = /\/[^/\n]*(?:[A-Za-z][A-Za-z0-9_-]{2,}\|){2,}[A-Za-z][A-Za-z0-9_-]{2,}[^/\n]*\/|#["'][^"'\n]*(?:[A-Za-z][A-Za-z0-9_-]{2,}\|){2,}[A-Za-z][A-Za-z0-9_-]{2,}[^"'\n]*["']/;
+const NUMBER_LITERAL_RE = /(?<![A-Za-z0-9_$])[-+]?(?:\d+\.\d+|\d+)(?:e[-+]?\d+)?(?![A-Za-z0-9_$])/gi;
+const NAMED_CONSTANT_RE = /^\s*(?:export\s+)?(?:const|let|var|static\s+let|static\s+var)\s+[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
+const IMPORT_RE = /^\s*(?:import|export)\b.*\bfrom\b|^\s*(?:import|require)\s*\(/;
+const ALLOWED_NUMBER_LITERALS = new Set(['-1', '0', '1', '2']);
 
 const args = parseArgs(process.argv.slice(2));
 const mode = resolveMode(args);
@@ -61,49 +55,13 @@ for (const file of files) {
   for (const lineNumber of changedLines) {
     const line = lines[lineNumber - 1] ?? '';
     if (isCommentOnlyLine(line)) continue;
+    if (isAllowedLiteralContext(line)) continue;
 
-    if (KEYWORD_IDENTIFIER_RE.test(line)) {
+    for (const violation of literalViolations(line)) {
       violations.push({
         file,
         line: lineNumber,
-        rule: 'keyword-identifier',
-        detail: 'identifier names cannot introduce keyword-based logic',
-        source: line.trim()
-      });
-      continue;
-    }
-
-    if (REGEX_ALTERNATION_RE.test(line)) {
-      violations.push({
-        file,
-        line: lineNumber,
-        rule: 'regex-keyword-gate',
-        detail: 'regex alternation over words is keyword-based logic',
-        source: line.trim()
-      });
-      continue;
-    }
-
-    if (DIRECT_LITERAL_GATE_RE.test(line) && directGateHasNaturalLanguageLiteral(line)) {
-      violations.push({
-        file,
-        line: lineNumber,
-        rule: 'literal-keyword-gate',
-        detail: 'natural-language literals cannot drive contains/prefix/match logic',
-        source: line.trim()
-      });
-      continue;
-    }
-
-    if (!isPotentialStringListGateLine(line)) continue;
-
-    const window = sourceWindow(lines, lineNumber, 12);
-    if (isStringListGate(window.text)) {
-      violations.push({
-        file,
-        line: lineNumber,
-        rule: 'string-list-keyword-gate',
-        detail: 'string lists cannot drive lexical contains/prefix/match decisions',
+        ...violation,
         source: line.trim()
       });
     }
@@ -111,19 +69,74 @@ for (const file of files) {
 }
 
 if (violations.length > 0) {
-  console.error('No-keyword-logic guard failed.');
+  console.error('No-magic-constants guard failed.');
   console.error('');
   for (const violation of violations) {
     console.error(`${violation.file}:${violation.line}: ${violation.rule}: ${violation.detail}`);
     if (violation.source) console.error(`  ${violation.source}`);
   }
   console.error('');
-  console.error('Use structured state, typed metadata, parser output, or model/classifier output.');
-  console.error('Do not make behavior depend on word lists, phrase lists, prefix lists, or contains checks.');
+  console.error('Name the value, load it from configuration, or derive it from typed metadata instead of embedding it in logic.');
   process.exit(1);
 }
 
-console.log(`No-keyword-logic guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
+console.log(`No-magic-constants guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
+
+function literalViolations(line) {
+  const code = codeWithoutInlineComment(line);
+  const withoutStrings = code.replace(STRING_LITERAL_RE, '""');
+  const found = [];
+
+  for (const match of code.matchAll(STRING_LITERAL_RE)) {
+    const value = (match[1] ?? match[2] ?? match[3] ?? '').trim();
+    if (!isSignificantString(value)) continue;
+    found.push({
+      rule: 'magic-string',
+      detail: `string literal "${abbreviate(value)}" is embedded in logic`
+    });
+  }
+
+  for (const match of withoutStrings.matchAll(NUMBER_LITERAL_RE)) {
+    const value = normalizeNumberLiteral(match[0]);
+    if (ALLOWED_NUMBER_LITERALS.has(value)) continue;
+    found.push({
+      rule: 'magic-number',
+      detail: `number literal ${value} is embedded in logic`
+    });
+  }
+
+  return found;
+}
+
+function isSignificantString(value) {
+  if (value.length < 3) return false;
+  if (/^[A-Z0-9_./:-]+$/.test(value)) return false;
+  if (/^https?:\/\//.test(value)) return false;
+  if (/^[./~]/.test(value)) return false;
+  if (/^\$\{[^}]+\}$/.test(value)) return false;
+  return /[A-Za-z]/.test(value);
+}
+
+function isAllowedLiteralContext(line) {
+  const trimmed = line.trim();
+  return NAMED_CONSTANT_RE.test(line)
+    || IMPORT_RE.test(line)
+    || trimmed.startsWith('case ')
+    || trimmed.startsWith('throw new ')
+    || trimmed.startsWith('throw ')
+    || trimmed.startsWith('console.')
+    || trimmed.startsWith('logger.')
+    || trimmed.startsWith('assert');
+}
+
+function normalizeNumberLiteral(value) {
+  return String(Number(value));
+}
+
+function abbreviate(value) {
+  if (value.length <= 32) return value;
+  return `${value.slice(0, 29)}...`;
+}
 
 function parseArgs(raw) {
   const parsed = { all: false, staged: false, worktree: false, base: '', range: '' };
@@ -158,7 +171,7 @@ function resolveMode(parsed) {
 
 function usage(message) {
   console.error(message);
-  console.error('usage: node check-no-keyword-logic.mjs [--all | --staged | --worktree | --base <sha> | --range <before>..<after>]');
+  console.error('usage: node check-no-magic-constants.mjs [--all | --staged | --worktree | --base <sha> | --range <before>..<after>]');
   process.exit(2);
 }
 
@@ -254,60 +267,11 @@ function isCommentOnlyLine(line) {
     || trimmed.startsWith('///')
     || trimmed.startsWith('#')
     || trimmed.startsWith('*')
-    || trimmed.startsWith('/*')
-    || trimmed.startsWith('<!--');
+    || trimmed.startsWith('/*');
 }
 
-function sourceWindow(lines, lineNumber, radius) {
-  const start = Math.max(1, lineNumber - radius);
-  const end = Math.min(lines.length, lineNumber + radius);
-  return {
-    start,
-    end,
-    text: lines.slice(start - 1, end).join('\n')
-  };
-}
-
-function isStringListGate(text) {
-  const literalCount = naturalLanguageLiterals(text).length;
-  if (literalCount < 3) return false;
-  if (!LEXICAL_GATE_RE.test(text)) return false;
-  if (SUSPICIOUS_LIST_NAME_RE.test(text)) return true;
-  return false;
-}
-
-function isPotentialStringListGateLine(line) {
-  const code = codeWithoutStrings(line);
-  if (SUSPICIOUS_LIST_NAME_RE.test(code)) return true;
-  if (DECLARES_LIST_RE.test(code)) return true;
-  return LEXICAL_GATE_RE.test(code) && naturalLanguageLiterals(line).length > 0;
-}
-
-function directGateHasNaturalLanguageLiteral(line) {
-  return naturalLanguageLiterals(line)
-    .some(value => !/^[A-Za-z0-9_.-]+:$/.test(value));
-}
-
-function naturalLanguageLiterals(text) {
-  const literals = [];
-  for (const match of text.matchAll(STRING_LITERAL_RE)) {
-    const value = (match[1] ?? match[2] ?? match[3] ?? '').trim();
-    if (isNaturalLanguageToken(value)) literals.push(value);
-  }
-  return literals;
-}
-
-function isNaturalLanguageToken(value) {
-  if (value.length < 3) return false;
-  if (!/[A-Za-z]/.test(value)) return false;
-  if (/^[A-Z0-9_./:-]+$/.test(value)) return false;
-  if (/^https?:\/\//.test(value)) return false;
-  if (/^[./~]/.test(value)) return false;
-  return true;
-}
-
-function codeWithoutStrings(text) {
-  return text.replace(STRING_LITERAL_RE, '""');
+function codeWithoutInlineComment(line) {
+  return line.replace(/\s+\/\/.*$/, '').replace(/\s+#.*$/, '');
 }
 
 function isTrackedFile(file) {

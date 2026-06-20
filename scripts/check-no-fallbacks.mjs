@@ -12,14 +12,9 @@ const SOURCE_EXTENSIONS = new Set([
   '.ts',
   '.tsx',
   '.py',
-  '.sh',
-  '.yml',
-  '.yaml',
-  '.json'
+  '.sh'
 ]);
 const EXCLUDED_FILES = new Set([
-  '.github/workflows/no-fallbacks.yml',
-  '.github/workflows/no-keyword-logic.yml',
   'scripts/check-no-fallbacks.mjs',
   'scripts/check-no-keyword-logic.mjs',
   'scripts/check-no-magic-constants.mjs'
@@ -30,16 +25,18 @@ const EXCLUDED_PREFIXES = [
   '.swiftpm/',
   '.work/',
   'Tests/',
+  'test/',
   'node_modules/'
 ];
 
-const KEYWORD_IDENTIFIER_RE = /\b[A-Za-z_][A-Za-z0-9_]*(?:keyword|keywords)[A-Za-z0-9_]*\b/i;
-const SUSPICIOUS_LIST_NAME_RE = /\b(?:signals?|fragments?|phrases?|prefixes?|suffixes?|triggers?|words?|terms?|markers?|patterns?)\b/i;
-const DECLARES_LIST_RE = /\b(?:let|var|const|static\s+let|static\s+var)\s+[A-Za-z_][A-Za-z0-9_]*\s*(?::[^=]+)?=\s*(?:\[|Set\s*\(|new\s+Set\s*\()/;
-const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|`([^`\\]*(?:\\.[^`\\]*)*)`/g;
-const LEXICAL_GATE_RE = /\.(?:contains|hasPrefix|hasSuffix|localizedCaseInsensitiveContains|range|includes|startsWith|endsWith|some|every|test|match)\b|\b(?:contains|hasPrefix|startswith|endswith|includes|re\.search|RegExp|NSRegularExpression|localizedLowercase|lowercased|toLowerCase|lower)\b/;
-const DIRECT_LITERAL_GATE_RE = /\.(?:contains|hasPrefix|hasSuffix|localizedCaseInsensitiveContains|includes|startsWith|endsWith|test|match)\s*\(\s*(["'`])([^"'`]{3,})\1/;
-const REGEX_ALTERNATION_RE = /\/[^/\n]*(?:[A-Za-z][A-Za-z0-9_-]{2,}\|){2,}[A-Za-z][A-Za-z0-9_-]{2,}[^/\n]*\/|#["'][^"'\n]*(?:[A-Za-z][A-Za-z0-9_-]{2,}\|){2,}[A-Za-z][A-Za-z0-9_-]{2,}[^"'\n]*["']/;
+const FALLBACK_IDENTIFIER_RE = /\b[A-Za-z_][A-Za-z0-9_]*fallback[A-Za-z0-9_]*\b/i;
+const NULLISH_DEFAULT_RE = /\?\?/;
+const LOGICAL_DEFAULT_RE = /(?:=|return|\(|:|,)\s*[^;\n]+(?:\|\|)\s*(?:["'`\[{(]|\d|true\b|false\b|null\b|undefined\b|[A-Za-z_$][A-Za-z0-9_$]*)/;
+const OPTIONAL_TRY_RE = /\btry\?/;
+const PY_GET_DEFAULT_RE = /\.get\([^,\n]+,\s*[^)\n]+\)/;
+const PROMISE_CATCH_DEFAULT_RE = /\.catch\(\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][A-Za-z0-9_$]*)\s*=>\s*(?:["'`\[{(]|\d|true\b|false\b|null\b|undefined\b)/;
+const CATCH_RETURN_DEFAULT_RE = /\bcatch\b[^{]*{\s*return\s+(?:["'`\[{(]|\d|true\b|false\b|null\b|undefined\b)/;
+const EMPTY_CATCH_RE = /\bcatch\b[^{]*{\s*}/;
 
 const args = parseArgs(process.argv.slice(2));
 const mode = resolveMode(args);
@@ -61,69 +58,92 @@ for (const file of files) {
   for (const lineNumber of changedLines) {
     const line = lines[lineNumber - 1] ?? '';
     if (isCommentOnlyLine(line)) continue;
+    const code = codeWithoutInlineComment(line);
 
-    if (KEYWORD_IDENTIFIER_RE.test(line)) {
-      violations.push({
-        file,
-        line: lineNumber,
-        rule: 'keyword-identifier',
-        detail: 'identifier names cannot introduce keyword-based logic',
-        source: line.trim()
-      });
-      continue;
-    }
+    const rule = fallbackRule(code);
+    if (!rule) continue;
 
-    if (REGEX_ALTERNATION_RE.test(line)) {
-      violations.push({
-        file,
-        line: lineNumber,
-        rule: 'regex-keyword-gate',
-        detail: 'regex alternation over words is keyword-based logic',
-        source: line.trim()
-      });
-      continue;
-    }
-
-    if (DIRECT_LITERAL_GATE_RE.test(line) && directGateHasNaturalLanguageLiteral(line)) {
-      violations.push({
-        file,
-        line: lineNumber,
-        rule: 'literal-keyword-gate',
-        detail: 'natural-language literals cannot drive contains/prefix/match logic',
-        source: line.trim()
-      });
-      continue;
-    }
-
-    if (!isPotentialStringListGateLine(line)) continue;
-
-    const window = sourceWindow(lines, lineNumber, 12);
-    if (isStringListGate(window.text)) {
-      violations.push({
-        file,
-        line: lineNumber,
-        rule: 'string-list-keyword-gate',
-        detail: 'string lists cannot drive lexical contains/prefix/match decisions',
-        source: line.trim()
-      });
-    }
+    violations.push({
+      file,
+      line: lineNumber,
+      rule: rule.name,
+      detail: rule.detail,
+      source: line.trim()
+    });
   }
 }
 
 if (violations.length > 0) {
-  console.error('No-keyword-logic guard failed.');
+  console.error('No-fallbacks guard failed.');
   console.error('');
   for (const violation of violations) {
     console.error(`${violation.file}:${violation.line}: ${violation.rule}: ${violation.detail}`);
     if (violation.source) console.error(`  ${violation.source}`);
   }
   console.error('');
-  console.error('Use structured state, typed metadata, parser output, or model/classifier output.');
-  console.error('Do not make behavior depend on word lists, phrase lists, prefix lists, or contains checks.');
+  console.error('Fail explicitly, validate upstream data, or require configuration instead of adding fallback behavior.');
   process.exit(1);
 }
 
-console.log(`No-keyword-logic guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
+console.log(`No-fallbacks guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
+
+function fallbackRule(code) {
+  if (FALLBACK_IDENTIFIER_RE.test(code)) {
+    return {
+      name: 'fallback-identifier',
+      detail: 'fallback identifiers introduce hidden alternate behavior'
+    };
+  }
+  if (NULLISH_DEFAULT_RE.test(code)) {
+    return {
+      name: 'nullish-default',
+      detail: 'nullish coalescing hides missing data behind a substitute value'
+    };
+  }
+  if (LOGICAL_DEFAULT_RE.test(code) && !isBooleanExpression(code)) {
+    return {
+      name: 'logical-default',
+      detail: 'logical-or defaulting hides missing data behind a substitute value'
+    };
+  }
+  if (OPTIONAL_TRY_RE.test(code)) {
+    return {
+      name: 'optional-try',
+      detail: 'optional try converts errors into missing values'
+    };
+  }
+  if (PY_GET_DEFAULT_RE.test(code)) {
+    return {
+      name: 'dictionary-default',
+      detail: 'dictionary defaults hide missing keys'
+    };
+  }
+  if (PROMISE_CATCH_DEFAULT_RE.test(code)) {
+    return {
+      name: 'promise-catch-default',
+      detail: 'promise catch returns a substitute value'
+    };
+  }
+  if (CATCH_RETURN_DEFAULT_RE.test(code)) {
+    return {
+      name: 'catch-return-default',
+      detail: 'catch block returns a substitute value'
+    };
+  }
+  if (EMPTY_CATCH_RE.test(code)) {
+    return {
+      name: 'empty-catch',
+      detail: 'empty catch block swallows errors'
+    };
+  }
+  return null;
+}
+
+function isBooleanExpression(code) {
+  return /^\s*(?:if|while|for)\s*\(/.test(code)
+    || /\b(?:true|false)\b\s*(?:\|\|)\s*\b(?:true|false)\b/.test(code)
+    || /(?:&&|\|\|)\s*[A-Za-z_$][A-Za-z0-9_$]*\s*(?:&&|\|\|)/.test(code);
+}
 
 function parseArgs(raw) {
   const parsed = { all: false, staged: false, worktree: false, base: '', range: '' };
@@ -158,7 +178,7 @@ function resolveMode(parsed) {
 
 function usage(message) {
   console.error(message);
-  console.error('usage: node check-no-keyword-logic.mjs [--all | --staged | --worktree | --base <sha> | --range <before>..<after>]');
+  console.error('usage: node check-no-fallbacks.mjs [--all | --staged | --worktree | --base <sha> | --range <before>..<after>]');
   process.exit(2);
 }
 
@@ -254,60 +274,11 @@ function isCommentOnlyLine(line) {
     || trimmed.startsWith('///')
     || trimmed.startsWith('#')
     || trimmed.startsWith('*')
-    || trimmed.startsWith('/*')
-    || trimmed.startsWith('<!--');
+    || trimmed.startsWith('/*');
 }
 
-function sourceWindow(lines, lineNumber, radius) {
-  const start = Math.max(1, lineNumber - radius);
-  const end = Math.min(lines.length, lineNumber + radius);
-  return {
-    start,
-    end,
-    text: lines.slice(start - 1, end).join('\n')
-  };
-}
-
-function isStringListGate(text) {
-  const literalCount = naturalLanguageLiterals(text).length;
-  if (literalCount < 3) return false;
-  if (!LEXICAL_GATE_RE.test(text)) return false;
-  if (SUSPICIOUS_LIST_NAME_RE.test(text)) return true;
-  return false;
-}
-
-function isPotentialStringListGateLine(line) {
-  const code = codeWithoutStrings(line);
-  if (SUSPICIOUS_LIST_NAME_RE.test(code)) return true;
-  if (DECLARES_LIST_RE.test(code)) return true;
-  return LEXICAL_GATE_RE.test(code) && naturalLanguageLiterals(line).length > 0;
-}
-
-function directGateHasNaturalLanguageLiteral(line) {
-  return naturalLanguageLiterals(line)
-    .some(value => !/^[A-Za-z0-9_.-]+:$/.test(value));
-}
-
-function naturalLanguageLiterals(text) {
-  const literals = [];
-  for (const match of text.matchAll(STRING_LITERAL_RE)) {
-    const value = (match[1] ?? match[2] ?? match[3] ?? '').trim();
-    if (isNaturalLanguageToken(value)) literals.push(value);
-  }
-  return literals;
-}
-
-function isNaturalLanguageToken(value) {
-  if (value.length < 3) return false;
-  if (!/[A-Za-z]/.test(value)) return false;
-  if (/^[A-Z0-9_./:-]+$/.test(value)) return false;
-  if (/^https?:\/\//.test(value)) return false;
-  if (/^[./~]/.test(value)) return false;
-  return true;
-}
-
-function codeWithoutStrings(text) {
-  return text.replace(STRING_LITERAL_RE, '""');
+function codeWithoutInlineComment(line) {
+  return line.replace(/\s+\/\/.*$/, '').replace(/\s+#.*$/, '');
 }
 
 function isTrackedFile(file) {

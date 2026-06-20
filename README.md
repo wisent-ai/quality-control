@@ -20,6 +20,10 @@ The second check rejects pull requests that introduce keyword-driven lexical log
 
 This catches introduced identifiers such as `keywords`, word-list gates, phrase/prefix/pattern lists wired into contains/match checks, and regex alternations over natural-language tokens.
 
+The fallback check rejects introduced fallback behavior: fallback identifiers, nullish/default coalescing, logical-or defaults, optional `try?`, dictionary defaults, promise catch defaults, catch blocks that return substitute values, and empty catch blocks.
+
+The constants check rejects introduced magic values in logic. It flags non-trivial string literals and numeric literals outside the small structural set `-1`, `0`, `1`, `2`, while allowing imports and named uppercase constant declarations.
+
 ## How it is enforced
 
 GitHub supports organization rulesets that require a workflow to pass before pull requests merge. The required workflow lives in this repository at `.github/workflows/required-pr-quality.yml`.
