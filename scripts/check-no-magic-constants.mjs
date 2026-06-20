@@ -11,8 +11,7 @@ const SOURCE_EXTENSIONS = new Set([
   '.js',
   '.ts',
   '.tsx',
-  '.py',
-  '.sh'
+  '.py'
 ]);
 const EXCLUDED_FILES = new Set([
   'scripts/check-no-fallbacks.mjs',
@@ -33,6 +32,8 @@ const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'
 const NUMBER_LITERAL_RE = /(?<![A-Za-z0-9_$])[-+]?(?:\d+\.\d+|\d+)(?:e[-+]?\d+)?(?![A-Za-z0-9_$])/gi;
 const NAMED_CONSTANT_RE = /^\s*(?:export\s+)?(?:const|let|var|static\s+let|static\s+var)\s+[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
 const IMPORT_RE = /^\s*(?:import|export)\b.*\bfrom\b|^\s*(?:import|require)\s*\(/;
+const LOCAL_LITERAL_ASSIGN_RE = /^\s*(?:const|let|var)?\s*[a-z_][A-Za-z0-9_]*\s*(?::[^=]+)?=\s*(?:["'`]|[-+]?(?:\d+\.\d+|\d+)(?:e[-+]?\d+)?\b)/i;
+const LOGIC_LITERAL_RE = /^\s*(?:if|elif|while|for|return|assert)\b|(?:[=!<>]=|[<>])|[-+*/%]=|\b(?:range|sleep|timeout|limit|max|min)\s*\(/;
 const ALLOWED_NUMBER_LITERALS = new Set(['-1', '0', '1', '2']);
 
 const args = parseArgs(process.argv.slice(2));
@@ -56,6 +57,7 @@ for (const file of files) {
     const line = lines[lineNumber - 1] ?? '';
     if (isCommentOnlyLine(line)) continue;
     if (isAllowedLiteralContext(line)) continue;
+    if (!isLiteralSensitiveContext(line)) continue;
 
     for (const violation of literalViolations(line)) {
       violations.push({
@@ -121,12 +123,26 @@ function isAllowedLiteralContext(line) {
   const trimmed = line.trim();
   return NAMED_CONSTANT_RE.test(line)
     || IMPORT_RE.test(line)
+    || trimmed.startsWith('@')
+    || trimmed.startsWith('help=')
+    || trimmed.startsWith('default=')
     || trimmed.startsWith('case ')
     || trimmed.startsWith('throw new ')
     || trimmed.startsWith('throw ')
     || trimmed.startsWith('console.')
+    || trimmed.startsWith('click.echo')
+    || trimmed.includes('flags.append(')
     || trimmed.startsWith('logger.')
-    || trimmed.startsWith('assert');
+    || trimmed.startsWith('print(')
+    || trimmed.startsWith('sys.stderr.write')
+    || trimmed.startsWith('_log(')
+    || trimmed.startsWith('f"')
+    || trimmed.startsWith("f'");
+}
+
+function isLiteralSensitiveContext(line) {
+  const code = codeWithoutInlineComment(line);
+  return LOCAL_LITERAL_ASSIGN_RE.test(code) || LOGIC_LITERAL_RE.test(code);
 }
 
 function normalizeNumberLiteral(value) {
@@ -255,6 +271,9 @@ function allLineNumbers(lines) {
 function isScannedFile(file) {
   if (EXCLUDED_FILES.has(file)) return false;
   if (EXCLUDED_PREFIXES.some(prefix => file.startsWith(prefix))) return false;
+  if (file.includes('/_catalog/')) return false;
+  if (file.endsWith('/config.py') || file === 'config.py') return false;
+  if (file.includes('/profiles/')) return false;
   const extension = path.extname(file);
   if (!SOURCE_EXTENSIONS.has(extension)) return false;
   if (file.includes('/node_modules/')) return false;

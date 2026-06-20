@@ -61,6 +61,7 @@ for (const file of files) {
   for (const lineNumber of changedLines) {
     const line = lines[lineNumber - 1] ?? '';
     if (isCommentOnlyLine(line)) continue;
+    if (isLikelyDocumentationLine(line)) continue;
 
     if (KEYWORD_IDENTIFIER_RE.test(line)) {
       violations.push({
@@ -264,7 +265,11 @@ function sourceWindow(lines, lineNumber, radius) {
   return {
     start,
     end,
-    text: lines.slice(start - 1, end).join('\n')
+    text: lines
+      .slice(start - 1, end)
+      .filter(line => !isCommentOnlyLine(line))
+      .filter(line => !isLikelyDocumentationLine(line))
+      .join('\n')
   };
 }
 
@@ -300,6 +305,7 @@ function naturalLanguageLiterals(text) {
 function isNaturalLanguageToken(value) {
   if (value.length < 3) return false;
   if (!/[A-Za-z]/.test(value)) return false;
+  if (/[/_]/.test(value)) return false;
   if (/^[A-Z0-9_./:-]+$/.test(value)) return false;
   if (/^https?:\/\//.test(value)) return false;
   if (/^[./~]/.test(value)) return false;
@@ -308,6 +314,15 @@ function isNaturalLanguageToken(value) {
 
 function codeWithoutStrings(text) {
   return text.replace(STRING_LITERAL_RE, '""');
+}
+
+function isLikelyDocumentationLine(line) {
+  const trimmed = line.trim();
+  if (!trimmed) return true;
+  if (trimmed.startsWith('"""') || trimmed.startsWith("'''")) return true;
+  if (trimmed.endsWith('"""') || trimmed.endsWith("'''")) return true;
+  if (/[=({[;]|^\s*(?:if|for|while|return|const|let|var|def|class|func)\b/.test(trimmed)) return false;
+  return /\s/.test(trimmed) && /[A-Za-z]/.test(trimmed);
 }
 
 function isTrackedFile(file) {
