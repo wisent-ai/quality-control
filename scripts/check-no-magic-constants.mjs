@@ -93,6 +93,7 @@ function literalViolations(line) {
   for (const match of code.matchAll(STRING_LITERAL_RE)) {
     const value = (match[1] ?? match[2] ?? match[3] ?? '').trim();
     if (!isSignificantString(value)) continue;
+    if (isSchemaKeyAccess(code, match.index ?? 0, match[0].length)) continue;
     found.push({
       rule: 'magic-string',
       detail: `string literal "${abbreviate(value)}" is embedded in logic`
@@ -124,6 +125,7 @@ function isAllowedLiteralContext(line) {
   const trimmed = line.trim();
   return NAMED_CONSTANT_RE.test(line)
     || IMPORT_RE.test(line)
+    || trimmed === 'if __name__ == "__main__":'
     || trimmed.startsWith('@')
     || trimmed.startsWith('"')
     || trimmed.startsWith("'")
@@ -147,6 +149,14 @@ function isAllowedLiteralContext(line) {
 function isLiteralSensitiveContext(line) {
   const code = codeWithoutInlineComment(line);
   return LOCAL_LITERAL_ASSIGN_RE.test(code) || LOGIC_LITERAL_RE.test(code);
+}
+
+function isSchemaKeyAccess(code, start, length) {
+  const before = code.slice(Math.max(0, start - 8), start);
+  const after = code.slice(start + length, start + length + 4).trimStart();
+  if (before.endsWith('[') && after.startsWith(']')) return true;
+  if (before.endsWith('.get(') && (after.startsWith(',') || after.startsWith(')'))) return true;
+  return false;
 }
 
 function isLikelyDocumentationLine(line) {
