@@ -32,7 +32,7 @@ const FALLBACK_IDENTIFIER_RE = /\b[A-Za-z_][A-Za-z0-9_]*fallback[A-Za-z0-9_]*\b/
 const NULLISH_DEFAULT_RE = /\?\?/;
 const LOGICAL_DEFAULT_RE = /(?:=|return|\(|:|,)\s*[^;\n]+(?:\|\|)\s*(?:["'`\[{(]|\d|true\b|false\b|null\b|undefined\b|[A-Za-z_$][A-Za-z0-9_$]*)/;
 const OPTIONAL_TRY_RE = /\btry\?/;
-const PY_GET_DEFAULT_RE = /\.get\([^,\n]+,\s*[^)\n]+\)/;
+const PY_GET_DEFAULT_RE = /\.get\(\s*[^=,\n]+,\s*[^)\n]+\)/;
 const PROMISE_CATCH_DEFAULT_RE = /\.catch\(\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][A-Za-z0-9_$]*)\s*=>\s*(?:["'`\[{(]|\d|true\b|false\b|null\b|undefined\b)/;
 const CATCH_RETURN_DEFAULT_RE = /\bcatch\b[^{]*{\s*return\s+(?:["'`\[{(]|\d|true\b|false\b|null\b|undefined\b)/;
 const EMPTY_CATCH_RE = /\bcatch\b[^{]*{\s*}/;
