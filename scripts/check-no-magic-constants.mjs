@@ -30,7 +30,7 @@ const EXCLUDED_PREFIXES = [
 
 const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|`([^`\\]*(?:\\.[^`\\]*)*)`/g;
 const NUMBER_LITERAL_RE = /(?<![A-Za-z0-9_$])[-+]?(?:\d+\.\d+|\d+)(?:e[-+]?\d+)?(?![A-Za-z0-9_$])/gi;
-const NAMED_CONSTANT_RE = /^\s*(?:export\s+)?(?:const|let|var|static\s+let|static\s+var)\s+[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
+const NAMED_CONSTANT_RE = /^\s*(?:(?:export\s+)?(?:const|let|var|static\s+let|static\s+var)\s+)?[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
 const IMPORT_RE = /^\s*(?:import|export)\b.*\bfrom\b|^\s*(?:import|require)\s*\(/;
 const LOCAL_LITERAL_ASSIGN_RE = /^\s*(?:const|let|var)?\s*[a-z_][A-Za-z0-9_]*\s*(?::[^=]+)?=\s*(?:["'`]|[-+]?(?:\d+\.\d+|\d+)(?:e[-+]?\d+)?\b)/i;
 const LOGIC_LITERAL_RE = /^\s*(?:if|elif|while|for|return|assert)\b|(?:[=!<>]=|[<>])|[-+*/%]=|\b(?:range|sleep|timeout|limit|max|min)\s*\(/;
@@ -56,6 +56,7 @@ for (const file of files) {
   for (const lineNumber of changedLines) {
     const line = lines[lineNumber - 1] ?? '';
     if (isCommentOnlyLine(line)) continue;
+    if (isLikelyDocumentationLine(line)) continue;
     if (isAllowedLiteralContext(line)) continue;
     if (!isLiteralSensitiveContext(line)) continue;
 
@@ -124,6 +125,9 @@ function isAllowedLiteralContext(line) {
   return NAMED_CONSTANT_RE.test(line)
     || IMPORT_RE.test(line)
     || trimmed.startsWith('@')
+    || trimmed.startsWith('"')
+    || trimmed.startsWith("'")
+    || trimmed.startsWith('<')
     || trimmed.startsWith('help=')
     || trimmed.startsWith('default=')
     || trimmed.startsWith('case ')
@@ -143,6 +147,16 @@ function isAllowedLiteralContext(line) {
 function isLiteralSensitiveContext(line) {
   const code = codeWithoutInlineComment(line);
   return LOCAL_LITERAL_ASSIGN_RE.test(code) || LOGIC_LITERAL_RE.test(code);
+}
+
+function isLikelyDocumentationLine(line) {
+  const trimmed = line.trim();
+  if (!trimmed) return true;
+  if (trimmed.startsWith('"""') || trimmed.startsWith("'''")) return true;
+  if (trimmed.endsWith('"""') || trimmed.endsWith("'''")) return true;
+  if (trimmed.includes('"""') || trimmed.includes("'''")) return true;
+  if (/^[A-Za-z][A-Za-z0-9 ,.;:()/_<>`'"\-–—]+$/.test(trimmed) && !/[=({[;]/.test(trimmed)) return true;
+  return false;
 }
 
 function normalizeNumberLiteral(value) {
