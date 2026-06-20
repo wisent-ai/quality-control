@@ -118,6 +118,7 @@ function isSignificantString(value) {
   if (value.length < 3) return false;
   if (/[{}]/.test(value)) return false;
   if (value.startsWith('<')) return false;
+  if (value.startsWith('--')) return false;
   if (/^[A-Z0-9_./:-]+$/.test(value)) return false;
   if (/^https?:\/\//.test(value)) return false;
   if (/^[./~]/.test(value)) return false;
@@ -161,6 +162,8 @@ function isSchemaKeyAccess(code, start, length) {
   const after = code.slice(start + length, start + length + 4).trimStart();
   if (before.endsWith('[') && after.startsWith(']')) return true;
   if (before.endsWith('.get(') && (after.startsWith(',') || after.startsWith(')'))) return true;
+  if (/getattr\([^,\n]+,\s*$/.test(beforeFull) && (after.startsWith(',') || after.startsWith(')'))) return true;
+  if (/setattr\([^,\n]+,\s*$/.test(beforeFull) && (after.startsWith(',') || after.startsWith(')'))) return true;
   if (
     after.startsWith(':')
     && (beforeFull.endsWith('{') || beforeFull.endsWith(',') || beforeFull.endsWith('('))
