@@ -42,3 +42,15 @@ node scripts/install-org-ruleset.mjs
 ```bash
 npm test
 ```
+
+## Baseline audit
+
+The PR checks block only newly introduced issues. To inspect an existing repository, run the guard scripts against the whole tree:
+
+```bash
+node scripts/check-no-keyword-logic.mjs --all
+node scripts/check-no-fallbacks.mjs --all
+node scripts/check-no-magic-constants.mjs --all
+```
+
+There is also a manual GitHub Actions workflow, `Repository audit`, that checks a selected repo/ref and uploads the logs as an artifact without failing the workflow.

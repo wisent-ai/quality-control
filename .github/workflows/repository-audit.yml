@@ -1,0 +1,78 @@
+name: Repository audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Repository to audit, for example wisent-ai/swiatowid.
+        required: true
+        type: string
+      ref:
+        description: Branch, tag, or SHA to audit.
+        required: false
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Audit existing code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out target repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.ref }}
+          fetch-depth: 1
+          path: target
+
+      - name: Check out quality-control scripts
+        uses: actions/checkout@v4
+        with:
+          repository: wisent-ai/quality-control
+          ref: main
+          path: quality-control
+
+      - name: Run baseline audit
+        shell: bash
+        working-directory: target
+        run: |
+          set +e
+          mkdir -p ../audit-results
+
+          node ../quality-control/scripts/check-no-keyword-logic.mjs --all > ../audit-results/lexical-policy.log 2>&1
+          echo "$?" > ../audit-results/lexical-policy.exit
+
+          node ../quality-control/scripts/check-no-fallbacks.mjs --all > ../audit-results/fallback-policy.log 2>&1
+          echo "$?" > ../audit-results/fallback-policy.exit
+
+          node ../quality-control/scripts/check-no-magic-constants.mjs --all > ../audit-results/constants-policy.log 2>&1
+          echo "$?" > ../audit-results/constants-policy.exit
+
+          {
+            echo "# Repository audit"
+            echo
+            echo "Repository: ${{ inputs.repository }}"
+            echo "Ref: ${{ inputs.ref }}"
+            echo
+            for policy in lexical-policy fallback-policy constants-policy; do
+              status="$(cat "../audit-results/${policy}.exit")"
+              if [ "$status" = "0" ]; then
+                echo "- ${policy}: pass"
+              else
+                echo "- ${policy}: findings"
+              fi
+            done
+          } > ../audit-results/summary.md
+
+          cat ../audit-results/summary.md
+          exit 0
+
+      - name: Upload audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: repository-audit
+          path: audit-results/
