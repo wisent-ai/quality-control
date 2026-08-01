@@ -1,5 +1,14 @@
 # Wisent quality control
 
+<!-- wisent-readme-signals:start -->
+[![CI](https://github.com/wisent-ai/quality-control/actions/workflows/repository-audit.yml/badge.svg?branch=main)](https://github.com/wisent-ai/quality-control/actions/workflows/repository-audit.yml)
+[![Release](https://img.shields.io/github/v/release/wisent-ai/quality-control?display_name=tag&sort=semver)](https://github.com/wisent-ai/quality-control/releases)
+[![Downloads](https://img.shields.io/github/downloads/wisent-ai/quality-control/total)](https://github.com/wisent-ai/quality-control/releases)
+[![License](https://img.shields.io/github/license/wisent-ai/quality-control)](https://github.com/wisent-ai/quality-control)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Wisent-5865F2?logo=discord&logoColor=white)](https://discord.gg/qRjpkthq54)
+<!-- wisent-readme-signals:end -->
+
+
 Central PR quality checks for `wisent-ai` repositories.
 
 The first check rejects pull requests whose commit subjects are too vague to audit later. Examples that fail:
