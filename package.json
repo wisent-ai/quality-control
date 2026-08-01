@@ -1,9 +1,23 @@
 {
   "name": "@wisent-ai/quality-control",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": "https://github.com/wisent-ai/quality-control",
   "type": "module",
-  "description": "Central GitHub PR quality checks for Wisent repositories.",
+  "description": "Stable local policy checks and reusable organization quality gates.",
+  "bin": {
+    "wisent-check-keyword-logic": "scripts/check-no-keyword-logic.mjs",
+    "wisent-check-fallbacks": "scripts/check-no-fallbacks.mjs",
+    "wisent-check-magic-constants": "scripts/check-no-magic-constants.mjs"
+  },
+  "files": [
+    "scripts/check-no-keyword-logic.mjs",
+    "scripts/check-no-fallbacks.mjs",
+    "scripts/check-no-magic-constants.mjs",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "test": "node --test"
   },
