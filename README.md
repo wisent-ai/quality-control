@@ -1,7 +1,6 @@
 # Wisent quality control
 
 <!-- wisent-readme-signals:start -->
-[![Repository audit](https://github.com/wisent-ai/quality-control/actions/workflows/repository-audit.yml/badge.svg?branch=main)](https://github.com/wisent-ai/quality-control/actions/workflows/repository-audit.yml)
 [![Release](https://img.shields.io/github/v/release/wisent-ai/quality-control?display_name=tag&sort=semver)](https://github.com/wisent-ai/quality-control/releases)
 [![Downloads](https://img.shields.io/github/downloads/wisent-ai/quality-control/total)](https://github.com/wisent-ai/quality-control/releases)
 [![License](https://img.shields.io/github/license/wisent-ai/quality-control)](https://github.com/wisent-ai/quality-control)
