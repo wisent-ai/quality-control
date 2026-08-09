@@ -1,0 +1,15 @@
+[automation]
+managed = true
+source_fingerprint = "326f3723e95ece59"
+category = "benchmark"
+
+[banner]
+title = "Make repository policy executable."
+description = "Dependency-free checks and reusable GitHub workflows for enforcing organization quality gates."
+product = "Wisent"
+url = "wisent.ai"
+theme = "dark"
+layout = "benchmark-left"
+art_seed = "quality-control"
+width = 1584
+height = 396
