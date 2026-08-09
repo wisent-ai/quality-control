@@ -1,103 +1,112 @@
 #!/bin/sh
-# Which repositories publish, which have said they do not, and which are
-# simply silent.
+# Enforce the explicit release contract of every repository in the pack.
 #
-# Forty-four of the pack's repositories carry no workflow at all, and today
-# there is no way to tell "this is a library that ships nothing" from "nobody
-# set this up". That is the same defect the Skarbiec dashboard had, one layer
-# up: a state chosen deliberately and a state nobody attended to rendered
-# identically, which teaches a reader to skim past both.
-#
-# The remedy is a declaration a repository can make about itself:
-#
-#   .github/release-policy.json
-#   {"releases": false, "reason": "manuscripts; nothing is built or shipped"}
-#
-# A repository that publishes needs no file - its release workflow says so.
-# A repository that publishes nothing says why. Anything left is silent, and
-# silence is what this prints last, because it is the only column that is a
-# question rather than an answer.
-#
-# Usage: scripts/release-policy.sh [--json]
+# releases=true requires the distribution type, the path of the emitted
+# manifest, and every publisher that receives the exact release bytes.
+# releases=false requires a reason. Workflow-name heuristics are deliberately
+# not accepted: a publisher without policy and a non-publisher without policy
+# are both silent, and silence is a contract failure.
 set -eu
 
-# The pack root: this script lives in quality-control, which owns review and
-# scanning policy, and reads its siblings. PACK_ROOT overrides for a checkout
-# laid out differently.
 root="${PACK_ROOT:-$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd -P)}"
-cd "$root"
-
-as_json=false
+format=text
 if [ "${1:-}" = "--json" ]; then
-  as_json=true
+  format=json
+elif [ "$#" -ne 0 ]; then
+  echo "usage: scripts/release-policy.sh [--json]" >&2
+  exit 2
 fi
 
-publishes=""
-declared=""
-silent=""
+python3 - "$root" "$format" <<'PY'
+import json
+import pathlib
+import sys
 
-for entry in */; do
-  repo="${entry%/}"
-  [ -d "$repo/.git" ] || continue
+root = pathlib.Path(sys.argv[1])
+output_format = sys.argv[2]
+publishes = []
+no_release = []
+silent = []
+malformed = []
 
-  policy="$repo/.github/release-policy.json"
-  if [ -f "$policy" ]; then
-    declared="$declared $repo"
-    continue
-  fi
+for repo in sorted(path for path in root.iterdir() if (path / ".git").exists()):
+    policy_path = repo / ".github" / "release-policy.json"
+    if not policy_path.is_file():
+        silent.append(repo.name)
+        continue
+    try:
+        policy = json.loads(policy_path.read_text(encoding="utf-8"))
+        if not isinstance(policy, dict) or set(policy) - {
+            "schema_version", "releases", "type", "manifest", "publisher", "reason"
+        }:
+            raise ValueError("unsupported or non-object policy")
+        if policy.get("schema_version") != 1:
+            raise ValueError("schema_version must be 1")
+        releases = policy.get("releases")
+        if releases is True:
+            if "reason" in policy:
+                raise ValueError("releases=true forbids reason")
+            release_type = policy.get("type")
+            manifest = policy.get("manifest")
+            publishers = policy.get("publisher")
+            if not isinstance(release_type, str) or not release_type.strip():
+                raise ValueError("releases=true requires non-empty type")
+            if (
+                not isinstance(manifest, str)
+                or not manifest.strip()
+                or pathlib.PurePosixPath(manifest).is_absolute()
+                or ".." in pathlib.PurePosixPath(manifest).parts
+            ):
+                raise ValueError("releases=true requires a repository-relative manifest")
+            if (
+                not isinstance(publishers, list)
+                or not publishers
+                or any(not isinstance(value, str) or not value.strip() for value in publishers)
+                or len(set(publishers)) != len(publishers)
+            ):
+                raise ValueError("releases=true requires a non-empty unique publisher array")
+            publishes.append({
+                "repository": repo.name,
+                "type": release_type,
+                "manifest": manifest,
+                "publisher": publishers,
+            })
+        elif releases is False:
+            if set(policy) - {"schema_version", "releases", "reason"}:
+                raise ValueError("releases=false permits only reason")
+            reason = policy.get("reason")
+            if not isinstance(reason, str) or not reason.strip():
+                raise ValueError("releases=false requires a non-empty reason")
+            no_release.append({"repository": repo.name, "reason": reason})
+        else:
+            raise ValueError("releases must be true or false")
+    except (OSError, json.JSONDecodeError, ValueError, TypeError) as error:
+        malformed.append({"repository": repo.name, "error": str(error)})
 
-  # A repository publishes if any workflow creates a release. Matching the
-  # publishing action rather than the word "release" keeps a workflow merely
-  # NAMED release.yml from counting as one that publishes.
-  if [ -d "$repo/.github/workflows" ] && grep -rlq \
-      -e 'softprops/action-gh-release' \
-      -e 'gh release create' \
-      -e 'actions/create-release' \
-      -e 'macos-sparkle-release.yml' \
-      "$repo/.github/workflows" 2>/dev/null; then
-    publishes="$publishes $repo"
-    continue
-  fi
-
-  silent="$silent $repo"
-done
-
-count() {
-  # shellcheck disable=SC2086
-  set -- $1
-  printf '%s' "$#"
+report = {
+    "publishes": publishes,
+    "declared_no_release": no_release,
+    "silent": silent,
+    "malformed": malformed,
 }
+if output_format == "json":
+    print(json.dumps(report, separators=(",", ":"), sort_keys=True))
+else:
+    print(f"publishes ({len(publishes)}):")
+    for item in publishes:
+        print(
+            f"  {item['repository']} — {item['type']}; {item['manifest']}; "
+            f"{', '.join(item['publisher'])}"
+        )
+    print(f"\ndeclared no release ({len(no_release)}):")
+    for item in no_release:
+        print(f"  {item['repository']} — {item['reason']}")
+    print(f"\nsilent ({len(silent)}):")
+    for name in silent:
+        print(f"  {name}")
+    print(f"\nmalformed ({len(malformed)}):")
+    for item in malformed:
+        print(f"  {item['repository']} — {item['error']}")
 
-if [ "$as_json" = true ]; then
-  emit() {
-    printf '['
-    separator=""
-    # shellcheck disable=SC2086
-    for name in $2; do
-      printf '%s"%s"' "$separator" "$name"
-      separator=","
-    done
-    printf ']'
-  }
-  printf '{"publishes":'
-  emit publishes "$publishes"
-  printf ',"declared_no_release":'
-  emit declared "$declared"
-  printf ',"silent":'
-  emit silent "$silent"
-  printf '}\n'
-  exit 0
-fi
-
-printf 'publishes (%s):\n' "$(count "$publishes")"
-for name in $publishes; do printf '  %s\n' "$name"; done
-
-printf '\ndeclared no release (%s):\n' "$(count "$declared")"
-for name in $declared; do
-  reason="$(sed -n 's/.*"reason"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-    "$name/.github/release-policy.json" | head -1)"
-  printf '  %s — %s\n' "$name" "${reason:-no reason given}"
-done
-
-printf '\nsilent (%s) — neither publishes nor says why:\n' "$(count "$silent")"
-for name in $silent; do printf '  %s\n' "$name"; done
+raise SystemExit(1 if silent or malformed else 0)
+PY

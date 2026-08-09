@@ -1,0 +1,111 @@
+name: Prepare Rust release
+
+on:
+  workflow_call:
+    inputs:
+      manifest:
+        description: Cargo manifest carrying the released product version.
+        type: string
+        default: Cargo.toml
+      runs-on:
+        description: Runner label or JSON label array.
+        type: string
+        default: ubuntu-latest
+    outputs:
+      tag:
+        description: Immutable v-prefixed release coordinate.
+        value: ${{ jobs.prepare.outputs.tag }}
+      version:
+        description: Version committed in the Cargo manifest.
+        value: ${{ jobs.prepare.outputs.version }}
+      sha:
+        description: Exact source commit the tag resolves to.
+        value: ${{ jobs.prepare.outputs.sha }}
+      publish:
+        description: Whether this invocation must publish or resume the release.
+        value: ${{ jobs.prepare.outputs.publish }}
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ${{ fromJSON(startsWith(inputs.runs-on, '[') && inputs.runs-on || format('"{0}"', inputs.runs-on)) }}
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+      sha: ${{ steps.release.outputs.sha }}
+      publish: ${{ steps.release.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: release
+        name: Bind release coordinate to the committed source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MANIFEST: ${{ inputs.manifest }}
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(git rev-parse HEAD)"
+          if [ "$sha" != "$GITHUB_SHA" ]; then
+            echo "::error::checkout resolved to $sha, not workflow source $GITHUB_SHA."
+            false
+          fi
+          version="$(python3 - "$MANIFEST" <<'PY'
+          import pathlib, re, sys, tomllib
+          data = tomllib.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+          version = data.get("package", {}).get("version")
+          if not isinstance(version, str) or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?", version):
+              raise SystemExit(f"{sys.argv[1]} has no canonical committed package version")
+          print(version)
+          PY
+          )"
+          tag="v$version"
+          publish=true
+
+          # A normal main push that did not change the version is not a release.
+          # A manual invocation is an explicit request to resume the exact release.
+          if [ "$EVENT_NAME" = push ] && [ -n "${BEFORE_SHA:-}" ] \
+             && [ "$BEFORE_SHA" != 0000000000000000000000000000000000000000 ] \
+             && git cat-file -e "$BEFORE_SHA:$MANIFEST" 2>/dev/null; then
+            git show "$BEFORE_SHA:$MANIFEST" > "$RUNNER_TEMP/previous-manifest.toml"
+            previous="$(python3 - "$RUNNER_TEMP/previous-manifest.toml" <<'PY'
+          import pathlib, sys, tomllib
+          print(tomllib.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))["package"]["version"])
+          PY
+            )"
+            if [ "$previous" = "$version" ]; then
+              publish=false
+            fi
+          fi
+
+          if [ "$publish" = true ]; then
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+              tagged_sha="$(git rev-list -n 1 "refs/tags/$tag")"
+              if [ "$tagged_sha" != "$sha" ]; then
+                echo "::error::$tag already resolves to $tagged_sha; refusing to publish or move it to $sha."
+                false
+              fi
+              echo "$tag already names $sha; resuming any incomplete publication."
+            else
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git tag -a "$tag" "$sha" -m "$version from committed $MANIFEST at $sha"
+              git push origin "refs/tags/$tag"
+              echo "Created immutable $tag at $sha; this workflow continues publication directly."
+            fi
+          else
+            echo "$MANIFEST remains at $version; no release publication is requested."
+          fi
+
+          {
+            echo "tag=$tag"
+            echo "version=$version"
+            echo "sha=$sha"
+            echo "publish=$publish"
+          } >> "$GITHUB_OUTPUT"

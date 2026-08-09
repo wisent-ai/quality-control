@@ -1,0 +1,105 @@
+name: Rust AutoVersion contract
+
+on:
+  workflow_call:
+    inputs:
+      manifest:
+        description: Cargo manifest carrying the public product version.
+        type: string
+        default: Cargo.toml
+      baseline:
+        description: Committed public surface of the released version.
+        type: string
+        default: released-surface.json
+      surface-command:
+        description: Command that writes candidate surface JSON to stdout.
+        type: string
+        default: python3 scripts/surface.py
+      runs-on:
+        description: Runner label or JSON label array.
+        type: string
+        default: ubuntu-latest
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ${{ fromJSON(startsWith(inputs.runs-on, '[') && inputs.runs-on || format('"{0}"', inputs.runs-on)) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install the shared version rule
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/autoversion"
+          "$RUNNER_TEMP/autoversion/bin/python" -m pip install --quiet \
+            "git+https://github.com/lbartoszcze/AutoVersion@v0.1.0"
+          rule="$RUNNER_TEMP/autoversion/bin/autoversion"
+          test -x "$rule"
+          echo "AUTOVERSION=$rule" >> "$GITHUB_ENV"
+
+      - name: Read candidate public surface
+        env:
+          SURFACE_COMMAND: ${{ inputs.surface-command }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -euo pipefail -c "$SURFACE_COMMAND" > "$RUNNER_TEMP/candidate-surface.json"
+          jq -e '.surface | arrays | length > 0' "$RUNNER_TEMP/candidate-surface.json" >/dev/null
+
+      - name: Enforce released surface and committed manifest version
+        env:
+          MANIFEST: ${{ inputs.manifest }}
+          BASELINE: ${{ inputs.baseline }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --quiet -- "$MANIFEST" || {
+            echo "::error::$MANIFEST was modified while deriving the candidate; the gate only accepts the committed version."
+            false
+          }
+          declared="$(python3 - "$MANIFEST" <<'PY'
+          import pathlib, sys, tomllib
+          value = tomllib.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+          version = value.get("package", {}).get("version")
+          if not isinstance(version, str) or not version:
+              raise SystemExit(f"{sys.argv[1]} has no non-empty [package].version")
+          print(version)
+          PY
+          )"
+          released="$(jq -er '.version | strings | select(length > 0)' "$BASELINE")"
+          jq -e '.surface | arrays | length > 0' "$BASELINE" >/dev/null
+
+          jq '{surface: .surface}' "$BASELINE" > "$RUNNER_TEMP/identical.json"
+          jq '{surface: (.surface - [(.surface | sort | first)])}' "$BASELINE" > "$RUNNER_TEMP/removed.json"
+          unchanged="$($AUTOVERSION decide --current "$released" \
+            --published-surface "$BASELINE" --candidate-surface "$RUNNER_TEMP/identical.json" \
+            --json | jq -er .change)"
+          removed="$($AUTOVERSION decide --current "$released" \
+            --published-surface "$BASELINE" --candidate-surface "$RUNNER_TEMP/removed.json" \
+            --json | jq -er .change)"
+          if [ "$unchanged" != internal ] || [ "$removed" != breaking ]; then
+            echo "::error::AutoVersion self-check returned identical=$unchanged removed=$removed."
+            false
+          fi
+
+          verdict="$($AUTOVERSION decide --current "$released" \
+            --published-surface "$BASELINE" \
+            --candidate-surface "$RUNNER_TEMP/candidate-surface.json" --json)"
+          echo "$verdict"
+          change="$(printf '%s' "$verdict" | jq -er .change)"
+          required="$(printf '%s' "$verdict" | jq -er .next)"
+          if [ "$declared" = "$released" ]; then
+            if [ "$change" != internal ]; then
+              echo "::error::$MANIFEST commits $declared, but the public surface is $change and requires $required."
+              false
+            fi
+          elif [ "$declared" != "$required" ]; then
+            echo "::error::$MANIFEST commits $declared, but the $change change from $released requires $required."
+            false
+          fi
+          echo "Committed manifest version $declared satisfies the $change public-surface change from $released."
