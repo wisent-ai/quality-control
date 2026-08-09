@@ -110,10 +110,22 @@ def local_policies():
 def github_policies(org):
     for repo in github_repositories(org):
         name = repo.get("name")
+        archived = repo.get("archived")
+        if not isinstance(name, str) or not name or not isinstance(archived, bool):
+            yield str(name or "<unknown>"), None, "repository metadata is incomplete"
+            continue
+        if archived:
+            yield name, json.dumps({
+                "schema_version": 1,
+                "releases": False,
+                "reason": "GitHub repository is archived and read-only",
+            }), None
+            continue
+
         full_name = repo.get("full_name")
         default_branch = repo.get("default_branch")
-        if not all(isinstance(value, str) and value for value in (name, full_name, default_branch)):
-            yield str(name or full_name or "<unknown>"), None, "repository metadata is incomplete"
+        if not all(isinstance(value, str) and value for value in (full_name, default_branch)):
+            yield name, None, "repository metadata is incomplete"
             continue
         quoted_name = urllib.parse.quote(full_name, safe="/")
         quoted_ref = urllib.parse.quote(default_branch, safe="")
