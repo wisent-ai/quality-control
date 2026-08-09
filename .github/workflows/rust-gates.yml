@@ -1,0 +1,78 @@
+# The gates every Rust repository in the pack runs, in one place.
+#
+# Measured before this existed: four Rust repositories with CI, four different
+# gate sets. skarbiec ran `cargo fmt --check` and `clippy --all-targets`,
+# image-video-router ran `fmt --all -- --check` and `clippy --all-targets
+# --all-features`, brama built and checked nothing, and jeden ran
+# `cargo check` with neither fmt nor clippy. Across the whole pack there were
+# 111 workflow files, which is 111 places for a gate to drift, and the fix
+# applied to one of them protected exactly one repository.
+#
+# The desktop side already proved the alternative: nine applications share a
+# single reusable release workflow and each carries a fourteen-line caller.
+# This is the same shape for the gate side.
+#
+# The gates are FIXED. There is no input to skip fmt, relax clippy, or pick a
+# different build profile, because an input like that is how a repository
+# quietly opts out of the standard while still appearing to call it. A
+# repository that cannot pass these has a defect to fix, not a flag to set.
+
+name: rust gates
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: >-
+          Runner label set. Defaults to GitHub-hosted Linux; pass a
+          self-hosted label where the account's hosted minutes matter, which
+          on this fleet they do.
+        type: string
+        default: ubuntu-latest
+      toolchain:
+        description: Rust toolchain the gates run under.
+        type: string
+        default: stable
+      working-directory:
+        description: >-
+          Directory holding Cargo.toml, for repositories whose crate is not at
+          the root.
+        type: string
+        default: .
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ${{ fromJSON(startsWith(inputs.runs-on, '[') && inputs.runs-on || format('"{0}"', inputs.runs-on)) }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ inputs.toolchain }}
+          components: rustfmt, clippy
+
+      # Formatting first, and it is the whole tree rather than the crate the
+      # build happens to touch. This gate refused five merges in one evening
+      # on skarbiec, each one red on main, because the formatter had not been
+      # run on new files - which is exactly what it is for.
+      - name: cargo fmt
+        run: cargo fmt --all --check
+
+      # Warnings are errors. A warning nobody is forced to read is a warning
+      # nobody reads.
+      - name: cargo clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      # --locked: the lockfile in the commit is the lockfile that is built. A
+      # build that may silently resolve a different dependency set is not
+      # evidence about the commit under test.
+      - name: cargo build
+        run: cargo build --locked --release
