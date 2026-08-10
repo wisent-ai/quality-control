@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "product": "quality-control",
+  "releases": false,
+  "reason": "Policy and reusable workflow repository; it ships no versioned product artifact."
+}
