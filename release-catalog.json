@@ -1370,13 +1370,13 @@
         "jeden-desktop"
       ],
       "releases": true,
-      "product": "Jeden",
-      "source_branch": "codex/stado-native-desktop-release",
-      "source_commit": "b6bf35b86101b84c1c337012fa0121a94f5c9c65",
-      "manifest_sha256": "cd9205aa81b44acf49e398ceff8324788ba394ed189198118899a48e4bb98a23",
+      "product": "jeden-desktop",
+      "source_branch": "main",
+      "source_commit": "3f6d69f0736337272bd0b587603dbf259ad3c06c",
+      "manifest_sha256": "2821f552c1895083168e361058d2e61a3590e562c2186f631a4b0231b4c89c7c",
       "manifest": {
         "schema_version": 1,
-        "product": "Jeden",
+        "product": "jeden-desktop",
         "releases": true,
         "version_source": {
           "kind": "regex",
@@ -3675,67 +3675,16 @@
       "checkouts": [
         "wisent-backend-images"
       ],
-      "releases": true,
+      "releases": false,
       "product": "wisent-backend-images",
-      "source_branch": "feat/stado-native-release",
-      "source_commit": "55922442eaae26928dafd6d12fefce71a029557d",
-      "manifest_sha256": "40d49740263e6da0afdeccc30a71131f59b6a53aa34105da6dcee6271b6f4ca0",
+      "source_branch": "main",
+      "source_commit": "609f0eedc53ab05b84825346b88673e8f913f95d",
+      "manifest_sha256": "b1a7812fde810092fd8865ef97c7d9f1471fe49ae56fc2c9e8ae2675c8905f46",
       "manifest": {
         "schema_version": 1,
         "product": "wisent-backend-images",
-        "releases": true,
-        "version_source": {
-          "kind": "regex",
-          "path": "app/main.py",
-          "pattern": "(?m)^\\s*version=\"(?P<version>[0-9A-Za-z.+-]+)\",$"
-        },
-        "platforms": {
-          "linux-amd64": {
-            "runner_platform": "linux-amd64",
-            "quality": [],
-            "build": {
-              "argv": [
-                "python3",
-                "release/build-runtime.py"
-              ]
-            },
-            "stage": {
-              "dist/bin": "bin",
-              "dist/app": "app",
-              "dist/loras": "loras",
-              "dist/requirements.txt": "requirements.txt"
-            }
-          }
-        },
-        "runtime": {
-          "binary": "bin/wisent-backend-images",
-          "launcher": "bin/wisent-backend-images",
-          "config_schema": 1,
-          "state_schema": 1,
-          "minimum_stado_version": "0.1.0",
-          "rollback_compatible_with": []
-        },
-        "promotion": {
-          "channels": [
-            "candidate",
-            "stable"
-          ],
-          "reconcile": true
-        },
-        "deliveries": [
-          {
-            "name": "stado-host",
-            "platform": "linux-amd64",
-            "argv": [
-              "python3",
-              "release/deliver-stado-service.py"
-            ],
-            "required": true,
-            "secret_env": {
-              "WISENT_STADO_TARGET": "stado-service-deployment#wisent_backend_images_target"
-            }
-          }
-        ]
+        "releases": false,
+        "reason": "Archived read-only image source; active release ownership moved out of this superseded repository."
       }
     },
     {
