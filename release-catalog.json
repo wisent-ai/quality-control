@@ -1,0 +1,5070 @@
+{
+  "schema_version": 1,
+  "repositories": [
+    {
+      "repository": "lbartoszcze/AutoVersion",
+      "remote": "https://github.com/lbartoszcze/AutoVersion.git",
+      "checkouts": [
+        "versioning"
+      ],
+      "releases": true,
+      "product": "autoversion",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "65aa50f7eaaee1d676ec3c18ab2faa1fe763b528",
+      "manifest_sha256": "ad1c76ca820a9154d381687e787ccbf0b09d4d45e5e02c6ca53a2ddaa0a35227",
+      "manifest": {
+        "schema_version": 1,
+        "product": "autoversion",
+        "releases": true,
+        "version_source": {
+          "kind": "json",
+          "path": "released-surface.json",
+          "pointer": "/version"
+        },
+        "platforms": {
+          "source": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "release-metadata",
+                "argv": [
+                  "python3",
+                  "scripts/stado_release.py",
+                  "quality"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "python3",
+                "scripts/stado_release.py",
+                "build"
+              ]
+            },
+            "stage": {
+              "release/source-bundle.tar": "release/source-bundle.tar"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {},
+        "deliveries": []
+      }
+    },
+    {
+      "repository": "lbartoszcze/entitlements-rotator",
+      "remote": "https://github.com/lbartoszcze/entitlements-rotator.git",
+      "checkouts": [
+        "entitlements-rotator"
+      ],
+      "releases": true,
+      "product": "entitlements-rotator",
+      "source_branch": "feat/stado-native-release-rust-v1",
+      "source_commit": "b235eab093d746cc05806602e15bbbaedcd34bd8",
+      "manifest_sha256": "3f8b9143361688244a5c526e36dfb1fb1aaeb654c57cdfaf9e2d3fe40c87540a",
+      "manifest": {
+        "schema_version": 1,
+        "product": "entitlements-rotator",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "Cargo.toml",
+          "pattern": "(?m)^version\\s*=\\s*\"(?P<version>[0-9A-Za-z.+-]+)\"\\s*$"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "cargo-check",
+                "argv": [
+                  "./scripts/release-quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "./scripts/release-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/entitlements-router": "bin/entitlements-router"
+            }
+          },
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "cargo-check",
+                "argv": [
+                  "./scripts/release-quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "./scripts/release-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/entitlements-router": "bin/entitlements-router"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        }
+      }
+    },
+    {
+      "repository": "lbartoszcze/people-rotator",
+      "remote": "https://github.com/lbartoszcze/people-rotator.git",
+      "checkouts": [
+        "people-rotator"
+      ],
+      "releases": false,
+      "product": "people-rotator",
+      "source_branch": "feat/stado-native-release-rust-v1",
+      "source_commit": "e8c0410667a3a823eb8ececd85f5fcfc4ccdc21f",
+      "manifest_sha256": "3034ca59a16cc4a8f604a53c7814abe1043898f61ca144ebc6dcdc0b504f30a6",
+      "manifest": {
+        "schema_version": 1,
+        "product": "people-rotator",
+        "releases": false,
+        "reason": "The committed package is private and runs employee-lifecycle operations directly from source; it defines no immutable package, registry channel, or release publisher."
+      }
+    },
+    {
+      "repository": "lbartoszcze/ssh-auth-router",
+      "remote": "https://github.com/lbartoszcze/ssh-auth-router.git",
+      "checkouts": [
+        "ssh-auth-router"
+      ],
+      "releases": false,
+      "product": "ssh-auth-router",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "59be1d5bb9caf3d5abc9d698390beb402ab46e5d",
+      "manifest_sha256": "ba2529e2f5aa8890a1f79e5161f5511601b1c80ff2f6198f7e23a7067b159ffe",
+      "manifest": {
+        "schema_version": 1,
+        "product": "ssh-auth-router",
+        "releases": false,
+        "reason": "The README defines a private operator-run SSH configuration router, while package.json marks it private and documents source-checkout commands; it declares no package, image, hosted, or versioned artifact publisher."
+      }
+    },
+    {
+      "repository": "lbartoszcze/wisent-benchmark",
+      "remote": "https://github.com/lbartoszcze/wisent-benchmark.git",
+      "checkouts": [
+        "wisent-benchmark"
+      ],
+      "releases": false,
+      "product": "wisent-benchmark",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "26631e17ccee4385250b917d2d91471efba00b2f",
+      "manifest_sha256": "ceea4b6f1ad30a7c05b2970a0a0e859f41dd8ca7985b00c6a92d532a7609b402",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-benchmark",
+        "releases": false,
+        "reason": "The repository is unpublished, and ARCHITECTURE.md records that LiveCodeBenchmark returns a fixed mock score, so it has no releasable artifact."
+      }
+    },
+    {
+      "repository": "lbartoszcze/wisent-experiments",
+      "remote": "https://github.com/lbartoszcze/wisent-experiments.git",
+      "checkouts": [
+        "wisent-experiments"
+      ],
+      "releases": false,
+      "product": "wisent-experiments",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "bf7ea054141cc86b5bb8243084a216a700bdbb23",
+      "manifest_sha256": "6e4a811cbedc62f494e1911be02ea30897225c173f82243a7e0345277b00925d",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-experiments",
+        "releases": false,
+        "reason": "This repository contains research and experiment material and declares no versioned package, application, or release publisher."
+      }
+    },
+    {
+      "repository": "wisent-ai/OpenEnv",
+      "remote": "https://github.com/wisent-ai/OpenEnv.git",
+      "checkouts": [
+        "OpenEnv"
+      ],
+      "releases": true,
+      "product": "openenv-kant",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "97ecc771a23fc09c53c92efed36f1bfaf7f0e270",
+      "manifest_sha256": "cd0c1c2e6b085b54e4c9b344bf8f46c8e9d72249ab0970844ccf9dd2cd1a0d10",
+      "manifest": {
+        "schema_version": 1,
+        "product": "openenv-kant",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "pyproject.toml",
+          "pattern": "(?m)^\\s*version\\s*=\\s*[\\\"'](?P<version>[0-9A-Za-z._-]+)[\\\"']"
+        },
+        "platforms": {
+          "python": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "release-metadata",
+                "argv": [
+                  "python3",
+                  "scripts/stado_release.py",
+                  "quality"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "python3",
+                "scripts/stado_release.py",
+                "build"
+              ]
+            },
+            "stage": {
+              "release/python-distributions.tar": "release/python-distributions.tar"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {},
+        "deliveries": []
+      }
+    },
+    {
+      "repository": "wisent-ai/brama",
+      "remote": "https://github.com/wisent-ai/brama.git",
+      "checkouts": [
+        "brama"
+      ],
+      "releases": true,
+      "product": "brama",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "399898f0e9102b8dfad82b202141ca6e8786e5f4",
+      "manifest_sha256": "ced72d88f66dc80faaa799964948813e321f9ae74d4f8b3fa2c6a341864ef269",
+      "manifest": {
+        "schema_version": 1,
+        "product": "brama",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "Cargo.toml",
+          "pattern": "(?m)^version\\s*=\\s*\"(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)\"\\s*$"
+        },
+        "inputs": {
+          "skarbiec": {
+            "uri": "stado://sources/skarbiec/sha256/5cfcc50e0b3f847c9a2d19843001c61727a228afea39e38dc1cbc1f992680815/source.tar.gz",
+            "sha256": "5cfcc50e0b3f847c9a2d19843001c61727a228afea39e38dc1cbc1f992680815",
+            "mount": "skarbiec"
+          }
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "quality": [
+              {
+                "name": "brama-release-quality",
+                "argv": [
+                  "scripts/release/quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "scripts/release/build.sh"
+              ]
+            },
+            "stage": {
+              "stage/bin/brama": "bin/brama",
+              "stage/bin/skarbiec-entitlements-router": "bin/skarbiec-entitlements-router",
+              "stage/bin/start-with-skarbiec": "bin/start-with-skarbiec",
+              "stage/bin/provision-skarbiec-trust": "bin/provision-skarbiec-trust",
+              "stage/libexec/generate-skarbiec-config.mjs": "libexec/generate-skarbiec-config.mjs",
+              "stage/libexec/brama-diagnose.py": "libexec/brama-diagnose.py",
+              "stage/libexec/brama-subscription-report.py": "libexec/brama-subscription-report.py",
+              "stage/libexec/brama-register-workload.py": "libexec/brama-register-workload.py",
+              "stage/libexec/brama-write-capability-routes.py": "libexec/brama-write-capability-routes.py",
+              "stage/libexec/brama-route-probe.py": "libexec/brama-route-probe.py",
+              "stage/libexec/brama-clear-stale-broker.py": "libexec/brama-clear-stale-broker.py",
+              "stage/libexec/brama-repair-inference-routes.py": "libexec/brama-repair-inference-routes.py",
+              "stage/etc/brama-skarbiec/subscriptions.json": "etc/brama-skarbiec/subscriptions.json",
+              "stage/etc/brama-skarbiec/recipient-public-keys.asc": "etc/brama-skarbiec/recipient-public-keys.asc",
+              "stage/LICENSE": "LICENSE"
+            },
+            "runner_platform": "darwin-arm64"
+          },
+          "linux-amd64": {
+            "quality": [
+              {
+                "name": "brama-release-quality",
+                "argv": [
+                  "scripts/release/quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "scripts/release/build.sh"
+              ]
+            },
+            "stage": {
+              "stage/bin/brama": "bin/brama",
+              "stage/bin/skarbiec-entitlements-router": "bin/skarbiec-entitlements-router",
+              "stage/bin/start-with-skarbiec": "bin/start-with-skarbiec",
+              "stage/bin/provision-skarbiec-trust": "bin/provision-skarbiec-trust",
+              "stage/libexec/generate-skarbiec-config.mjs": "libexec/generate-skarbiec-config.mjs",
+              "stage/libexec/brama-diagnose.py": "libexec/brama-diagnose.py",
+              "stage/libexec/brama-subscription-report.py": "libexec/brama-subscription-report.py",
+              "stage/libexec/brama-register-workload.py": "libexec/brama-register-workload.py",
+              "stage/libexec/brama-write-capability-routes.py": "libexec/brama-write-capability-routes.py",
+              "stage/libexec/brama-route-probe.py": "libexec/brama-route-probe.py",
+              "stage/libexec/brama-clear-stale-broker.py": "libexec/brama-clear-stale-broker.py",
+              "stage/libexec/brama-repair-inference-routes.py": "libexec/brama-repair-inference-routes.py",
+              "stage/etc/brama-skarbiec/subscriptions.json": "etc/brama-skarbiec/subscriptions.json",
+              "stage/etc/brama-skarbiec/recipient-public-keys.asc": "etc/brama-skarbiec/recipient-public-keys.asc",
+              "stage/LICENSE": "LICENSE"
+            },
+            "runner_platform": "linux-amd64"
+          }
+        },
+        "runtime": {
+          "binary": "bin/brama",
+          "launcher": "bin/start-with-skarbiec",
+          "config_schema": 1,
+          "state_schema": 1,
+          "minimum_stado_version": "0.6.1",
+          "rollback_compatible_with": [
+            "0.2.2"
+          ]
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": true
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/brama-desktop",
+      "remote": "https://github.com/wisent-ai/brama-desktop.git",
+      "checkouts": [
+        "brama-desktop"
+      ],
+      "releases": true,
+      "product": "brama-desktop",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "93981d83bd4f4b4a27689a55b5d20faa65e23c89",
+      "manifest_sha256": "804d715e9226bd131b26fcd16fa4fd04a63b8f002ef346dc0f065958c038248e",
+      "manifest": {
+        "schema_version": 1,
+        "product": "brama-desktop",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "App/Info.plist",
+          "pattern": "(?s)<key>CFBundleShortVersionString</key>\\s*<string>(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)</string>"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-release.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/Brama.app": "Brama.app",
+              ".wisent-output/release/Brama.zip": "Brama.zip",
+              ".wisent-output/release/Brama.zip.sparkle-signature": "Brama.zip.sparkle-signature",
+              ".wisent-output/release/appcast.xml": "appcast.xml",
+              ".wisent-output/evidence/release.json": "evidence/release.json",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS",
+              ".wisent-output/notary.json": "evidence/notary.json"
+            },
+            "secret_env": {
+              "MACOS_CERT_P12": "wisent-apple-developer-id#certificate_p12_base64",
+              "MACOS_CERT_PASSWORD": "wisent-apple-developer-id#certificate_password",
+              "MACOS_SIGN_IDENTITY": "wisent-apple-developer-id#sign_identity",
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64",
+              "SPARKLE_PRIVATE_KEY": "brama-desktop-sparkle#private_key"
+            }
+          }
+        },
+        "inputs": {
+          "swiftpm-cache": {
+            "uri": "stado://sources/brama-desktop-swiftpm-cache/sha256/ee2b06a54bbd44dc0c9c6e8e707feae8c876d4ce958f679783b52b20a63b2638/source.tar.gz",
+            "sha256": "ee2b06a54bbd44dc0c9c6e8e707feae8c876d4ce958f679783b52b20a63b2638",
+            "mount": "swiftpm-cache.tar.gz",
+            "extract": false
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "sparkle-appcast",
+            "platform": "darwin-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-sparkle.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "WISENT_SPARKLE_UPLOAD_BASE_URL": "brama-desktop-sparkle#upload_base_url",
+              "WISENT_SPARKLE_TOKEN": "brama-desktop-sparkle#delivery_token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/byk-desktop",
+      "remote": "https://github.com/wisent-ai/byk-desktop.git",
+      "checkouts": [
+        "byk-desktop"
+      ],
+      "releases": true,
+      "product": "byk-desktop",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "5e2cdf9f49936a147b138203eadb2f7db0329d55",
+      "manifest_sha256": "94e19b848428831c9096b7623fa468f1d9e92b790f50d25392d8a85c7105c247",
+      "manifest": {
+        "schema_version": 1,
+        "product": "byk-desktop",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "App/Info.plist",
+          "pattern": "(?s)<key>CFBundleShortVersionString</key>\\s*<string>(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)</string>"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-release.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/Byk.app": "Byk.app",
+              ".wisent-output/release/Byk.zip": "Byk.zip",
+              ".wisent-output/release/Byk.zip.sparkle-signature": "Byk.zip.sparkle-signature",
+              ".wisent-output/release/appcast.xml": "appcast.xml",
+              ".wisent-output/evidence/release.json": "evidence/release.json",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS",
+              ".wisent-output/notary.json": "evidence/notary.json"
+            },
+            "secret_env": {
+              "MACOS_CERT_P12": "wisent-apple-developer-id#certificate_p12_base64",
+              "MACOS_CERT_PASSWORD": "wisent-apple-developer-id#certificate_password",
+              "MACOS_SIGN_IDENTITY": "wisent-apple-developer-id#sign_identity",
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64",
+              "SPARKLE_PRIVATE_KEY": "byk-desktop-sparkle#private_key"
+            }
+          }
+        },
+        "inputs": {
+          "swiftpm-cache": {
+            "uri": "stado://sources/byk-desktop-swiftpm-cache/sha256/7959fb454722ed65c06793d41333579b576ffae372a5804f077afcc0eacf50c0/source.tar.gz",
+            "sha256": "7959fb454722ed65c06793d41333579b576ffae372a5804f077afcc0eacf50c0",
+            "mount": "swiftpm-cache.tar.gz",
+            "extract": false
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "sparkle-appcast",
+            "platform": "darwin-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-sparkle.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "WISENT_SPARKLE_UPLOAD_BASE_URL": "byk-desktop-sparkle#upload_base_url",
+              "WISENT_SPARKLE_TOKEN": "byk-desktop-sparkle#delivery_token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/byk-ios",
+      "remote": "https://github.com/wisent-ai/byk-ios.git",
+      "checkouts": [
+        "byk-ios"
+      ],
+      "releases": true,
+      "product": "byk-ios",
+      "source_branch": "feature/stado-native-release-v1",
+      "source_commit": "09d96daafdac449de781f1424afca2baee72274e",
+      "manifest_sha256": "71bb5ed8a39c1be8cd8bbb5aa042d0baaa09dc96bf41d608383e9fe1ede8078e",
+      "manifest": {
+        "schema_version": 1,
+        "product": "byk-ios",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "project.yml",
+          "pattern": "MARKETING_VERSION:\\s*\"(?<version>[0-9]+(?:\\.[0-9]+){2})\""
+        },
+        "platforms": {
+          "ios-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "package-metadata",
+                "argv": [
+                  "bash",
+                  "release/quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "bash",
+                "release/build.sh"
+              ]
+            },
+            "stage": {
+              "dist/Byk.ipa": "Byk.ipa",
+              "dist/Byk.xcarchive.tar.gz": "evidence/Byk.xcarchive.tar.gz",
+              "dist/build-evidence.json": "evidence/build-evidence.json",
+              "dist/SOURCE_REVISION": "SOURCE_REVISION"
+            },
+            "secret_env": {
+              "IOS_DIST_P12_B64": "wisent-ios-distribution#certificate_p12_base64",
+              "IOS_DIST_P12_PASSWORD": "wisent-ios-distribution#certificate_password",
+              "IOS_SIGN_IDENTITY": "wisent-ios-distribution#sign_identity",
+              "IOS_PROFILE_B64": "byk-ios-signing#provisioning_profile_base64"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "testflight",
+            "platform": "ios-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-testflight.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/codespy",
+      "remote": "https://github.com/wisent-ai/codespy.git",
+      "checkouts": [
+        "codespy"
+      ],
+      "releases": true,
+      "product": "codespy",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "a91c6609d2a8b20e4ad0f9924e738d46316008a2",
+      "manifest_sha256": "04d4f6d02f433999fb0a116eefab727293d5adbc9621b0b8aeb33a54b16d6a21",
+      "manifest": {
+        "schema_version": 1,
+        "product": "codespy",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "codespy.py",
+          "pattern": "(?m)^__version__\\s*=\\s*[\\\"'](?P<version>[0-9A-Za-z._-]+)[\\\"']"
+        },
+        "platforms": {
+          "source": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "release-metadata",
+                "argv": [
+                  "python3",
+                  "scripts/stado_release.py",
+                  "quality"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "python3",
+                "scripts/stado_release.py",
+                "build"
+              ]
+            },
+            "stage": {
+              "release/source-bundle.tar": "release/source-bundle.tar"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {},
+        "deliveries": []
+      }
+    },
+    {
+      "repository": "wisent-ai/competitor-crawl",
+      "remote": "https://github.com/wisent-ai/competitor-crawl.git",
+      "checkouts": [
+        "competitor-crawl"
+      ],
+      "releases": false,
+      "product": "competitor-crawl",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "24f35104ac1fd5ef88ff91c1157f1a36a776c670",
+      "manifest_sha256": "695633295ca0044adebaf51a000b916c85d6d7ac2347b64d2fa543b4193a2ea5",
+      "manifest": {
+        "schema_version": 1,
+        "product": "competitor-crawl",
+        "releases": false,
+        "reason": "package.json marks @wisent-ai/competitor-crawl private and provides source exports without a version or publish configuration, so this internal crawler declares no package, image, hosted, or versioned artifact publisher."
+      }
+    },
+    {
+      "repository": "wisent-ai/competitor-discovery",
+      "remote": "https://github.com/wisent-ai/competitor-discovery.git",
+      "checkouts": [
+        "competitor-discovery"
+      ],
+      "releases": false,
+      "product": "competitor-discovery",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "c2a70491eab6a7d6ee8064b3407c2579952648ff",
+      "manifest_sha256": "6082c75db1265ed9ff7d3bba359e867348105552ef19efce552a9a89cb033162",
+      "manifest": {
+        "schema_version": 1,
+        "product": "competitor-discovery",
+        "releases": false,
+        "reason": "package.json marks @wisent-ai/competitor-discovery private and provides a source export without a version or publish configuration, so this internal discovery job declares no package, image, hosted, or versioned artifact publisher."
+      }
+    },
+    {
+      "repository": "wisent-ai/compute.wisent.com",
+      "remote": "https://github.com/wisent-ai/compute.wisent.com.git",
+      "checkouts": [
+        "compute.wisent.com"
+      ],
+      "releases": true,
+      "product": "compute-wisent-com",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "61f8fa43f5d8447688d47d21b87f576950c7409c",
+      "manifest_sha256": "774e7719e231a5a25268d5e4f323624084a75ad88ecdda754ec7d10d537d3d2c",
+      "manifest": {
+        "schema_version": 1,
+        "product": "compute-wisent-com",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "backend/Cargo.toml",
+          "pattern": "(?m)^version\\s*=\\s*\"(?<version>[0-9A-Za-z.+-]+)\"\\s*$"
+        },
+        "platforms": {
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/bin/wisent-backend": "bin/wisent-backend",
+              ".wisent-output/bin/wisent-agent": "bin/wisent-agent",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS"
+            }
+          },
+          "web": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/vercel-output.tar.gz": "vercel-output.tar.gz",
+              ".wisent-output/evidence/web.json": "evidence/web.json"
+            },
+            "secret_env": {
+              "VERCEL_TOKEN": "vercel-deployment#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id",
+              "VERCEL_PROJECT_ID": "vercel-deployment#compute_wisent_com_project_id"
+            }
+          }
+        },
+        "inputs": {
+          "onboarding-web": {
+            "uri": "stado://sources/echo-web-onboarding/7420e7d7a9033e677f63fe876f1a63e2b2b000b9e365b7c1fd26cc5175665ac5/source.tar.gz",
+            "sha256": "7420e7d7a9033e677f63fe876f1a63e2b2b000b9e365b7c1fd26cc5175665ac5",
+            "mount": "onboarding-web",
+            "extract": true
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "vercel-production",
+            "platform": "web",
+            "argv": [
+              "python3",
+              "release/stado-vercel-deliver.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "VERCEL_TOKEN": "vercel-deployment#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id",
+              "VERCEL_PROJECT_ID": "vercel-deployment#compute_wisent_com_project_id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/deep-analytics",
+      "remote": "https://github.com/wisent-ai/deep-analytics.git",
+      "checkouts": [
+        "deep-analytics"
+      ],
+      "releases": false,
+      "product": "deep-analytics",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "53af61ba060d1a4eee927a350e42d4428025f42a",
+      "manifest_sha256": "fa6c70ae02463ca02b14dce196916f42d7ed36fe7da7b78f67e0a77971412373",
+      "manifest": {
+        "schema_version": 1,
+        "product": "deep-analytics",
+        "releases": false,
+        "reason": "The README describes shared internal analytics and experiment infrastructure, and package.json marks @wisent-ai/deep-analytics private with source exports and operator-run scripts; it declares no package, image, hosted, or versioned artifact publisher."
+      }
+    },
+    {
+      "repository": "wisent-ai/echo",
+      "remote": "https://github.com/wisent-ai/echo.git",
+      "checkouts": [
+        "echo",
+        "echo-production"
+      ],
+      "releases": true,
+      "product": "echo",
+      "source_branch": "feature/stado-native-release-v1",
+      "source_commit": "83e888ab402077591af7b33f4cdf52122f00c5fd",
+      "manifest_sha256": "d541faa69fd382411d4e6ff44b9b228426f34d52d04181fdea89255be6fe6b54",
+      "manifest": {
+        "schema_version": 1,
+        "product": "echo",
+        "releases": true,
+        "version_source": {
+          "kind": "json",
+          "path": "package.json",
+          "pointer": "/version"
+        },
+        "platforms": {
+          "source-package": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "package-metadata",
+                "argv": [
+                  "bash",
+                  "release/quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "python3",
+                "release/build.py"
+              ]
+            },
+            "stage": {
+              "dist/echo-source.tar.gz": "echo-source.tar.gz",
+              "dist/echo-source.tar.gz.sha256": "echo-source.tar.gz.sha256",
+              "dist/SOURCE_REVISION": "SOURCE_REVISION"
+            },
+            "secret_env": {}
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "github-mirror",
+            "platform": "source-package",
+            "argv": [
+              "python3",
+              "release/deliver-github-mirror.py"
+            ],
+            "required": false,
+            "secret_env": {
+              "WISENT_MIRROR_TOKEN": "github-release-mirror#token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/echo-desktop",
+      "remote": "https://github.com/wisent-ai/echo-desktop.git",
+      "checkouts": [
+        "echo-desktop"
+      ],
+      "releases": true,
+      "product": "echo-desktop",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "c12f97686300e0434da5f039b7b005a9cb62b7fa",
+      "manifest_sha256": "43577c77d434b8082a5c16d744e4a078ec30914da96e67c9def168758a7b9abd",
+      "manifest": {
+        "schema_version": 1,
+        "product": "echo-desktop",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "App/Info.plist",
+          "pattern": "(?s)<key>CFBundleShortVersionString</key>\\s*<string>(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)</string>"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-release.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/Echo.app": "Echo.app",
+              ".wisent-output/release/Echo.zip": "Echo.zip",
+              ".wisent-output/release/Echo.zip.sparkle-signature": "Echo.zip.sparkle-signature",
+              ".wisent-output/release/appcast.xml": "appcast.xml",
+              ".wisent-output/evidence/release.json": "evidence/release.json",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS",
+              ".wisent-output/notary.json": "evidence/notary.json"
+            },
+            "secret_env": {
+              "MACOS_CERT_P12": "wisent-apple-developer-id#certificate_p12_base64",
+              "MACOS_CERT_PASSWORD": "wisent-apple-developer-id#certificate_password",
+              "MACOS_SIGN_IDENTITY": "wisent-apple-developer-id#sign_identity",
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64",
+              "SPARKLE_PRIVATE_KEY": "echo-desktop-sparkle#private_key"
+            }
+          }
+        },
+        "inputs": {
+          "swiftpm-cache": {
+            "uri": "stado://sources/echo-desktop-swiftpm-cache/sha256/8a4a7bb2b2360805158ad8a68de153e9b4dc30619b065792b1f1fe5184e760e9/source.tar.gz",
+            "sha256": "8a4a7bb2b2360805158ad8a68de153e9b4dc30619b065792b1f1fe5184e760e9",
+            "mount": "swiftpm-cache.tar.gz",
+            "extract": false
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "sparkle-appcast",
+            "platform": "darwin-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-sparkle.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "WISENT_SPARKLE_UPLOAD_BASE_URL": "echo-desktop-sparkle#upload_base_url",
+              "WISENT_SPARKLE_TOKEN": "echo-desktop-sparkle#delivery_token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/echo-web",
+      "remote": "https://github.com/wisent-ai/echo-web.git",
+      "checkouts": [
+        "echo-web"
+      ],
+      "releases": true,
+      "product": "echo-web",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "81ad1c570f7a12ead919279134de3c62078eae36",
+      "manifest_sha256": "05c6b3fee59a750f485e7a5fa0e5ddf1121e8bd48809635ef4fca0ea1ae9775b",
+      "manifest": {
+        "schema_version": 1,
+        "product": "echo-web",
+        "releases": true,
+        "version_source": {
+          "kind": "text",
+          "path": "VERSION"
+        },
+        "platforms": {
+          "web": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/stado-vercel-build.py",
+                "--team-id",
+                "team_NpYIdK4B8yGCD2snT7xELPmd",
+                "--project-id",
+                "prj_WHIEObU4462EHdEZWX6klhaaeFm2"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/vercel-output.tar.gz": "vercel-output.tar.gz",
+              ".wisent-output/evidence/build.json": "evidence/build.json"
+            },
+            "secret_env": {
+              "VERCEL_TOKEN": "VERCEL#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {
+          "competitor-crawl-bundle": {
+            "uri": "stado://sources/competitor-crawl/ce0a0411785bb17ce7f944835c53ccaae17c6514f61951dec1c1f43d639dca66/competitor-crawl.bundle",
+            "sha256": "ce0a0411785bb17ce7f944835c53ccaae17c6514f61951dec1c1f43d639dca66",
+            "mount": "competitor-crawl.bundle",
+            "extract": false
+          },
+          "competitor-discovery-bundle": {
+            "uri": "stado://sources/competitor-discovery/17e73cf1ca76b6f07eb8dc78c1c8391b733286eb60c34339e3942c05f2e08992/competitor-discovery.bundle",
+            "sha256": "17e73cf1ca76b6f07eb8dc78c1c8391b733286eb60c34339e3942c05f2e08992",
+            "mount": "competitor-discovery.bundle",
+            "extract": false
+          }
+        },
+        "deliveries": [
+          {
+            "name": "vercel-production",
+            "platform": "web",
+            "argv": [
+              "python3",
+              "release/stado-vercel-deliver.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "VERCEL_TOKEN": "VERCEL#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/finance-desktop",
+      "remote": "https://github.com/wisent-ai/finance-desktop.git",
+      "checkouts": [
+        "finance-desktop"
+      ],
+      "releases": true,
+      "product": "finance-desktop",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "a9c6a9930b6e465ec1c2a984f2c42787bc912cf9",
+      "manifest_sha256": "a781cf0784a5d66a5d8bb2b29bdda32bb93c5edbeab587ab45837bb24daf6504",
+      "manifest": {
+        "schema_version": 1,
+        "product": "finance-desktop",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "App/Info.plist",
+          "pattern": "(?s)<key>CFBundleShortVersionString</key>\\s*<string>(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)</string>"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-release.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/Finance.app": "Finance.app",
+              ".wisent-output/release/Finance.zip": "Finance.zip",
+              ".wisent-output/release/Finance.zip.sparkle-signature": "Finance.zip.sparkle-signature",
+              ".wisent-output/release/appcast.xml": "appcast.xml",
+              ".wisent-output/evidence/release.json": "evidence/release.json",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS",
+              ".wisent-output/notary.json": "evidence/notary.json"
+            },
+            "secret_env": {
+              "MACOS_CERT_P12": "wisent-apple-developer-id#certificate_p12_base64",
+              "MACOS_CERT_PASSWORD": "wisent-apple-developer-id#certificate_password",
+              "MACOS_SIGN_IDENTITY": "wisent-apple-developer-id#sign_identity",
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64",
+              "SPARKLE_PRIVATE_KEY": "finance-desktop-sparkle#private_key"
+            }
+          }
+        },
+        "inputs": {
+          "swiftpm-cache": {
+            "uri": "stado://sources/finance-desktop-swiftpm-cache/sha256/ed494c4c077c2814a9058322674502b0f0050605ac86f161eae2d46ede52165f/source.tar.gz",
+            "sha256": "ed494c4c077c2814a9058322674502b0f0050605ac86f161eae2d46ede52165f",
+            "mount": "swiftpm-cache.tar.gz",
+            "extract": false
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "sparkle-appcast",
+            "platform": "darwin-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-sparkle.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "WISENT_SPARKLE_UPLOAD_BASE_URL": "finance-desktop-sparkle#upload_base_url",
+              "WISENT_SPARKLE_TOKEN": "finance-desktop-sparkle#delivery_token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/growth-tactics",
+      "remote": "https://github.com/wisent-ai/growth-tactics.git",
+      "checkouts": [
+        "growth-tactics"
+      ],
+      "releases": true,
+      "product": "growth-tactics",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "4e7be8288afebc2b26bb7a5a96d13434e53cff93",
+      "manifest_sha256": "9e7ad2c381ab3a046d2a283a1bd9dd9f7cef5842414ebd99d46bc22c183d185e",
+      "manifest": {
+        "schema_version": 1,
+        "product": "growth-tactics",
+        "releases": true,
+        "version_source": {
+          "kind": "text",
+          "path": "VERSION"
+        },
+        "platforms": {
+          "service": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "release-metadata",
+                "argv": [
+                  "python3",
+                  "scripts/stado_release.py",
+                  "quality"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "python3",
+                "scripts/stado_release.py",
+                "build"
+              ]
+            },
+            "stage": {
+              "release/service-bundle.tar": "release/service-bundle.tar"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {},
+        "deliveries": [
+          {
+            "name": "render-account-api",
+            "platform": "service",
+            "argv": [
+              "python3",
+              "scripts/stado_release.py",
+              "deliver-render",
+              "--service-name",
+              "account-api"
+            ],
+            "required": true,
+            "secret_env": {
+              "RENDER_API_KEY": "RENDER_API_KEY#token"
+            }
+          },
+          {
+            "name": "vercel-production",
+            "platform": "service",
+            "argv": [
+              "python3",
+              "scripts/stado_release.py",
+              "deliver-vercel",
+              "--team-id",
+              "team_NpYIdK4B8yGCD2snT7xELPmd",
+              "--project-id",
+              "prj_J2bdiDyAXfQ3tP5FlSW9Sq1lYqhI",
+              "--project-name",
+              "growth-tactics"
+            ],
+            "required": false,
+            "secret_env": {
+              "VERCEL_TOKEN": "VERCEL#token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/hooks-rotator",
+      "remote": "https://github.com/wisent-ai/hooks-rotator.git",
+      "checkouts": [
+        "hooks-rotator"
+      ],
+      "releases": false,
+      "product": "hooks-rotator",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "0438dd662eb96248d4867c078639f56abe5f5d4a",
+      "manifest_sha256": "5cdfd6056a4a9afc54042aa4dda246c75e420a2a99ce5092619e5d1430693a26",
+      "manifest": {
+        "schema_version": 1,
+        "product": "hooks-rotator",
+        "releases": false,
+        "reason": "package.json marks the hook runtime package private and exposes only source-checkout CLI and MCP scripts; it declares no package registry, hosted deployment, image registry, or versioned artifact publisher."
+      }
+    },
+    {
+      "repository": "wisent-ai/image-video-router",
+      "remote": "https://github.com/wisent-ai/image-video-router.git",
+      "checkouts": [
+        "image-video-router"
+      ],
+      "releases": true,
+      "product": "image-video-router",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "c95e2fd91daf91dfd2326e714a66e10a342d2745",
+      "manifest_sha256": "6e6656143efce4d852314bf40bfc0cd7108a4637e330f7a4ac65d73d8da7ea72",
+      "manifest": {
+        "schema_version": 1,
+        "product": "image-video-router",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "Cargo.toml",
+          "pattern": "(?m)^version\\s*=\\s*\"(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)\"\\s*$"
+        },
+        "platforms": {
+          "linux-amd64": {
+            "quality": [
+              {
+                "name": "image-video-router-release-quality",
+                "argv": [
+                  "scripts/release/quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "scripts/release/build.sh"
+              ]
+            },
+            "stage": {
+              "stage/bin/image-video-router": "bin/image-video-router",
+              "stage/bin/start": "bin/start"
+            },
+            "runner_platform": "linux-amd64"
+          }
+        },
+        "runtime": {
+          "binary": "bin/image-video-router",
+          "launcher": "bin/start",
+          "config_schema": 1,
+          "state_schema": 1,
+          "minimum_stado_version": "0.6.1",
+          "rollback_compatible_with": []
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": true
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/jeden",
+      "remote": "https://github.com/wisent-ai/jeden.git",
+      "checkouts": [
+        "jeden"
+      ],
+      "releases": true,
+      "product": "jeden",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "31f710064935d1ee4669b3c47c731ff3d8f72f5c",
+      "manifest_sha256": "70bc797d7a4bcb9cc2ed27cb72e4b419dc7632b2790e93ee86a3039c6e2b3b9c",
+      "manifest": {
+        "schema_version": 1,
+        "product": "jeden",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "Cargo.toml",
+          "pattern": "(?m)^version\\s*=\\s*\"(?<version>[0-9A-Za-z.+-]+)\"\\s*$"
+        },
+        "platforms": {
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-build.sh",
+                "--bin",
+                "jeden",
+                "--bin",
+                "jeden-quality-report",
+                "--bin",
+                "jeden-reference-benchmark",
+                "--bin",
+                "jeden-sandbox-helper"
+              ]
+            },
+            "stage": {
+              ".wisent-output/bin/jeden": "bin/jeden",
+              ".wisent-output/bin/jeden-quality-report": "bin/jeden-quality-report",
+              ".wisent-output/bin/jeden-reference-benchmark": "bin/jeden-reference-benchmark",
+              ".wisent-output/bin/jeden-sandbox-helper": "bin/jeden-sandbox-helper",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/jeden-desktop",
+      "remote": "https://github.com/wisent-ai/jeden-desktop.git",
+      "checkouts": [
+        "jeden-desktop"
+      ],
+      "releases": true,
+      "product": "Jeden",
+      "source_branch": "codex/stado-native-desktop-release",
+      "source_commit": "b6bf35b86101b84c1c337012fa0121a94f5c9c65",
+      "manifest_sha256": "cd9205aa81b44acf49e398ceff8324788ba394ed189198118899a48e4bb98a23",
+      "manifest": {
+        "schema_version": 1,
+        "product": "Jeden",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "App/Info.plist",
+          "pattern": "(?s)<key>CFBundleShortVersionString</key>\\s*<string>(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)</string>"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "compile",
+                "argv": [
+                  "./Scripts/stado-release.sh",
+                  "compile"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "./Scripts/stado-release.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              "release/Jeden.app": "Jeden.app",
+              "release/Jeden.zip": "Jeden.zip",
+              "release/Jeden.zip.sparkle-signature": "Jeden.zip.sparkle-signature",
+              "release/appcast.xml": "appcast.xml",
+              "evidence/release.json": "evidence/release.json",
+              "evidence/notary.json": "evidence/notary.json",
+              "evidence/DIGESTS": "evidence/DIGESTS"
+            },
+            "secret_env": {
+              "MACOS_CERT_P12": "wisent-apple-developer-id#certificate_p12_base64",
+              "MACOS_CERT_PASSWORD": "wisent-apple-developer-id#certificate_password",
+              "MACOS_SIGN_IDENTITY": "wisent-apple-developer-id#sign_identity",
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64",
+              "SPARKLE_PRIVATE_KEY": "jeden-desktop-sparkle#private_key"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {
+          "wisent-desktop-update": {
+            "uri": "stado://sources/wisent-desktop-update/sha256/1f3c919e7e15ef6736a7c9c841ca185cb487e502c0da39be68aa1aa8b487af47/source.tar.gz",
+            "sha256": "1f3c919e7e15ef6736a7c9c841ca185cb487e502c0da39be68aa1aa8b487af47",
+            "mount": "wisent-desktop-update.tar.gz"
+          }
+        },
+        "deliveries": [
+          {
+            "name": "sparkle-appcast",
+            "platform": "darwin-arm64",
+            "argv": [
+              "./Scripts/stado-release.sh",
+              "deliver-sparkle"
+            ],
+            "required": true,
+            "secret_env": {
+              "WISENT_SPARKLE_UPLOAD_BASE_URL": "jeden-desktop-sparkle#upload_base_url",
+              "WISENT_SPARKLE_TOKEN": "jeden-desktop-sparkle#delivery_token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/las",
+      "remote": "https://github.com/wisent-ai/las.git",
+      "checkouts": [
+        "las"
+      ],
+      "releases": true,
+      "product": "las",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "c40047317bf3c5b65c7881b740eade5c0c82c583",
+      "manifest_sha256": "e5d55db9a0c6ec074a7d124f7ebcf0ed5494656f73822c987dfbc6ce4d4a107f",
+      "manifest": {
+        "schema_version": 1,
+        "product": "las",
+        "releases": true,
+        "version_source": {
+          "kind": "json",
+          "path": "package.json",
+          "pointer": "/version"
+        },
+        "platforms": {
+          "npm-package": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/build-package.py"
+              ]
+            },
+            "stage": {
+              "dist/las.tgz": "las.tgz",
+              "dist/las.tgz.sha256": "las.tgz.sha256"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "npm",
+            "platform": "npm-package",
+            "argv": [
+              "python3",
+              "release/deliver-npm.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "NPM_TOKEN": "npm-registry#token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/las-landing",
+      "remote": "https://github.com/wisent-ai/las-landing.git",
+      "checkouts": [
+        "las-landing"
+      ],
+      "releases": true,
+      "product": "las-landing",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "d6ded2db184911b2494419cac46df88160c09edd",
+      "manifest_sha256": "beb65b5c3cbc9adbd7f0967fc471ece9ae1f8ec05c1e05f1b3121bf3d265713d",
+      "manifest": {
+        "schema_version": 1,
+        "product": "las-landing",
+        "releases": true,
+        "version_source": {
+          "kind": "text",
+          "path": "VERSION"
+        },
+        "platforms": {
+          "web": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/stado-vercel-build.py",
+                "--team-id",
+                "team_NpYIdK4B8yGCD2snT7xELPmd",
+                "--project-id",
+                "prj_DmLoQzwhNfVdwkiAmlbeXbjTmd88"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/vercel-output.tar.gz": "vercel-output.tar.gz",
+              ".wisent-output/evidence/build.json": "evidence/build.json"
+            },
+            "secret_env": {
+              "VERCEL_TOKEN": "VERCEL#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {},
+        "deliveries": [
+          {
+            "name": "vercel-production",
+            "platform": "web",
+            "argv": [
+              "python3",
+              "release/stado-vercel-deliver.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "VERCEL_TOKEN": "VERCEL#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/lem",
+      "remote": "https://github.com/wisent-ai/lem.git",
+      "checkouts": [
+        "lem"
+      ],
+      "releases": true,
+      "product": "lem",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "aed01306e225a67e5eca192f9e967cbd49663e87",
+      "manifest_sha256": "d93a65b6dc489fefbf9217b0b00f6a4b60b61ddadf56606574fc17967ec4d6ba",
+      "manifest": {
+        "schema_version": 1,
+        "product": "lem",
+        "releases": true,
+        "version_source": {
+          "kind": "text",
+          "path": "VERSION"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/bin/LemBackend": "bin/LemBackend",
+              ".wisent-output/bin/LemAuditProvenance": "bin/LemAuditProvenance",
+              ".wisent-output/bin/LemImportPapers": "bin/LemImportPapers",
+              ".wisent-output/bin/LemRefreshPaperContexts": "bin/LemRefreshPaperContexts",
+              ".wisent-output/bin/LemMCP": "bin/LemMCP",
+              ".wisent-output/bin/LemCLI": "bin/LemCLI",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS"
+            }
+          }
+        },
+        "inputs": {
+          "oko-source": {
+            "uri": "stado://sources/oko/30c91f4b3c5a94f1426d85795af6b462ea70e4ecff1f4aa6481e2e2882df9da7/source.tar.gz",
+            "sha256": "30c91f4b3c5a94f1426d85795af6b462ea70e4ecff1f4aa6481e2e2882df9da7",
+            "mount": "oko",
+            "extract": true
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/lem-desktop",
+      "remote": "https://github.com/wisent-ai/lem-desktop.git",
+      "checkouts": [
+        "lem-desktop"
+      ],
+      "releases": true,
+      "product": "lem-desktop",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "b7c4248198cd48eea43a19562d00cdbd096f3bb0",
+      "manifest_sha256": "bcfc374d30c9c298d5a2f9dfebdf75bea47a9b0a44f9b4ffbed7f9bf8f522c45",
+      "manifest": {
+        "schema_version": 1,
+        "product": "lem-desktop",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "App/Info.plist",
+          "pattern": "(?s)<key>CFBundleShortVersionString</key>\\s*<string>(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)</string>"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-release.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/Lem.app": "Lem.app",
+              ".wisent-output/release/Lem.zip": "Lem.zip",
+              ".wisent-output/release/Lem.zip.sparkle-signature": "Lem.zip.sparkle-signature",
+              ".wisent-output/release/appcast.xml": "appcast.xml",
+              ".wisent-output/evidence/release.json": "evidence/release.json",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS",
+              ".wisent-output/notary.json": "evidence/notary.json"
+            },
+            "secret_env": {
+              "MACOS_CERT_P12": "wisent-apple-developer-id#certificate_p12_base64",
+              "MACOS_CERT_PASSWORD": "wisent-apple-developer-id#certificate_password",
+              "MACOS_SIGN_IDENTITY": "wisent-apple-developer-id#sign_identity",
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64",
+              "SPARKLE_PRIVATE_KEY": "lem-desktop-sparkle#private_key"
+            }
+          }
+        },
+        "inputs": {
+          "swiftpm-cache": {
+            "uri": "stado://sources/lem-desktop-swiftpm-cache/sha256/302d1a0c33d9dbe9bee4f93b530e4b44427b29e28ef29d1e6828ee304e0019b7/source.tar.gz",
+            "sha256": "302d1a0c33d9dbe9bee4f93b530e4b44427b29e28ef29d1e6828ee304e0019b7",
+            "mount": "swiftpm-cache.tar.gz",
+            "extract": false
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "sparkle-appcast",
+            "platform": "darwin-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-sparkle.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "WISENT_SPARKLE_UPLOAD_BASE_URL": "lem-desktop-sparkle#upload_base_url",
+              "WISENT_SPARKLE_TOKEN": "lem-desktop-sparkle#delivery_token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/most",
+      "remote": "https://github.com/wisent-ai/most.git",
+      "checkouts": [
+        "most"
+      ],
+      "releases": true,
+      "product": "most",
+      "source_branch": "feat/stado-native-release-rust-v1",
+      "source_commit": "8acf1c6bb706ba303cab6c7deb795ce4317243e0",
+      "manifest_sha256": "97c48502aa8b7fbcc4468afe61e1fa103bac7d681463338049a142c10ff838de",
+      "manifest": {
+        "schema_version": 1,
+        "product": "most",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "most-rs/crates/most-server/Cargo.toml",
+          "pattern": "(?m)^version\\s*=\\s*\"(?P<version>[0-9A-Za-z.+-]+)\"\\s*$"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "cargo-check",
+                "argv": [
+                  "./scripts/release-quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "./scripts/release-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/most-server": "bin/most-server",
+              ".wisent-output/most-migrate": "bin/most-migrate",
+              ".wisent-output/most-cli": "bin/most-cli",
+              ".wisent-output/most-mcp": "bin/most-mcp",
+              ".wisent-output/most-bootstrap": "bin/most-bootstrap"
+            }
+          },
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "cargo-check",
+                "argv": [
+                  "./scripts/release-quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "./scripts/release-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/most-server": "bin/most-server",
+              ".wisent-output/most-migrate": "bin/most-migrate",
+              ".wisent-output/most-cli": "bin/most-cli",
+              ".wisent-output/most-mcp": "bin/most-mcp"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/most-desktop",
+      "remote": "https://github.com/wisent-ai/most-desktop.git",
+      "checkouts": [
+        "most-desktop"
+      ],
+      "releases": true,
+      "product": "most-desktop",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "293a59e6de35ea2b626d7bbb37c3de9dc75e8145",
+      "manifest_sha256": "85347ac2397585a817c4c2dcbd01c04ed5fdc33115cd74b5028c16ea040d02cc",
+      "manifest": {
+        "schema_version": 1,
+        "product": "most-desktop",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "App/Info.plist",
+          "pattern": "(?s)<key>CFBundleShortVersionString</key>\\s*<string>(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)</string>"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-release.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/Most.app": "Most.app",
+              ".wisent-output/release/Most.zip": "Most.zip",
+              ".wisent-output/release/Most.zip.sparkle-signature": "Most.zip.sparkle-signature",
+              ".wisent-output/release/appcast.xml": "appcast.xml",
+              ".wisent-output/evidence/release.json": "evidence/release.json",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS",
+              ".wisent-output/notary.json": "evidence/notary.json"
+            },
+            "secret_env": {
+              "MACOS_CERT_P12": "wisent-apple-developer-id#certificate_p12_base64",
+              "MACOS_CERT_PASSWORD": "wisent-apple-developer-id#certificate_password",
+              "MACOS_SIGN_IDENTITY": "wisent-apple-developer-id#sign_identity",
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64",
+              "SPARKLE_PRIVATE_KEY": "most-desktop-sparkle#private_key"
+            }
+          }
+        },
+        "inputs": {
+          "swiftpm-cache": {
+            "uri": "stado://sources/most-desktop-swiftpm-cache/sha256/77c09260ca064c3fcc553b5a0fad8dd1d32eee3d243c020a79590be625ee1593/source.tar.gz",
+            "sha256": "77c09260ca064c3fcc553b5a0fad8dd1d32eee3d243c020a79590be625ee1593",
+            "mount": "swiftpm-cache.tar.gz",
+            "extract": false
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "sparkle-appcast",
+            "platform": "darwin-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-sparkle.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "WISENT_SPARKLE_UPLOAD_BASE_URL": "most-desktop-sparkle#upload_base_url",
+              "WISENT_SPARKLE_TOKEN": "most-desktop-sparkle#delivery_token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/oko",
+      "remote": "https://github.com/wisent-ai/oko.git",
+      "checkouts": [
+        "oko"
+      ],
+      "releases": true,
+      "product": "oko",
+      "source_branch": "feature/stado-native-release-v1",
+      "source_commit": "dbe4665eb0b7facba815229334f226228da0ba34",
+      "manifest_sha256": "2fc7b0d13234af7f4e28e3ff5a3e6cb23837e304e957fe026d39556eb49d7a9c",
+      "manifest": {
+        "schema_version": 1,
+        "product": "oko",
+        "releases": true,
+        "version_source": {
+          "kind": "json",
+          "path": "released-surface.json",
+          "pointer": "/version"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "package-metadata",
+                "argv": [
+                  "bash",
+                  "release/quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "bash",
+                "release/build.sh"
+              ]
+            },
+            "stage": {
+              "dist/oko-cli": "bin/oko-cli",
+              "dist/oko-router-proxy": "bin/oko-router-proxy",
+              "dist/oko-launch-guard": "bin/oko-launch-guard",
+              "dist/oko-acquire-model-identity": "bin/oko-acquire-model-identity",
+              "dist/SHA256SUMS": "SHA256SUMS",
+              "dist/SOURCE_REVISION": "SOURCE_REVISION"
+            },
+            "secret_env": {
+              "MACOS_CERT_P12": "wisent-apple-developer-id#certificate_p12_base64",
+              "MACOS_CERT_PASSWORD": "wisent-apple-developer-id#certificate_password",
+              "MACOS_SIGN_IDENTITY": "wisent-apple-developer-id#sign_identity"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "github-mirror",
+            "platform": "darwin-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-github-mirror.py"
+            ],
+            "required": false,
+            "secret_env": {
+              "WISENT_MIRROR_TOKEN": "github-release-mirror#token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/oko-desktop",
+      "remote": "https://github.com/wisent-ai/oko-desktop.git",
+      "checkouts": [
+        "oko-desktop"
+      ],
+      "releases": true,
+      "product": "oko-desktop",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "53ccc16fa0697d92235805a1a1d0408a641ebe9b",
+      "manifest_sha256": "768429ac2b56d4d4c239453d12589963107ad2102aedb246827db7f0b95d0021",
+      "manifest": {
+        "schema_version": 1,
+        "product": "oko-desktop",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "Resources/Info.plist",
+          "pattern": "(?s)<key>CFBundleShortVersionString</key>\\s*<string>(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)</string>"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-release.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/Oko.app": "Oko.app",
+              ".wisent-output/release/Oko.zip": "Oko.zip",
+              ".wisent-output/release/Oko.zip.sparkle-signature": "Oko.zip.sparkle-signature",
+              ".wisent-output/release/appcast.xml": "appcast.xml",
+              ".wisent-output/evidence/release.json": "evidence/release.json",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS",
+              ".wisent-output/notary.json": "evidence/notary.json"
+            },
+            "secret_env": {
+              "MACOS_CERT_P12": "wisent-apple-developer-id#certificate_p12_base64",
+              "MACOS_CERT_PASSWORD": "wisent-apple-developer-id#certificate_password",
+              "MACOS_SIGN_IDENTITY": "wisent-apple-developer-id#sign_identity",
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64",
+              "SPARKLE_PRIVATE_KEY": "oko-desktop-sparkle#private_key"
+            }
+          }
+        },
+        "inputs": {
+          "swiftpm-cache": {
+            "uri": "stado://sources/oko-desktop-swiftpm-cache/sha256/b569b38961a748a6330c0129d4e4ef584d51adf6a75f7e623835d2385974b48c/source.tar.gz",
+            "sha256": "b569b38961a748a6330c0129d4e4ef584d51adf6a75f7e623835d2385974b48c",
+            "mount": "swiftpm-cache.tar.gz",
+            "extract": false
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "sparkle-appcast",
+            "platform": "darwin-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-sparkle.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "WISENT_SPARKLE_UPLOAD_BASE_URL": "oko-desktop-sparkle#upload_base_url",
+              "WISENT_SPARKLE_TOKEN": "oko-desktop-sparkle#delivery_token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/oko-ios",
+      "remote": "https://github.com/wisent-ai/oko-ios.git",
+      "checkouts": [
+        "oko-ios"
+      ],
+      "releases": true,
+      "product": "oko-ios",
+      "source_branch": "feature/stado-native-release-v1",
+      "source_commit": "77e1b5848ebc8ae249c01fd19e9d621512ec7580",
+      "manifest_sha256": "a6559c9a30911d9c7e3598d3f7c6144fe570f8dd3c9dcf7e346d2f43c8f95ed3",
+      "manifest": {
+        "schema_version": 1,
+        "product": "oko-ios",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "project.yml",
+          "pattern": "MARKETING_VERSION:\\s*\"(?<version>[0-9]+(?:\\.[0-9]+){2})\""
+        },
+        "platforms": {
+          "ios-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "package-metadata",
+                "argv": [
+                  "bash",
+                  "release/quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "bash",
+                "release/build.sh"
+              ]
+            },
+            "stage": {
+              "dist/Oko.ipa": "Oko.ipa",
+              "dist/Oko.xcarchive.tar.gz": "evidence/Oko.xcarchive.tar.gz",
+              "dist/build-evidence.json": "evidence/build-evidence.json",
+              "dist/SOURCE_REVISION": "SOURCE_REVISION"
+            },
+            "secret_env": {
+              "IOS_DIST_P12_B64": "wisent-ios-distribution#certificate_p12_base64",
+              "IOS_DIST_P12_PASSWORD": "wisent-ios-distribution#certificate_password",
+              "IOS_SIGN_IDENTITY": "wisent-ios-distribution#sign_identity",
+              "IOS_PROFILE_B64": "oko-ios-signing#provisioning_profile_base64"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "testflight",
+            "platform": "ios-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-testflight.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/oko-landing",
+      "remote": "https://github.com/wisent-ai/oko-landing.git",
+      "checkouts": [
+        "oko-landing"
+      ],
+      "releases": true,
+      "product": "oko-landing",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "baa19fdd428569a5a7017058b19104a3fcfcbcce",
+      "manifest_sha256": "e4295c65b46c99b995fa5ae222a5f600a6c5c453a24408ff67133d6fc9309607",
+      "manifest": {
+        "schema_version": 1,
+        "product": "oko-landing",
+        "releases": true,
+        "version_source": {
+          "kind": "text",
+          "path": "VERSION"
+        },
+        "platforms": {
+          "web": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/stado-vercel-build.py",
+                "--team-id",
+                "team_NpYIdK4B8yGCD2snT7xELPmd",
+                "--project-id",
+                "prj_YikT3QxBehfUcbpXDjYKYNTHaoIF"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/vercel-output.tar.gz": "vercel-output.tar.gz",
+              ".wisent-output/evidence/build.json": "evidence/build.json"
+            },
+            "secret_env": {
+              "VERCEL_TOKEN": "VERCEL#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {},
+        "deliveries": [
+          {
+            "name": "vercel-production",
+            "platform": "web",
+            "argv": [
+              "python3",
+              "release/stado-vercel-deliver.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "VERCEL_TOKEN": "VERCEL#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/paper-repos",
+      "remote": "https://github.com/wisent-ai/paper-repos.git",
+      "checkouts": [
+        "paper-repos"
+      ],
+      "releases": false,
+      "product": "paper-repos",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "e2cadf82d8129eedccfc06afaae669f4982a036f",
+      "manifest_sha256": "27ce4917a434d2dc99268e6f8e3edf5a9636e398ce6d936dd199bc092b5501f4",
+      "manifest": {
+        "schema_version": 1,
+        "product": "paper-repos",
+        "releases": false,
+        "reason": "The repository's authoring rules define it as manuscript and research coordination with Overleaf as the shared working copy, not a software or artifact publication target; no versioned release publisher is declared."
+      }
+    },
+    {
+      "repository": "wisent-ai/probierz",
+      "remote": "https://github.com/wisent-ai/probierz.git",
+      "checkouts": [
+        "probierz"
+      ],
+      "releases": false,
+      "product": "probierz",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "bae173ab33a4274713036efa4c6a58ba17bf77c1",
+      "manifest_sha256": "aa1cdfc4cc1b27e1f590291bb10599dec55c3f75f47f86e519afe8a69a18af44",
+      "manifest": {
+        "schema_version": 1,
+        "product": "probierz",
+        "releases": false,
+        "reason": "package.json marks this workspace private, and deploy/ only schedules the source checkout in place; the repository defines no published artifact or durable release channel."
+      }
+    },
+    {
+      "repository": "wisent-ai/probierz-desktop",
+      "remote": "https://github.com/wisent-ai/probierz-desktop.git",
+      "checkouts": [
+        "probierz-desktop"
+      ],
+      "releases": true,
+      "product": "probierz-desktop",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "9f428a26460031685924f74dd75a7a26d7a09c75",
+      "manifest_sha256": "98ce2960863cc6124912548f32fedb44dea4ca1bbe3bc555a78ea35255585b18",
+      "manifest": {
+        "schema_version": 1,
+        "product": "probierz-desktop",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "App/Info.plist",
+          "pattern": "(?s)<key>CFBundleShortVersionString</key>\\s*<string>(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)</string>"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "compile",
+                "argv": [
+                  "bash",
+                  "release/stado-release.sh",
+                  "compile"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-release.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              "release/Probierz.app": "Probierz.app",
+              "release/Probierz.zip": "Probierz.zip",
+              "release/Probierz.zip.sparkle-signature": "Probierz.zip.sparkle-signature",
+              "release/appcast.xml": "appcast.xml",
+              "evidence/release.json": "evidence/release.json",
+              "evidence/notary.json": "evidence/notary.json",
+              "evidence/DIGESTS": "evidence/DIGESTS"
+            },
+            "secret_env": {
+              "MACOS_CERT_P12": "wisent-apple-developer-id#certificate_p12_base64",
+              "MACOS_CERT_PASSWORD": "wisent-apple-developer-id#certificate_password",
+              "MACOS_SIGN_IDENTITY": "wisent-apple-developer-id#sign_identity",
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64",
+              "SPARKLE_PRIVATE_KEY": "probierz-desktop-sparkle#private_key"
+            }
+          }
+        },
+        "inputs": {
+          "wisent-desktop-update": {
+            "uri": "stado://sources/wisent-desktop-update/sha256/1f3c919e7e15ef6736a7c9c841ca185cb487e502c0da39be68aa1aa8b487af47/source.tar.gz",
+            "sha256": "1f3c919e7e15ef6736a7c9c841ca185cb487e502c0da39be68aa1aa8b487af47",
+            "mount": "wisent-desktop-update.tar.gz",
+            "extract": false
+          },
+          "swiftpm-cache": {
+            "uri": "stado://sources/probierz-swiftpm-cache/sha256/1afb0215091d97ef0a1c05ce93035d91e83af8b09eaaa48d369ba1f3c7c769f4/source.tar.gz",
+            "sha256": "1afb0215091d97ef0a1c05ce93035d91e83af8b09eaaa48d369ba1f3c7c769f4",
+            "mount": "swiftpm-cache.tar.gz",
+            "extract": false
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "sparkle-appcast",
+            "platform": "darwin-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-sparkle.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "WISENT_SPARKLE_UPLOAD_BASE_URL": "probierz-desktop-sparkle#upload_base_url",
+              "WISENT_SPARKLE_TOKEN": "probierz-desktop-sparkle#delivery_token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/product-guidelines",
+      "remote": "https://github.com/wisent-ai/product-guidelines.git",
+      "checkouts": [
+        "product-guidelines"
+      ],
+      "releases": false,
+      "product": "product-guidelines",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "b2a05ffd911621f87fee8c19b12ee20e5e55b40c",
+      "manifest_sha256": "97d7c98d9e8a3f748004aa4313e14f2c52471efdabec881b30b3cd0daf6bdd33",
+      "manifest": {
+        "schema_version": 1,
+        "product": "product-guidelines",
+        "releases": false,
+        "reason": "The README defines this private repository as a shared documentation standard and says its maintenance scripts only refresh reference material; it publishes no versioned product artifact."
+      }
+    },
+    {
+      "repository": "wisent-ai/quality-control",
+      "remote": "https://github.com/wisent-ai/quality-control.git",
+      "checkouts": [
+        "quality-control"
+      ],
+      "releases": false,
+      "product": "quality-control",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "8d9e271e769840e7d15e605a212185bb196437a9",
+      "manifest_sha256": "060ddb5e7cbc5d01eb4c84c808503ce23980cb65bd8807ab3029d66a75541e56",
+      "manifest": {
+        "schema_version": 1,
+        "product": "quality-control",
+        "releases": false,
+        "reason": "Policy and reusable workflow repository; it ships no versioned product artifact."
+      }
+    },
+    {
+      "repository": "wisent-ai/singularity",
+      "remote": "https://github.com/wisent-ai/singularity.git",
+      "checkouts": [
+        "singularity",
+        "wisentbot"
+      ],
+      "releases": true,
+      "product": "singularity",
+      "source_branch": "feat/stado-native-release-rust-v1",
+      "source_commit": "9fb003ce1371646372ac902a5eafd1c9d92dc856",
+      "manifest_sha256": "261ee4ebb0d94b29a4e1f1bebc2ef737d6ff74f2a5e3d64b9b25c781c6640ca7",
+      "manifest": {
+        "schema_version": 1,
+        "product": "singularity",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "Cargo.toml",
+          "pattern": "(?m)^version\\s*=\\s*\"(?P<version>[0-9A-Za-z.+-]+)\"\\s*$"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "cargo-check",
+                "argv": [
+                  "./scripts/release-quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "./scripts/release-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/singularity": "bin/singularity"
+            }
+          },
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "cargo-check",
+                "argv": [
+                  "./scripts/release-quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "./scripts/release-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/singularity": "bin/singularity"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/skarbiec",
+      "remote": "https://github.com/wisent-ai/skarbiec.git",
+      "checkouts": [
+        "skarbiec"
+      ],
+      "releases": true,
+      "product": "skarbiec",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "3e695278ff564271714b7a70ed7a3efb8dd9afa6",
+      "manifest_sha256": "142965f6eb7bd8e96ddc75e1bfc7069321743a205c87cbd80f3387a49d96a107",
+      "manifest": {
+        "schema_version": 1,
+        "product": "skarbiec",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "Cargo.toml",
+          "pattern": "(?m)^version\\s*=\\s*\"(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)\"\\s*$"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "quality": [
+              {
+                "name": "skarbiec-release-quality",
+                "argv": [
+                  "scripts/release/quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "scripts/release/build.sh"
+              ]
+            },
+            "stage": {
+              "stage/bin/skarbiec": "bin/skarbiec",
+              "stage/bin/start": "bin/start",
+              "stage/LICENSE": "LICENSE",
+              "stage/NOTICE": "NOTICE",
+              "stage/TRADEMARKS.md": "TRADEMARKS.md"
+            },
+            "runner_platform": "darwin-arm64"
+          },
+          "linux-amd64": {
+            "quality": [
+              {
+                "name": "skarbiec-release-quality",
+                "argv": [
+                  "scripts/release/quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "scripts/release/build.sh"
+              ]
+            },
+            "secret_env": {
+              "SKARBIEC_EXTENSION_PRIVATE_KEY_FILE": "browser-extension-key#private_key"
+            },
+            "stage": {
+              "stage/bin/skarbiec": "bin/skarbiec",
+              "stage/bin/start": "bin/start",
+              "stage/share/skarbiec/browser/skarbiec-autofill.crx": "share/skarbiec/browser/skarbiec-autofill.crx",
+              "stage/share/skarbiec/browser/skarbiec-autofill.xml": "share/skarbiec/browser/skarbiec-autofill.xml",
+              "stage/LICENSE": "LICENSE",
+              "stage/NOTICE": "NOTICE",
+              "stage/TRADEMARKS.md": "TRADEMARKS.md"
+            },
+            "runner_platform": "linux-amd64"
+          }
+        },
+        "runtime": {
+          "binary": "bin/skarbiec",
+          "launcher": "bin/start",
+          "config_schema": 1,
+          "state_schema": 1,
+          "minimum_stado_version": "0.6.1",
+          "rollback_compatible_with": []
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": true
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/skarbiec-desktop",
+      "remote": "https://github.com/wisent-ai/skarbiec-desktop.git",
+      "checkouts": [
+        "skarbiec-desktop"
+      ],
+      "releases": true,
+      "product": "skarbiec-desktop",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "2fe7510111068031f5e0d6a0c43e0bd5ccff45fe",
+      "manifest_sha256": "a096c27706963d5597d5d94d526c4a80cc8a0a547a5c3567f41b5bb6b2363686",
+      "manifest": {
+        "schema_version": 1,
+        "product": "skarbiec-desktop",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "App/Info.plist",
+          "pattern": "(?s)<key>CFBundleShortVersionString</key>\\s*<string>(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)</string>"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-release.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/Skarbiec.app": "Skarbiec.app",
+              ".wisent-output/release/Skarbiec.zip": "Skarbiec.zip",
+              ".wisent-output/release/Skarbiec.zip.sparkle-signature": "Skarbiec.zip.sparkle-signature",
+              ".wisent-output/release/appcast.xml": "appcast.xml",
+              ".wisent-output/evidence/release.json": "evidence/release.json",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS",
+              ".wisent-output/notary.json": "evidence/notary.json"
+            },
+            "secret_env": {
+              "MACOS_CERT_P12": "wisent-apple-developer-id#certificate_p12_base64",
+              "MACOS_CERT_PASSWORD": "wisent-apple-developer-id#certificate_password",
+              "MACOS_SIGN_IDENTITY": "wisent-apple-developer-id#sign_identity",
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64",
+              "SPARKLE_PRIVATE_KEY": "skarbiec-desktop-sparkle#private_key"
+            }
+          }
+        },
+        "inputs": {
+          "swiftpm-cache": {
+            "uri": "stado://sources/skarbiec-desktop-swiftpm-cache/sha256/b1f57a5316bdbdded8b675599e1c84664c389e6f88520770957f4196cfc8492d/source.tar.gz",
+            "sha256": "b1f57a5316bdbdded8b675599e1c84664c389e6f88520770957f4196cfc8492d",
+            "mount": "swiftpm-cache.tar.gz",
+            "extract": false
+          },
+          "skarbiec-source": {
+            "uri": "stado://sources/skarbiec/1e198c323bc6bbd5d926d78c023a5f25081c227c7b30bfdbe6d32b72ff20889b/source.tar.gz",
+            "sha256": "1e198c323bc6bbd5d926d78c023a5f25081c227c7b30bfdbe6d32b72ff20889b",
+            "mount": "skarbiec-source",
+            "extract": true
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "sparkle-appcast",
+            "platform": "darwin-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-sparkle.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "WISENT_SPARKLE_UPLOAD_BASE_URL": "skarbiec-desktop-sparkle#upload_base_url",
+              "WISENT_SPARKLE_TOKEN": "skarbiec-desktop-sparkle#delivery_token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/skarbiec-hub",
+      "remote": "https://github.com/wisent-ai/skarbiec-hub.git",
+      "checkouts": [
+        "skarbiec-hub"
+      ],
+      "releases": true,
+      "product": "skarbiec-hub",
+      "source_branch": "feature/stado-native-release-v1",
+      "source_commit": "8f54ae234edec7188943be121d196cc148ca946b",
+      "manifest_sha256": "894f3bd8c68a32e1d989caa9781645337f3bd734285429bd8c6c3d1bd4ddca1d",
+      "manifest": {
+        "schema_version": 1,
+        "product": "skarbiec-hub",
+        "releases": true,
+        "version_source": {
+          "kind": "json",
+          "path": "package.json",
+          "pointer": "/version"
+        },
+        "platforms": {
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "release-scripts",
+                "argv": [
+                  "bash",
+                  "release/quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "bash",
+                "release/build.sh"
+              ]
+            },
+            "stage": {
+              "dist/bin/skarbiec-hub": "bin/skarbiec-hub",
+              "dist/dist/audit.js": "dist/audit.js",
+              "dist/dist/auth.js": "dist/auth.js",
+              "dist/dist/config.js": "dist/config.js",
+              "dist/dist/core.js": "dist/core.js",
+              "dist/dist/db.js": "dist/db.js",
+              "dist/dist/management.js": "dist/management.js",
+              "dist/dist/onboarding.js": "dist/onboarding.js",
+              "dist/dist/push.js": "dist/push.js",
+              "dist/dist/recovery.js": "dist/recovery.js",
+              "dist/dist/server.js": "dist/server.js",
+              "dist/dist/webhook.js": "dist/webhook.js",
+              "dist/migrations/init.sql": "migrations/init.sql",
+              "dist/Dockerfile": "Dockerfile",
+              "dist/package.json": "package.json",
+              "dist/package-lock.json": "package-lock.json",
+              "dist/SOURCE_REVISION": "SOURCE_REVISION"
+            },
+            "secret_env": {}
+          }
+        },
+        "runtime": {
+          "binary": "bin/skarbiec-hub",
+          "launcher": "bin/skarbiec-hub",
+          "config_schema": 1,
+          "state_schema": 1,
+          "minimum_stado_version": "0.1.0",
+          "rollback_compatible_with": []
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": true
+        },
+        "deliveries": []
+      }
+    },
+    {
+      "repository": "wisent-ai/stado",
+      "remote": "https://github.com/wisent-ai/stado.git",
+      "checkouts": [
+        "stado",
+        "wisent-compute"
+      ],
+      "releases": true,
+      "product": "stado",
+      "source_branch": "feat/stado-native-release-submit",
+      "source_commit": "10c231b4aac2a664056f9ecc178a348fb42d2a14",
+      "manifest_sha256": "550ab942c93ef7e6277f5cc0859b8137e00edab39deab6b5863eaff591bbd7ff",
+      "manifest": {
+        "schema_version": 1,
+        "product": "stado",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "stado-rs/Cargo.toml",
+          "pattern": "(?m)^version\\s*=\\s*\"(?P<version>[^\"]+)\"\\s*$"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "fmt",
+                "argv": [
+                  "cargo",
+                  "fmt",
+                  "--manifest-path",
+                  "stado-rs/Cargo.toml",
+                  "--all",
+                  "--",
+                  "--check"
+                ]
+              },
+              {
+                "name": "clippy",
+                "argv": [
+                  "cargo",
+                  "clippy",
+                  "--manifest-path",
+                  "stado-rs/Cargo.toml",
+                  "--locked",
+                  "--all-targets",
+                  "--",
+                  "-D",
+                  "warnings"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "cargo",
+                "build",
+                "--manifest-path",
+                "stado-rs/Cargo.toml",
+                "--locked",
+                "--release",
+                "--bin",
+                "stado"
+              ]
+            },
+            "stage": {
+              "stado-rs/target/release/stado": "bin/stado"
+            }
+          },
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "fmt",
+                "argv": [
+                  "cargo",
+                  "fmt",
+                  "--manifest-path",
+                  "stado-rs/Cargo.toml",
+                  "--all",
+                  "--",
+                  "--check"
+                ]
+              },
+              {
+                "name": "clippy",
+                "argv": [
+                  "cargo",
+                  "clippy",
+                  "--manifest-path",
+                  "stado-rs/Cargo.toml",
+                  "--locked",
+                  "--all-targets",
+                  "--",
+                  "-D",
+                  "warnings"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "cargo",
+                "build",
+                "--manifest-path",
+                "stado-rs/Cargo.toml",
+                "--locked",
+                "--release",
+                "--bin",
+                "stado"
+              ]
+            },
+            "stage": {
+              "stado-rs/target/release/stado": "bin/stado"
+            }
+          }
+        },
+        "runtime": {
+          "binary": "bin/stado",
+          "launcher": "bin/stado",
+          "config_schema": 1,
+          "state_schema": 1,
+          "minimum_stado_version": "0.6.1",
+          "rollback_compatible_with": [
+            "0.6.1"
+          ]
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": true
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/tama-desktop",
+      "remote": "https://github.com/wisent-ai/tama-desktop.git",
+      "checkouts": [
+        "tama-desktop"
+      ],
+      "releases": true,
+      "product": "tama-desktop",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "cc9acfe94ca0767750c7ed469d6b7cec39df65ea",
+      "manifest_sha256": "5ae42ba05d1813ce8a67d15413a69d9496238a5e41c714d3c302bfb9e1d24a8c",
+      "manifest": {
+        "schema_version": 1,
+        "product": "tama-desktop",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "App/Info.plist",
+          "pattern": "(?s)<key>CFBundleShortVersionString</key>\\s*<string>(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)</string>"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "compile",
+                "argv": [
+                  "bash",
+                  "Release/stado-release.sh",
+                  "compile"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "bash",
+                "Release/stado-release.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              "release/Tama.app": "Tama.app",
+              "release/Tama.zip": "Tama.zip",
+              "release/Tama.zip.sparkle-signature": "Tama.zip.sparkle-signature",
+              "release/appcast.xml": "appcast.xml",
+              "evidence/release.json": "evidence/release.json",
+              "evidence/notary.json": "evidence/notary.json",
+              "evidence/DIGESTS": "evidence/DIGESTS"
+            },
+            "secret_env": {
+              "MACOS_CERT_P12": "wisent-apple-developer-id#certificate_p12_base64",
+              "MACOS_CERT_PASSWORD": "wisent-apple-developer-id#certificate_password",
+              "MACOS_SIGN_IDENTITY": "wisent-apple-developer-id#sign_identity",
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64",
+              "SPARKLE_PRIVATE_KEY": "tama-desktop-sparkle#private_key",
+              "TAMA_APP_PROFILE_B64": "tama-desktop-signing#app_provisioning_profile_base64",
+              "TAMA_NETWORK_FILTER_PROFILE_B64": "tama-desktop-signing#network_filter_provisioning_profile_base64"
+            }
+          }
+        },
+        "inputs": {
+          "wisent-desktop-update": {
+            "uri": "stado://sources/wisent-desktop-update/sha256/1f3c919e7e15ef6736a7c9c841ca185cb487e502c0da39be68aa1aa8b487af47/source.tar.gz",
+            "sha256": "1f3c919e7e15ef6736a7c9c841ca185cb487e502c0da39be68aa1aa8b487af47",
+            "mount": "wisent-desktop-update.tar.gz",
+            "extract": false
+          },
+          "hooks-rotator": {
+            "uri": "stado://sources/hooks-rotator/sha256/415d6b9824d6fc47a7ebdc4395ed94cb18113c2553251cad50e1f9000d5ab326/source.tar.gz",
+            "sha256": "415d6b9824d6fc47a7ebdc4395ed94cb18113c2553251cad50e1f9000d5ab326",
+            "mount": "hooks-rotator.tar.gz",
+            "extract": false
+          },
+          "swiftpm-cache": {
+            "uri": "stado://sources/tama-swiftpm-cache/sha256/69afd7557e507caa16f64ac96a723c5daa74091bbe3417e423409634b670ada3/source.tar.gz",
+            "sha256": "69afd7557e507caa16f64ac96a723c5daa74091bbe3417e423409634b670ada3",
+            "mount": "swiftpm-cache.tar.gz",
+            "extract": false
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "sparkle-appcast",
+            "platform": "darwin-arm64",
+            "argv": [
+              "python3",
+              "Release/deliver-sparkle.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "WISENT_SPARKLE_UPLOAD_BASE_URL": "tama-desktop-sparkle#upload_base_url",
+              "WISENT_SPARKLE_TOKEN": "tama-desktop-sparkle#delivery_token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/trading-autonomy",
+      "remote": "https://github.com/wisent-ai/trading-autonomy.git",
+      "checkouts": [
+        "trading-autonomy"
+      ],
+      "releases": true,
+      "product": "trading-autonomy",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "15ed2b5a93a0c783924ef042fd4b298842f4dba2",
+      "manifest_sha256": "e90776ff0ba631f8ac780ca11fb0f4b327b121717c7104440ffaa3ccdde18408",
+      "manifest": {
+        "schema_version": 1,
+        "product": "trading-autonomy",
+        "releases": true,
+        "version_source": {
+          "kind": "text",
+          "path": "VERSION"
+        },
+        "platforms": {
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/build-runtime.py"
+              ]
+            },
+            "stage": {
+              "dist/bin": "bin",
+              "dist/agent": "agent",
+              "dist/agent_runtime": "agent_runtime"
+            }
+          }
+        },
+        "runtime": {
+          "binary": "bin/trading-autonomy-agent",
+          "launcher": "bin/trading-autonomy-agent",
+          "config_schema": 1,
+          "state_schema": 1,
+          "minimum_stado_version": "0.1.0",
+          "rollback_compatible_with": []
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": true
+        },
+        "deliveries": []
+      }
+    },
+    {
+      "repository": "wisent-ai/trading-ios",
+      "remote": "https://github.com/wisent-ai/trading-ios.git",
+      "checkouts": [
+        "trading-ios"
+      ],
+      "releases": false,
+      "product": "trading-ios",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "924b961cc59192cc4e7d9b42fa83f53ed747be9c",
+      "manifest_sha256": "a15f6ae54cc9cb4f71832319075ddb741b044b9124f6edf81e7cd4f8a7be2006",
+      "manifest": {
+        "schema_version": 1,
+        "product": "trading-ios",
+        "releases": false,
+        "reason": "The repository is an explicitly work-in-progress Swift library scaffold: Package.swift defines only the TradingIOS library and its companion target, with no iOS application target, Xcode archive/export configuration, signing surface, TestFlight application, or other durable release channel."
+      }
+    },
+    {
+      "repository": "wisent-ai/trading-tools",
+      "remote": "https://github.com/wisent-ai/trading-tools.git",
+      "checkouts": [
+        "trading-tools"
+      ],
+      "releases": true,
+      "product": "trading-tools",
+      "source_branch": "feat/stado-native-release-rust-v1",
+      "source_commit": "115d645be34ae0d4cd17dbd9bf634e7c23c3374e",
+      "manifest_sha256": "3a1f0f871244df17e90b63dd8ba6e1dc54ac613002cfd37a1a2e3bf429af35fd",
+      "manifest": {
+        "schema_version": 1,
+        "product": "trading-tools",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "crates/bot/Cargo.toml",
+          "pattern": "(?m)^version\\s*=\\s*\"(?P<version>[0-9A-Za-z.+-]+)\"\\s*$"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "cargo-check",
+                "argv": [
+                  "./scripts/release-quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "./scripts/release-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/tradingbot": "bin/tradingbot"
+            }
+          },
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "cargo-check",
+                "argv": [
+                  "./scripts/release-quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "./scripts/release-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/tradingbot": "bin/tradingbot"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/transcript-label-trainer",
+      "remote": "https://github.com/wisent-ai/transcript-label-trainer.git",
+      "checkouts": [
+        "transcript-label-trainer"
+      ],
+      "releases": false,
+      "product": "transcript-label-trainer",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "995b526632cc64df88ec3b64d87a56537e641e61",
+      "manifest_sha256": "934342cb043e6c3835cdb7cce7545c5c59f83019577144c7352b14a2d611edad",
+      "manifest": {
+        "schema_version": 1,
+        "product": "transcript-label-trainer",
+        "releases": false,
+        "reason": "The README installs this private training tool from the source checkout with cargo install --path .; it defines no immutable released artifact or versioned publisher."
+      }
+    },
+    {
+      "repository": "wisent-ai/transcript-lake",
+      "remote": "https://github.com/wisent-ai/transcript-lake.git",
+      "checkouts": [
+        "transcript-lake"
+      ],
+      "releases": false,
+      "product": "transcript-lake",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "2917f9b7310d7075b2a4ad680fc89f103c47acd7",
+      "manifest_sha256": "04f5755b3cf131eca70879ea4724aabdf5533d1f993a8de008be1aca147f3324",
+      "manifest": {
+        "schema_version": 1,
+        "product": "transcript-lake",
+        "releases": false,
+        "reason": "The README states there is not yet a supported immutable release and that the development channel is installed from a source checkout."
+      }
+    },
+    {
+      "repository": "wisent-ai/ugc-cli",
+      "remote": "https://github.com/wisent-ai/ugc-cli.git",
+      "checkouts": [
+        "ugc-cli"
+      ],
+      "releases": true,
+      "product": "ugc-cli",
+      "source_branch": "feat/stado-native-release-rust-v1",
+      "source_commit": "bcee29859a0a344246649e201ab2b20902598781",
+      "manifest_sha256": "f137bedc305e5399ae8c41c0011fc70d4ad815818e981e8acfc7a8820f09729a",
+      "manifest": {
+        "schema_version": 1,
+        "product": "ugc-cli",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "Cargo.toml",
+          "pattern": "(?m)^version\\s*=\\s*\"(?P<version>[0-9A-Za-z.+-]+)\"\\s*$"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "cargo-check",
+                "argv": [
+                  "./scripts/release-quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "./scripts/release-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/ugc-cli": "bin/ugc-cli"
+            }
+          },
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "cargo-check",
+                "argv": [
+                  "./scripts/release-quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "./scripts/release-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/ugc-cli": "bin/ugc-cli"
+            }
+          }
+        },
+        "inputs": {
+          "echo-web": {
+            "uri": "stado://sources/echo-web/sha256/4a2b107a1bd469f9c2401055014dde6eead087e3aefd7a54fc49f9c483c7f8bc/source.tar.gz",
+            "sha256": "4a2b107a1bd469f9c2401055014dde6eead087e3aefd7a54fc49f9c483c7f8bc",
+            "mount": "echo-web"
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/warsztat-desktop",
+      "remote": "https://github.com/wisent-ai/warsztat-desktop.git",
+      "checkouts": [
+        "warsztat-desktop"
+      ],
+      "releases": true,
+      "product": "warsztat-desktop",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "50e34661f944739d6d706a3de85f2902f33c52d7",
+      "manifest_sha256": "fa5153dfb723fe2a2aed139189085502ba72dbce0b0bc885e6c2c1d3874f7ed3",
+      "manifest": {
+        "schema_version": 1,
+        "product": "warsztat-desktop",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "App/Info.plist",
+          "pattern": "(?s)<key>CFBundleShortVersionString</key>\\s*<string>(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)</string>"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-release.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/Warsztat.app": "Warsztat.app",
+              ".wisent-output/release/Warsztat.zip": "Warsztat.zip",
+              ".wisent-output/release/Warsztat.zip.sparkle-signature": "Warsztat.zip.sparkle-signature",
+              ".wisent-output/release/appcast.xml": "appcast.xml",
+              ".wisent-output/evidence/release.json": "evidence/release.json",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS",
+              ".wisent-output/notary.json": "evidence/notary.json"
+            },
+            "secret_env": {
+              "MACOS_CERT_P12": "wisent-apple-developer-id#certificate_p12_base64",
+              "MACOS_CERT_PASSWORD": "wisent-apple-developer-id#certificate_password",
+              "MACOS_SIGN_IDENTITY": "wisent-apple-developer-id#sign_identity",
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64",
+              "SPARKLE_PRIVATE_KEY": "warsztat-desktop-sparkle#private_key"
+            }
+          }
+        },
+        "inputs": {
+          "swiftpm-cache": {
+            "uri": "stado://sources/warsztat-desktop-swiftpm-cache/sha256/c3b69a896ddb295ccf09a0dce30c9d03ecf3bd3fd855632123819439033682ff/source.tar.gz",
+            "sha256": "c3b69a896ddb295ccf09a0dce30c9d03ecf3bd3fd855632123819439033682ff",
+            "mount": "swiftpm-cache.tar.gz",
+            "extract": false
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "sparkle-appcast",
+            "platform": "darwin-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-sparkle.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "WISENT_SPARKLE_UPLOAD_BASE_URL": "warsztat-desktop-sparkle#upload_base_url",
+              "WISENT_SPARKLE_TOKEN": "warsztat-desktop-sparkle#delivery_token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/weles",
+      "remote": "https://github.com/wisent-ai/weles.git",
+      "checkouts": [
+        "weles"
+      ],
+      "releases": true,
+      "product": "weles-worker",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "cdc0bec30254271012cf639075228f9a736ef679",
+      "manifest_sha256": "ec557f13a133d4cbaf040783d308aad63a7de546c576a98dceff357292c9805d",
+      "manifest": {
+        "schema_version": 1,
+        "product": "weles-worker",
+        "releases": true,
+        "version_source": {
+          "kind": "json",
+          "path": "package.json",
+          "pointer": "/version"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-build.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/payload/weles-worker.tar.gz": "payload/weles-worker.tar.gz",
+              ".wisent-output/bin/start": "bin/start",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS"
+            }
+          }
+        },
+        "inputs": {
+          "weles-client-bundle": {
+            "uri": "stado://sources/weles-client/60d19e769a742cff377d5e5b59762b3696e2ea1403d8e578f52f681a8a6a350a/weles-client.bundle",
+            "sha256": "60d19e769a742cff377d5e5b59762b3696e2ea1403d8e578f52f681a8a6a350a",
+            "mount": "weles-client.bundle",
+            "extract": false
+          },
+          "wisent-cost-tracker-bundle": {
+            "uri": "stado://sources/wisent-cost-tracker/a29a3b94cbfb3ad9765664684d9fa8911f25aaeb95d7518f0a5047c1a49f02b6/wisent-cost-tracker.bundle",
+            "sha256": "a29a3b94cbfb3ad9765664684d9fa8911f25aaeb95d7518f0a5047c1a49f02b6",
+            "mount": "wisent-cost-tracker.bundle",
+            "extract": false
+          }
+        },
+        "runtime": {
+          "binary": "payload/weles-worker.tar.gz",
+          "launcher": "bin/start",
+          "config_schema": 1,
+          "state_schema": 1,
+          "minimum_stado_version": "0.6.1",
+          "rollback_compatible_with": []
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/weles-client",
+      "remote": "https://github.com/wisent-ai/weles-client.git",
+      "checkouts": [
+        "weles-client"
+      ],
+      "releases": true,
+      "product": "weles-client",
+      "source_branch": "feature/stado-native-release-v1",
+      "source_commit": "4aeb77de2036f4d7c6a81634df7cbb3a98e1c8f5",
+      "manifest_sha256": "0006571106f0e7ce8394885004e45b8aed9250de1e98bc46899f887c672505d4",
+      "manifest": {
+        "schema_version": 1,
+        "product": "weles-client",
+        "releases": true,
+        "version_source": {
+          "kind": "json",
+          "path": "package.json",
+          "pointer": "/version"
+        },
+        "platforms": {
+          "node-archive": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "node-syntax",
+                "argv": [
+                  "bash",
+                  "release/quality.sh"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "bash",
+                "release/build.sh"
+              ]
+            },
+            "stage": {
+              "dist/weles-client.tgz": "weles-client.tgz",
+              "dist/weles-client.tgz.sha256": "weles-client.tgz.sha256",
+              "dist/SOURCE_REVISION": "SOURCE_REVISION"
+            },
+            "secret_env": {}
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "github-mirror",
+            "platform": "node-archive",
+            "argv": [
+              "python3",
+              "release/deliver-github-mirror.py"
+            ],
+            "required": false,
+            "secret_env": {
+              "WISENT_MIRROR_TOKEN": "github-release-mirror#token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/weles-desktop",
+      "remote": "https://github.com/wisent-ai/weles-desktop.git",
+      "checkouts": [
+        "weles-desktop"
+      ],
+      "releases": false,
+      "product": "weles-desktop",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "ba1e4be6ce90d24535047362d2316e0dfd2529c8",
+      "manifest_sha256": "c25daa223556582a34fd2f01721813d7b019e67e36348b576234ac86d5b07bc9",
+      "manifest": {
+        "schema_version": 1,
+        "product": "weles-desktop",
+        "releases": false,
+        "reason": "The README states that Weles Desktop is private development source whose build script creates only an ad-hoc-signed local app bundle, with no stable signed or notarized public release or supported distribution contract."
+      }
+    },
+    {
+      "repository": "wisent-ai/weles-web",
+      "remote": "https://github.com/wisent-ai/weles-web.git",
+      "checkouts": [
+        "weles-web-blog"
+      ],
+      "releases": true,
+      "product": "weles-web",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "bd3a50d9a8de907179846126ef7b525c650626b2",
+      "manifest_sha256": "4dee96be23ceec183c58aedf1708d4d2a0e364332f95ce43cca40bfd83670dae",
+      "manifest": {
+        "schema_version": 1,
+        "product": "weles-web",
+        "releases": true,
+        "version_source": {
+          "kind": "json",
+          "path": "package.json",
+          "pointer": "/version"
+        },
+        "platforms": {
+          "web-source": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/stado-vercel-build.py"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/vercel-output.tar.gz": "vercel-output.tar.gz",
+              ".wisent-output/evidence/build.json": "evidence/build.json"
+            },
+            "secret_env": {
+              "VERCEL_TOKEN": "vercel-deployment#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id",
+              "VERCEL_PROJECT_ID": "vercel-deployment#weles_web_project_id"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "vercel-production",
+            "platform": "web-source",
+            "argv": [
+              "python3",
+              "release/stado-vercel-deliver.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "VERCEL_TOKEN": "vercel-deployment#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id",
+              "VERCEL_PROJECT_ID": "vercel-deployment#weles_web_project_id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent",
+      "remote": "https://huggingface.co/spaces/wisent-ai/wisent",
+      "checkouts": [
+        ".deploy_space_wisent"
+      ],
+      "releases": true,
+      "product": "wisent",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "0b171ef8919a8251ef245b26fad17465eeeb31c8",
+      "manifest_sha256": "f7e95bc0ee273e9c9c79a331226ff251f257c20a21b365de3b99f330ec051fdc",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent",
+        "releases": true,
+        "version_source": {
+          "kind": "text",
+          "path": "VERSION"
+        },
+        "platforms": {
+          "space": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "release-metadata",
+                "argv": [
+                  "python3",
+                  "scripts/stado_release.py",
+                  "quality"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "python3",
+                "scripts/stado_release.py",
+                "build"
+              ]
+            },
+            "stage": {
+              "release/space-bundle.tar": "release/space-bundle.tar"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {},
+        "deliveries": [
+          {
+            "name": "huggingface-space",
+            "platform": "space",
+            "argv": [
+              "python3",
+              "scripts/stado_release.py",
+              "deliver-huggingface",
+              "--repo-id",
+              "wisent-ai/wisent"
+            ],
+            "required": true,
+            "secret_env": {
+              "HUGGINGFACE_TOKEN": "HUGGINGFACE_TOKEN#token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent",
+      "remote": "https://github.com/wisent-ai/wisent.git",
+      "checkouts": [
+        "wisent"
+      ],
+      "releases": true,
+      "product": "wisent",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "eed465fb64d2e070169096c5adc7bf22c7c7d0a6",
+      "manifest_sha256": "009bf6ed43e710a9e4779d34efa9d55274795c26efc02b308938a398520ce680",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "wisent/__init__.py",
+          "pattern": "(?m)^__version__\\s*=\\s*[\\\"'](?P<version>[0-9A-Za-z._-]+)[\\\"']"
+        },
+        "platforms": {
+          "python": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "release-metadata",
+                "argv": [
+                  "python3",
+                  "scripts/stado_release.py",
+                  "quality"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "python3",
+                "scripts/stado_release.py",
+                "build"
+              ]
+            },
+            "stage": {
+              "release/python-distributions.tar": "release/python-distributions.tar"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {},
+        "deliveries": [
+          {
+            "name": "pypi",
+            "platform": "python",
+            "argv": [
+              "python3",
+              "scripts/stado_release.py",
+              "deliver-pypi"
+            ],
+            "required": true,
+            "secret_env": {
+              "PYPI_TOKEN": "PYPI_TOKEN#token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-1b",
+      "remote": "https://github.com/wisent-ai/wisent-1b.git",
+      "checkouts": [
+        "wisent-1b"
+      ],
+      "releases": false,
+      "product": "wisent-1b",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "c7c962cb3c37df97e76dff3f811d7ca101b84e96",
+      "manifest_sha256": "4a8b3b3b8d8fc71bfb58d3f81ff4ab967f63a4d67113da49e6e6d280dfc8eab2",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-1b",
+        "releases": false,
+        "reason": "The released-surface baseline states that no PyPI project or release tag exists; the only consumable form is a development source checkout."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-app",
+      "remote": "https://github.com/wisent-ai/wisent-app.git",
+      "checkouts": [
+        "wisent-app",
+        "wisent-app-blog"
+      ],
+      "releases": true,
+      "product": "wisent-app",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "7e925fcf78a16bac62d9136fc39f571fd2e660de",
+      "manifest_sha256": "42510d136ec828f8eda69055d5acb48afedbb0168fa8368ad01c4f02618825cd",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-app",
+        "releases": true,
+        "version_source": {
+          "kind": "json",
+          "path": "package.json",
+          "pointer": "/version"
+        },
+        "platforms": {
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-release.sh"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/vercel-output.tar.gz": "vercel-output.tar.gz",
+              ".wisent-output/evidence/build.json": "evidence/build.json"
+            },
+            "secret_env": {
+              "VERCEL_TOKEN": "vercel-deployment#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id",
+              "VERCEL_PROJECT_ID": "vercel-deployment#wisent_app_project_id"
+            }
+          }
+        },
+        "inputs": {
+          "onboarding-web": {
+            "uri": "stado://sources/echo-web-onboarding/7420e7d7a9033e677f63fe876f1a63e2b2b000b9e365b7c1fd26cc5175665ac5/source.tar.gz",
+            "sha256": "7420e7d7a9033e677f63fe876f1a63e2b2b000b9e365b7c1fd26cc5175665ac5",
+            "mount": "onboarding-web",
+            "extract": true
+          },
+          "deep-analytics-bundle": {
+            "uri": "stado://sources/deep-analytics/37ef4d8d819161ab0c9328a917d5617ec136df15ee42e4ce3fd870d61daad670/deep-analytics.bundle",
+            "sha256": "37ef4d8d819161ab0c9328a917d5617ec136df15ee42e4ce3fd870d61daad670",
+            "mount": "deep-analytics.bundle",
+            "extract": false
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "vercel-production",
+            "platform": "linux-amd64",
+            "argv": [
+              "python3",
+              "release/deliver-vercel.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "VERCEL_TOKEN": "vercel-deployment#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id",
+              "VERCEL_PROJECT_ID": "vercel-deployment#wisent_app_project_id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-backend-images",
+      "remote": "https://github.com/wisent-ai/wisent-backend-images.git",
+      "checkouts": [
+        "wisent-backend-images"
+      ],
+      "releases": true,
+      "product": "wisent-backend-images",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "55922442eaae26928dafd6d12fefce71a029557d",
+      "manifest_sha256": "40d49740263e6da0afdeccc30a71131f59b6a53aa34105da6dcee6271b6f4ca0",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-backend-images",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "app/main.py",
+          "pattern": "(?m)^\\s*version=\"(?P<version>[0-9A-Za-z.+-]+)\",$"
+        },
+        "platforms": {
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/build-runtime.py"
+              ]
+            },
+            "stage": {
+              "dist/bin": "bin",
+              "dist/app": "app",
+              "dist/loras": "loras",
+              "dist/requirements.txt": "requirements.txt"
+            }
+          }
+        },
+        "runtime": {
+          "binary": "bin/wisent-backend-images",
+          "launcher": "bin/wisent-backend-images",
+          "config_schema": 1,
+          "state_schema": 1,
+          "minimum_stado_version": "0.1.0",
+          "rollback_compatible_with": []
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": true
+        },
+        "deliveries": [
+          {
+            "name": "stado-host",
+            "platform": "linux-amd64",
+            "argv": [
+              "python3",
+              "release/deliver-stado-service.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "WISENT_STADO_TARGET": "stado-service-deployment#wisent_backend_images_target"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-backend-test-day",
+      "remote": "https://github.com/wisent-ai/wisent-backend-test-day.git",
+      "checkouts": [
+        "wisent-backend"
+      ],
+      "releases": true,
+      "product": "wisent-backend",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "6d6fe83ffd79602394c911983f772b21f31c4a87",
+      "manifest_sha256": "1939ae9f20eb80946049a9db63a05bf42f95bc21d90c29fe5b131f9bfe3f51bc",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-backend",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "Cargo.toml",
+          "pattern": "(?m)^version\\s*=\\s*\"(?<version>[0-9A-Za-z.+-]+)\"\\s*$"
+        },
+        "platforms": {
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-build.sh",
+                "--bin",
+                "wisent-backend"
+              ]
+            },
+            "stage": {
+              ".wisent-output/bin/wisent-backend": "bin/wisent-backend",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "runtime": {
+          "binary": "bin/wisent-backend",
+          "launcher": "bin/wisent-backend",
+          "config_schema": 1,
+          "state_schema": 1,
+          "minimum_stado_version": "0.6.1",
+          "rollback_compatible_with": []
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-body-horror",
+      "remote": "https://github.com/wisent-ai/wisent-body-horror.git",
+      "checkouts": [
+        "wisent-body-horror"
+      ],
+      "releases": false,
+      "product": "wisent-body-horror",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "d273f1806a3a455b176354cf20961ea7b89b21b3",
+      "manifest_sha256": "bec3967f42338639c161cbd3d400d52c105d35138e61c9fc153635f245634a4c",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-body-horror",
+        "releases": false,
+        "reason": "released-surface.json records that the package is published on no registry, the repository has no release tags, and no selectable artifact exists."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-cost-tracker",
+      "remote": "https://github.com/wisent-ai/wisent-cost-tracker.git",
+      "checkouts": [
+        "wisent-cost-tracker"
+      ],
+      "releases": false,
+      "product": "wisent-cost-tracker",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "4a952be90f80f83e377f514bb5be111a3880db77",
+      "manifest_sha256": "c2d601b3b58b0c85e644508cc95a0e273a42ad52ad86b02830abf1a14a5b16a2",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-cost-tracker",
+        "releases": false,
+        "reason": "Both committed baselines state that npm and PyPI report the distributions absent and origin has no release tag; no artifact is currently published."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-customer-support",
+      "remote": "https://github.com/wisent-ai/wisent-customer-support.git",
+      "checkouts": [
+        "wisent-customer-support"
+      ],
+      "releases": false,
+      "product": "wisent-customer-support",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "ba3806cec200f7ff9bed7dccb3f51edaa11cb5e4",
+      "manifest_sha256": "66a01316fc45a2f89366e8c8aa867b18cd9913ac7f472740af2412b30eda2545",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-customer-support",
+        "releases": false,
+        "reason": "package.json marks the service private, and the repository contains runtime source and a schema but no deploy configuration, published artifact, or durable release channel."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-desktop-auth",
+      "remote": "https://github.com/wisent-ai/wisent-desktop-auth.git",
+      "checkouts": [
+        "wisent-desktop-auth"
+      ],
+      "releases": true,
+      "product": "wisent-desktop-auth",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "9d451d38ef40cbcff349dbb2af809bce5bd794a2",
+      "manifest_sha256": "32fc2dc2c08d2cfe1213c7f647e174bcb9ed006298c936fedad4cf18150832b1",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-desktop-auth",
+        "releases": true,
+        "version_source": {
+          "kind": "json",
+          "path": "released-surface.json",
+          "pointer": "/version"
+        },
+        "platforms": {
+          "darwin-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "compile",
+                "argv": [
+                  "bash",
+                  "release/build.sh",
+                  "compile"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "bash",
+                "release/build.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              "dist/wisent-auth-onboarding-host": "bin/wisent-auth-onboarding-host",
+              "dist/wisent-desktop-auth-source.tar.gz": "source/wisent-desktop-auth-source.tar.gz",
+              "dist/SOURCE_REVISION": "SOURCE_REVISION",
+              "dist/build-evidence.json": "evidence/build-evidence.json"
+            }
+          }
+        },
+        "inputs": {
+          "echo": {
+            "uri": "stado://sources/echo/sha256/b086ee88ca870556f738589dd5548efea515bcc4f4831fa2d36cba93465113ba/source.tar.gz",
+            "sha256": "b086ee88ca870556f738589dd5548efea515bcc4f4831fa2d36cba93465113ba",
+            "mount": "echo.tar.gz",
+            "extract": false
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-desktop-update",
+      "remote": "https://github.com/wisent-ai/wisent-desktop-update.git",
+      "checkouts": [
+        "wisent-desktop-update"
+      ],
+      "releases": false,
+      "product": "wisent-desktop-update",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "12ae2a9bd7857196ee38d3b8fd345ea0254a3da6",
+      "manifest_sha256": "2c41667515be45ffea6951b44624623d9fc08ac83c97a698e75b695be5d4ebaf",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-desktop-update",
+        "releases": false,
+        "reason": "This repository owns the reusable macOS release workflow and Swift support code used by product repositories; it does not publish a versioned product artifact of its own."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-email-templates",
+      "remote": "https://github.com/wisent-ai/wisent-email-templates.git",
+      "checkouts": [
+        "wisent-email-templates"
+      ],
+      "releases": false,
+      "product": "wisent-email-templates",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "17b116c742dcb4ecce30d874b030eed3bbaf12dc",
+      "manifest_sha256": "d7d9944a8c71f61c99f38cadfff3696ad5fc627556bbe6e6edf1ea35b7f4cd46",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-email-templates",
+        "releases": false,
+        "reason": "This repository is the source collection for product email templates and declares no versioned package, application, or release publisher."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-evaluators",
+      "remote": "https://github.com/wisent-ai/wisent-evaluators.git",
+      "checkouts": [
+        "wisent-evaluators"
+      ],
+      "releases": true,
+      "product": "wisent-evaluators",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "b44b061806d5243c2bc5118b541de8e339be5261",
+      "manifest_sha256": "d1c9faf7ce90411163a2c18c464a952e98d19a6c295f3f348d6f673b61a7bc75",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-evaluators",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "setup.py",
+          "pattern": "(?m)^\\s*version\\s*=\\s*[\\\"'](?P<version>[0-9A-Za-z._-]+)[\\\"']"
+        },
+        "platforms": {
+          "python": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "release-metadata",
+                "argv": [
+                  "python3",
+                  "scripts/stado_release.py",
+                  "quality"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "python3",
+                "scripts/stado_release.py",
+                "build"
+              ]
+            },
+            "stage": {
+              "release/python-distributions.tar": "release/python-distributions.tar"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {},
+        "deliveries": [
+          {
+            "name": "pypi",
+            "platform": "python",
+            "argv": [
+              "python3",
+              "scripts/stado_release.py",
+              "deliver-pypi"
+            ],
+            "required": true,
+            "secret_env": {
+              "PYPI_TOKEN": "PYPI_TOKEN#token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-extractors",
+      "remote": "https://github.com/wisent-ai/wisent-extractors.git",
+      "checkouts": [
+        "wisent-extractors"
+      ],
+      "releases": true,
+      "product": "wisent-extractors",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "2cd9bbb567fbe21377e5a1d3a2941e97389f5c78",
+      "manifest_sha256": "3ad70843b05b685057a0fffaa6f758fd88f0d70f02ff1008a38cccadfadc8cd7",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-extractors",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "setup.py",
+          "pattern": "(?m)^\\s*version\\s*=\\s*[\\\"'](?P<version>[0-9A-Za-z._-]+)[\\\"']"
+        },
+        "platforms": {
+          "python": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "release-metadata",
+                "argv": [
+                  "python3",
+                  "scripts/stado_release.py",
+                  "quality"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "python3",
+                "scripts/stado_release.py",
+                "build"
+              ]
+            },
+            "stage": {
+              "release/python-distributions.tar": "release/python-distributions.tar"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {},
+        "deliveries": [
+          {
+            "name": "pypi",
+            "platform": "python",
+            "argv": [
+              "python3",
+              "scripts/stado_release.py",
+              "deliver-pypi"
+            ],
+            "required": true,
+            "secret_env": {
+              "PYPI_TOKEN": "PYPI_TOKEN#token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-gradio",
+      "remote": "https://github.com/wisent-ai/wisent-gradio.git",
+      "checkouts": [
+        "wisent-gradio"
+      ],
+      "releases": true,
+      "product": "wisent-gradio",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "c8ac591b1ef049d89d897b3ef133e14825bc5408",
+      "manifest_sha256": "d0ea70006b20d050de9a54fc5a6730a37f00edbca678659eb47424d7c24e49ac",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-gradio",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "setup.py",
+          "pattern": "(?m)^\\s*version=\"(?P<version>[0-9A-Za-z.+-]+)\",$"
+        },
+        "platforms": {
+          "python-package": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/build-package.py"
+              ]
+            },
+            "stage": {
+              "dist": "python-distributions"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "pypi",
+            "platform": "python-package",
+            "argv": [
+              "python3",
+              "release/deliver-pypi.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "PYPI_TOKEN": "pypi-publisher#token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-ground-truth-docs",
+      "remote": "https://github.com/wisent-ai/wisent-ground-truth-docs.git",
+      "checkouts": [
+        "wisent-ground-truth-docs"
+      ],
+      "releases": false,
+      "product": "wisent-ground-truth-docs",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "1e986edf27539f5e9b4166f412158589b8b1cee2",
+      "manifest_sha256": "12cf561d06f9dd0b8d7fd415ca2b017d271595009cd9264204d406690a20c475",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-ground-truth-docs",
+        "releases": false,
+        "reason": "The README defines this repository as a cross-repository documentation and inventory map; it builds and publishes no versioned artifact."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-integrations",
+      "remote": "https://github.com/wisent-ai/wisent-integrations.git",
+      "checkouts": [
+        "wisent-integrations"
+      ],
+      "releases": true,
+      "product": "wisent-integrations",
+      "source_branch": "feat/stado-native-release-v1",
+      "source_commit": "edaafd2c65c090d2caf49fa3242e1c90820f0cb1",
+      "manifest_sha256": "59de4bedae91dfa76c190910d49a82fd8a0c1d7c10b925ab7126c44caae66287",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-integrations",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "Cargo.toml",
+          "pattern": "(?m)^version\\s*=\\s*\"(?<version>[0-9A-Za-z.+-]+)\"\\s*$"
+        },
+        "platforms": {
+          "linux-amd64": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "bash",
+                "release/stado-build.sh",
+                "--bin",
+                "wisent-integrations"
+              ]
+            },
+            "stage": {
+              ".wisent-output/bin/wisent-integrations": "bin/wisent-integrations",
+              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "runtime": {
+          "binary": "bin/wisent-integrations",
+          "launcher": "bin/wisent-integrations",
+          "config_schema": 1,
+          "state_schema": 1,
+          "minimum_stado_version": "0.6.1",
+          "rollback_compatible_with": []
+        }
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-ios-main",
+      "remote": "https://github.com/wisent-ai/wisent-ios-main.git",
+      "checkouts": [
+        "wisent-ios"
+      ],
+      "releases": true,
+      "product": "wisent-ios",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "da5bc13a5f774a01f424c5b8812e6660df388281",
+      "manifest_sha256": "2295f5f8b9f399aba8307b547de7d237adee694f75b1b29e710f35100b37b1f7",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-ios",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "Wisent/Project.swift",
+          "pattern": "\\.marketingVersion\\(\"(?<version>[0-9]+(?:\\.[0-9]+){2})\"\\)"
+        },
+        "platforms": {
+          "ios-arm64": {
+            "runner_platform": "darwin-arm64",
+            "quality": [
+              {
+                "name": "release-project",
+                "argv": [
+                  "bash",
+                  "release/build.sh",
+                  "project"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "bash",
+                "release/build.sh",
+                "build"
+              ]
+            },
+            "stage": {
+              "dist/Wisent.ipa": "Wisent.ipa",
+              "dist/Wisent.xcarchive.tar.gz": "evidence/Wisent.xcarchive.tar.gz",
+              "dist/build-evidence.json": "evidence/build-evidence.json",
+              "dist/SOURCE_REVISION": "SOURCE_REVISION"
+            },
+            "secret_env": {
+              "IOS_DIST_P12_B64": "wisent-ios-distribution#certificate_p12_base64",
+              "IOS_DIST_P12_PASSWORD": "wisent-ios-distribution#certificate_password",
+              "IOS_SIGN_IDENTITY": "wisent-ios-distribution#sign_identity",
+              "IOS_APP_PROFILE_B64": "wisent-ios-signing#app_provisioning_profile_base64",
+              "IOS_ASSETS_PROFILE_B64": "wisent-ios-signing#background_assets_provisioning_profile_base64",
+              "IOS_WIDGET_PROFILE_B64": "wisent-ios-signing#widget_provisioning_profile_base64"
+            }
+          }
+        },
+        "inputs": {
+          "echo": {
+            "uri": "stado://sources/echo/sha256/b086ee88ca870556f738589dd5548efea515bcc4f4831fa2d36cba93465113ba/source.tar.gz",
+            "sha256": "b086ee88ca870556f738589dd5548efea515bcc4f4831fa2d36cba93465113ba",
+            "mount": "echo.tar.gz",
+            "extract": false
+          },
+          "espeak-ng-spm": {
+            "uri": "stado://sources/espeak-ng-spm/sha256/c24ce96aa456470e79d5a8fd79a46ed9742e7289f3acbd8459ad544d9d68aa22/source.tar.gz",
+            "sha256": "c24ce96aa456470e79d5a8fd79a46ed9742e7289f3acbd8459ad544d9d68aa22",
+            "mount": "espeak-ng-spm.tar.gz",
+            "extract": false
+          },
+          "neucodec-mlx-swift": {
+            "uri": "stado://sources/neucodec-mlx-swift/sha256/b13bb044dae39f5b8d0d015494f86f155dafeacb207bb3f9c244c3809be551c4/source.tar.gz",
+            "sha256": "b13bb044dae39f5b8d0d015494f86f155dafeacb207bb3f9c244c3809be551c4",
+            "mount": "neucodec-mlx-swift.tar.gz",
+            "extract": false
+          },
+          "swift-transformers": {
+            "uri": "stado://sources/swift-transformers/sha256/0880bd491392fc20c9400337bcb8940d314a97852df67d306480136a2be9af15/source.tar.gz",
+            "sha256": "0880bd491392fc20c9400337bcb8940d314a97852df67d306480136a2be9af15",
+            "mount": "swift-transformers.tar.gz",
+            "extract": false
+          },
+          "tuist-cache": {
+            "uri": "stado://sources/wisent-ios-tuist-cache/sha256/ad462c83383528de6e11c814131a78137a62f4f99b57e75eb2440553ea0faefb/source.tar.gz",
+            "sha256": "ad462c83383528de6e11c814131a78137a62f4f99b57e75eb2440553ea0faefb",
+            "mount": "tuist-cache.tar.gz",
+            "extract": false
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "testflight",
+            "platform": "ios-arm64",
+            "argv": [
+              "python3",
+              "release/deliver-testflight.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "AC_API_KEY_ID": "wisent-apple-notary#key_id",
+              "AC_API_ISSUER_ID": "wisent-apple-notary#issuer_id",
+              "AC_API_KEY_P8": "wisent-apple-notary#private_key_p8_base64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-landing",
+      "remote": "https://github.com/wisent-ai/wisent-landing.git",
+      "checkouts": [
+        "wisent-landing-blog"
+      ],
+      "releases": false,
+      "product": "wisent-landing",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "d24373fd734397fe38b29defae6bc01323b186a8",
+      "manifest_sha256": "b71227d0abec9041452990c56818e69d637a5019dac86114edaa108e89956624",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-landing",
+        "releases": false,
+        "reason": "The repository contains a buildable historical Next.js site but no committed deployment binding, delivery configuration, or durable release channel; the live www.wisent.ai Vercel project is bound to the distinct wisent-landing-new repository rather than this superseded source tree."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-landing-new",
+      "remote": "https://github.com/wisent-ai/wisent-landing-new.git",
+      "checkouts": [
+        "wisent-landing-new"
+      ],
+      "releases": true,
+      "product": "wisent-landing-new",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "7cf4d608949f7a8656f96de33393bbcec5b59e51",
+      "manifest_sha256": "debb7b8f0d3476a22bfdebefa0d11c94802269ca223c318d87f20bfa93388a91",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-landing-new",
+        "releases": true,
+        "version_source": {
+          "kind": "json",
+          "path": "package.json",
+          "pointer": "/version"
+        },
+        "platforms": {
+          "web-source": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/stado-vercel-build.py"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/vercel-output.tar.gz": "vercel-output.tar.gz",
+              ".wisent-output/evidence/build.json": "evidence/build.json"
+            },
+            "secret_env": {
+              "VERCEL_TOKEN": "VERCEL#value"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "vercel-production",
+            "platform": "web-source",
+            "argv": [
+              "python3",
+              "release/stado-vercel-deliver.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "VERCEL_TOKEN": "VERCEL#value"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-logo-generator",
+      "remote": "https://github.com/wisent-ai/wisent-logo-generator.git",
+      "checkouts": [
+        "wisent-logo-generator"
+      ],
+      "releases": false,
+      "product": "wisent-logo-generator",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "9c93c79e7163943781f51668989123a1a68a61f9",
+      "manifest_sha256": "c38202c20d362b24ff8dff0aa4e791ced8d3fbe53dc2caa3f7ca9f20ea70525f",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-logo-generator",
+        "releases": false,
+        "reason": "The private Node manifest defines internal logo-generation tooling; it declares no package registry, hosted application, or versioned release publisher."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-marketing-asset-generator",
+      "remote": "https://github.com/wisent-ai/wisent-marketing-asset-generator.git",
+      "checkouts": [
+        "wisent-marketing-asset-generator"
+      ],
+      "releases": false,
+      "product": "wisent-marketing-asset-generator",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "496848a7cea98f6a1fefdaa4a250037b71909926",
+      "manifest_sha256": "34f46c41a61cc359c90ae50ea5e6ab2d29f39b018a7a11e6c1261ce04b514510",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-marketing-asset-generator",
+        "releases": false,
+        "reason": "The private Node manifest defines internal marketing-asset tooling; its workflow is CI-only and it declares no package registry or versioned release publisher."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-optimizer",
+      "remote": "https://github.com/wisent-ai/wisent-optimizer.git",
+      "checkouts": [
+        "wisent-optimizer"
+      ],
+      "releases": true,
+      "product": "wisent-optimizer",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "103b0fd0e83e88f59019e1581c031052cf396227",
+      "manifest_sha256": "181b30ad852703396636daab19fdc8560602e77f3393b119e372c367aa552065",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-optimizer",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "setup.py",
+          "pattern": "(?m)^\\s*version\\s*=\\s*[\\\"'](?P<version>[0-9A-Za-z._-]+)[\\\"']"
+        },
+        "platforms": {
+          "python": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "release-metadata",
+                "argv": [
+                  "python3",
+                  "scripts/stado_release.py",
+                  "quality"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "python3",
+                "scripts/stado_release.py",
+                "build"
+              ]
+            },
+            "stage": {
+              "release/python-distributions.tar": "release/python-distributions.tar"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {},
+        "deliveries": [
+          {
+            "name": "pypi",
+            "platform": "python",
+            "argv": [
+              "python3",
+              "scripts/stado_release.py",
+              "deliver-pypi"
+            ],
+            "required": true,
+            "secret_env": {
+              "PYPI_TOKEN": "PYPI_TOKEN#token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-python",
+      "remote": "https://github.com/wisent-ai/wisent-python.git",
+      "checkouts": [
+        "wisent-python"
+      ],
+      "releases": false,
+      "product": "wisent-python",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "46ff065d37626838fd6e578b92bbebbfbc684a31",
+      "manifest_sha256": "357dbcf71c76ac1a4a9859783f9bd60adaf9b05c0f9a7082252e57579665b8fc",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-python",
+        "releases": false,
+        "reason": "The canonical wisent Python distribution and its PyPI publisher moved to the wisent repository; this legacy repository was superseded and has no independent release artifact or channel."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-research-paper-coding-boost",
+      "remote": "https://github.com/wisent-ai/wisent-research-paper-coding-boost",
+      "checkouts": [
+        "wisent-coding-paper"
+      ],
+      "releases": false,
+      "product": "wisent-coding-paper",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "7b1e05fd4daf807412db092db5c6baab08753914",
+      "manifest_sha256": "3db52d16629e6fb6881ab63523ea871debaebc697c4e6f0b2f3b9396a1ed3e9d",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-coding-paper",
+        "releases": false,
+        "reason": "This repository owns a research manuscript, experiment pipeline, figures, and recorded results; it has no software release manifest or publisher."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-supabase-echo",
+      "remote": "https://github.com/wisent-ai/wisent-supabase-echo.git",
+      "checkouts": [
+        "wisent-supabase-echo"
+      ],
+      "releases": true,
+      "product": "wisent-supabase-echo",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "0b2e4d6f3591b8162a6a932b94e31102fd9d338a",
+      "manifest_sha256": "f0fc42de1cd4448645857b0d8b725c1ef1a783f50b59d6e3bea16f4bd48ccb9e",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-supabase-echo",
+        "releases": true,
+        "version_source": {
+          "kind": "text",
+          "path": "VERSION"
+        },
+        "platforms": {
+          "supabase-source": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/build-source.py",
+                "dist/supabase-source.tar.gz",
+                "supabase/config.toml",
+                "supabase/migrations",
+                "supabase/seeds"
+              ]
+            },
+            "stage": {
+              "dist/supabase-source.tar.gz": "supabase-source.tar.gz",
+              "dist/supabase-source.tar.gz.sha256": "supabase-source.tar.gz.sha256"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "supabase-production",
+            "platform": "supabase-source",
+            "argv": [
+              "python3",
+              "release/deliver-supabase.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "SUPABASE_ACCESS_TOKEN": "supabase-deployment#access_token",
+              "SUPABASE_PROJECT_REF": "supabase-deployment#echo_project_ref",
+              "SUPABASE_DB_PASSWORD": "supabase-deployment#echo_db_password"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-supabase-oko",
+      "remote": "https://github.com/wisent-ai/wisent-supabase-oko.git",
+      "checkouts": [
+        "wisent-supabase-oko"
+      ],
+      "releases": true,
+      "product": "wisent-supabase-oko",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "24e62ab1a20246636ee364dfc1276b57e2d839a4",
+      "manifest_sha256": "12d9094886c6e20159ea2d06ccec897a719d841305a126fe6728263c9a4ac659",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-supabase-oko",
+        "releases": true,
+        "version_source": {
+          "kind": "text",
+          "path": "VERSION"
+        },
+        "platforms": {
+          "supabase-source": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/build-source.py",
+                "dist/supabase-source.tar.gz",
+                "supabase/config.toml",
+                "supabase/migrations",
+                "supabase/functions",
+                "supabase/templates"
+              ]
+            },
+            "stage": {
+              "dist/supabase-source.tar.gz": "supabase-source.tar.gz",
+              "dist/supabase-source.tar.gz.sha256": "supabase-source.tar.gz.sha256"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "supabase-production",
+            "platform": "supabase-source",
+            "argv": [
+              "python3",
+              "release/deliver-supabase.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "SUPABASE_ACCESS_TOKEN": "supabase-deployment#access_token",
+              "SUPABASE_PROJECT_REF": "supabase-deployment#oko_project_ref",
+              "SUPABASE_DB_PASSWORD": "supabase-deployment#oko_db_password"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-supabase-wisent-app",
+      "remote": "https://github.com/wisent-ai/wisent-supabase-wisent-app.git",
+      "checkouts": [
+        "wisent-supabase-wisent-app"
+      ],
+      "releases": true,
+      "product": "wisent-supabase-wisent-app",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "fae21d2ad163801dda187e339d62cdc094ad7157",
+      "manifest_sha256": "b7a50f6b54aea21b173bf9d279a54148caf9bb2b2cda44af90fc703387de8c1e",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-supabase-wisent-app",
+        "releases": true,
+        "version_source": {
+          "kind": "text",
+          "path": "VERSION"
+        },
+        "platforms": {
+          "supabase-source": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/build-source.py",
+                "dist/supabase-source.tar.gz",
+                "supabase/config.toml",
+                "supabase/migrations",
+                "supabase/functions",
+                "supabase/templates"
+              ]
+            },
+            "stage": {
+              "dist/supabase-source.tar.gz": "supabase-source.tar.gz",
+              "dist/supabase-source.tar.gz.sha256": "supabase-source.tar.gz.sha256"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "supabase-production",
+            "platform": "supabase-source",
+            "argv": [
+              "python3",
+              "release/deliver-supabase.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "SUPABASE_ACCESS_TOKEN": "supabase-deployment#access_token",
+              "SUPABASE_PROJECT_REF": "supabase-deployment#wisent_app_project_ref",
+              "SUPABASE_DB_PASSWORD": "supabase-deployment#wisent_app_db_password"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-terminal-session-recovery",
+      "remote": "https://github.com/wisent-ai/wisent-terminal-session-recovery.git",
+      "checkouts": [
+        "wisent-terminal-session-recovery"
+      ],
+      "releases": false,
+      "product": "wisent-terminal-session-recovery",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "7dec45b3ef654e4604d148f7621d2a76333c1a9a",
+      "manifest_sha256": "70da684eb248d391b0414246e201460becbb3a1b3381faa4f257cd5e1fc4a0a5",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-terminal-session-recovery",
+        "releases": false,
+        "reason": "The extension is packaged and installed locally as a VSIX by repository scripts; no Marketplace or versioned artifact publisher is declared."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-tools",
+      "remote": "https://github.com/wisent-ai/wisent-tools.git",
+      "checkouts": [
+        "wisent-tools"
+      ],
+      "releases": true,
+      "product": "wisent-tools",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "53b3041d200f72429a9d508f639fcf38e5b6c7d4",
+      "manifest_sha256": "531055caac9d0ec7fe94a17987ec9dcb1721f8f0e9f1ba39bae26aaf56252ba1",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-tools",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "setup.py",
+          "pattern": "(?m)^\\s*version=\"(?P<version>[0-9A-Za-z.+-]+)\",$"
+        },
+        "platforms": {
+          "python-package": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/build-package.py"
+              ]
+            },
+            "stage": {
+              "dist": "python-distributions"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "pypi",
+            "platform": "python-package",
+            "argv": [
+              "python3",
+              "release/deliver-pypi.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "PYPI_TOKEN": "pypi-publisher#token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-trade",
+      "remote": "https://github.com/wisent-ai/wisent-trade.git",
+      "checkouts": [
+        "wisent-trade"
+      ],
+      "releases": true,
+      "product": "wisent-trade",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "807c3623b0331437dae5177092cbc5d536f20fd8",
+      "manifest_sha256": "0e91e909998bf6f4253ac379139e64d65e6e10339a5c74ea9e4d4dba93e3a70b",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-trade",
+        "releases": true,
+        "version_source": {
+          "kind": "json",
+          "path": "package.json",
+          "pointer": "/version"
+        },
+        "platforms": {
+          "web-source": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/stado-vercel-build.py"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/vercel-output.tar.gz": "vercel-output.tar.gz",
+              ".wisent-output/evidence/build.json": "evidence/build.json"
+            },
+            "secret_env": {
+              "VERCEL_TOKEN": "vercel-deployment#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id",
+              "VERCEL_PROJECT_ID": "vercel-deployment#wisent_trade_project_id"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "candidate",
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "vercel-production",
+            "platform": "web-source",
+            "argv": [
+              "python3",
+              "release/stado-vercel-deliver.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "VERCEL_TOKEN": "vercel-deployment#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id",
+              "VERCEL_PROJECT_ID": "vercel-deployment#wisent_trade_project_id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-uncensored-model",
+      "remote": "https://github.com/wisent-ai/wisent-uncensored-model.git",
+      "checkouts": [
+        "wisent-undetectable-model"
+      ],
+      "releases": false,
+      "product": "wisent-undetectable-model",
+      "source_branch": "feat/stado-native-release-policy",
+      "source_commit": "314878e7bb70ecc723ed4731dae7a40ed6bb5f6d",
+      "manifest_sha256": "a247c1106ef755ce686ef944ce5dff84d427ae3faaed4466c5c0006af75ef856",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-undetectable-model",
+        "releases": false,
+        "reason": "This repository contains model research material and declares no package, hosted service, or versioned release publisher."
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-visuals",
+      "remote": "https://github.com/wisent-ai/wisent-visuals.git",
+      "checkouts": [
+        "wisent-visuals"
+      ],
+      "releases": true,
+      "product": "wisent-visuals",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "0d6b3c91ae8133fa0872809ee58a435756cdc746",
+      "manifest_sha256": "2334a77c5c3c1573e4ec5510da0bfd04f4cc84b6565f0f350ee968bfe0c94877",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-visuals",
+        "releases": true,
+        "version_source": {
+          "kind": "regex",
+          "path": "pyproject.toml",
+          "pattern": "(?m)^\\s*version\\s*=\\s*[\\\"'](?P<version>[0-9A-Za-z._-]+)[\\\"']"
+        },
+        "platforms": {
+          "python": {
+            "runner_platform": "linux-amd64",
+            "quality": [
+              {
+                "name": "release-metadata",
+                "argv": [
+                  "python3",
+                  "scripts/stado_release.py",
+                  "quality"
+                ]
+              }
+            ],
+            "build": {
+              "argv": [
+                "python3",
+                "scripts/stado_release.py",
+                "build"
+              ]
+            },
+            "stage": {
+              "release/python-distributions.tar": "release/python-distributions.tar"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {},
+        "deliveries": [
+          {
+            "name": "pypi",
+            "platform": "python",
+            "argv": [
+              "python3",
+              "scripts/stado_release.py",
+              "deliver-pypi"
+            ],
+            "required": true,
+            "secret_env": {
+              "PYPI_TOKEN": "PYPI_TOKEN#token"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "repository": "wisent-ai/wisent-wisent-app.com",
+      "remote": "https://github.com/wisent-ai/wisent-wisent-app.com.git",
+      "checkouts": [
+        "wisent-app-landing"
+      ],
+      "releases": true,
+      "product": "wisent-app-landing",
+      "source_branch": "feat/stado-native-release",
+      "source_commit": "fdee96e5c57d68c866f1294062f4098b6e791541",
+      "manifest_sha256": "f07032cd11acec5d9ceb1dfb44694c2a4550d7fb5e1910f851a16d63111bfebf",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-app-landing",
+        "releases": true,
+        "version_source": {
+          "kind": "text",
+          "path": "VERSION"
+        },
+        "platforms": {
+          "web": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "release/stado-vercel-build.py",
+                "--team-id",
+                "team_NpYIdK4B8yGCD2snT7xELPmd",
+                "--project-id",
+                "prj_pEcqd1uSQvKiJXZSTQDkB44fL2Ji"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/vercel-output.tar.gz": "vercel-output.tar.gz",
+              ".wisent-output/evidence/build.json": "evidence/build.json"
+            },
+            "secret_env": {
+              "VERCEL_TOKEN": "VERCEL#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id"
+            }
+          }
+        },
+        "promotion": {
+          "channels": [
+            "stable"
+          ],
+          "reconcile": false
+        },
+        "inputs": {},
+        "deliveries": [
+          {
+            "name": "vercel-production",
+            "platform": "web",
+            "argv": [
+              "python3",
+              "release/stado-vercel-deliver.py"
+            ],
+            "required": true,
+            "secret_env": {
+              "VERCEL_TOKEN": "VERCEL#token",
+              "VERCEL_ORG_ID": "vercel-deployment#team_id"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
