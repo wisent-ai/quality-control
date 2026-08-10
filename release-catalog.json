@@ -2687,8 +2687,8 @@
       "releases": true,
       "product": "stado",
       "source_branch": "main",
-      "source_commit": "e444745b84e143bee4037fef48eb9a2903b900fa",
-      "manifest_sha256": "d5aaa3bf47ef82d050cc448210aa5cd561f81bb4a317d6c81953755b12ce5f66",
+      "source_commit": "7471353dbda86eecb4ee78d42f06ce98fa44a483",
+      "manifest_sha256": "04ad3ab17432a423fbd1a739f9061c86c0143499d9c21f523d4f40e7c961fcab",
       "manifest": {
         "schema_version": 1,
         "product": "stado",
@@ -2792,23 +2792,41 @@
             }
           }
         },
-        "runtime": {
-          "binary": "bin/stado",
-          "launcher": "bin/stado",
-          "config_schema": 1,
-          "state_schema": 1,
-          "minimum_stado_version": "0.7.0",
-          "rollback_compatible_with": [
-            "0.6.1"
-          ]
-        },
         "promotion": {
           "channels": [
             "candidate",
             "stable"
           ],
-          "reconcile": true
-        }
+          "reconcile": false
+        },
+        "deliveries": [
+          {
+            "name": "fleet-darwin",
+            "platform": "darwin-arm64",
+            "argv": [
+              "python3",
+              "scripts/release/install-fleet.py",
+              "--target",
+              "lukasz-macbook",
+              "--target",
+              "charless-mac-mini"
+            ],
+            "required": true,
+            "secret_env": {}
+          },
+          {
+            "name": "fleet-linux",
+            "platform": "linux-amd64",
+            "argv": [
+              "python3",
+              "scripts/release/install-fleet.py",
+              "--target",
+              "ubuntu-server-rtx-pro-6000"
+            ],
+            "required": true,
+            "secret_env": {}
+          }
+        ]
       }
     },
     {
