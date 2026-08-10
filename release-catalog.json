@@ -1257,8 +1257,8 @@
       "releases": true,
       "product": "image-video-router",
       "source_branch": "main",
-      "source_commit": "eb5a8aa61141a2df4633d798c18ad3146998ba7e",
-      "manifest_sha256": "763b6c81771e0ba35e534b78a47b0242f90bbabce52093572670e4c8cb353c0b",
+      "source_commit": "0d9a45129dad24f522f8f8f12203b52b60293b54",
+      "manifest_sha256": "fd2ef7257c78165946a697c2e8ff3e41f2b0295d1fa0d14442705debe9971dee",
       "manifest": {
         "schema_version": 1,
         "product": "image-video-router",
@@ -1281,6 +1281,13 @@
               "stage/bin/start": "bin/start"
             },
             "runner_platform": "linux-amd64"
+          }
+        },
+        "inputs": {
+          "onboarding-client-source": {
+            "uri": "stado://sources/echo-web-onboarding/7420e7d7a9033e677f63fe876f1a63e2b2b000b9e365b7c1fd26cc5175665ac5/source.tar.gz",
+            "sha256": "7420e7d7a9033e677f63fe876f1a63e2b2b000b9e365b7c1fd26cc5175665ac5",
+            "mount": "onboarding-client-source"
           }
         },
         "runtime": {
