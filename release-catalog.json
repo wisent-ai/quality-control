@@ -3271,8 +3271,8 @@
       "releases": true,
       "product": "weles-worker",
       "source_branch": "main",
-      "source_commit": "1581a1959c8677f9b785323c2c0976f596b54aa4",
-      "manifest_sha256": "f94c978db1998a640cb23cbb6279da77335fd8552ee145e6bbaab4ba20c2b4b6",
+      "source_commit": "7beebee02d84583d50ce2f5c33ef02808bcc2efd",
+      "manifest_sha256": "02e0fe817bf4e6c48a41ad5296d0ce40c538035cc8316b150e84444667ae34bf",
       "manifest": {
         "schema_version": 1,
         "product": "weles-worker",
@@ -3312,14 +3312,6 @@
             "mount": "wisent-cost-tracker.bundle",
             "extract": false
           }
-        },
-        "runtime": {
-          "binary": "payload/weles-worker.tar.gz",
-          "launcher": "bin/start",
-          "config_schema": 1,
-          "state_schema": 1,
-          "minimum_stado_version": "0.7.0",
-          "rollback_compatible_with": []
         },
         "promotion": {
           "channels": [
@@ -3702,53 +3694,16 @@
       "checkouts": [
         "wisent-backend"
       ],
-      "releases": true,
-      "product": "wisent-backend",
-      "source_branch": "feat/stado-native-release-v1",
-      "source_commit": "6d6fe83ffd79602394c911983f772b21f31c4a87",
-      "manifest_sha256": "1939ae9f20eb80946049a9db63a05bf42f95bc21d90c29fe5b131f9bfe3f51bc",
+      "releases": false,
+      "product": "wisent-backend-test-day",
+      "source_branch": "main",
+      "source_commit": "490bec756b13004298937af19b9e39480ed56eda",
+      "manifest_sha256": "ff8f10eb05c54aedea3551bef48a1ed5dfe88cf10f0e0a115ce4b18857e9bd49",
       "manifest": {
         "schema_version": 1,
-        "product": "wisent-backend",
-        "releases": true,
-        "version_source": {
-          "kind": "regex",
-          "path": "Cargo.toml",
-          "pattern": "(?m)^version\\s*=\\s*\"(?<version>[0-9A-Za-z.+-]+)\"\\s*$"
-        },
-        "platforms": {
-          "linux-amd64": {
-            "runner_platform": "linux-amd64",
-            "quality": [],
-            "build": {
-              "argv": [
-                "bash",
-                "release/stado-build.sh",
-                "--bin",
-                "wisent-backend"
-              ]
-            },
-            "stage": {
-              ".wisent-output/bin/wisent-backend": "bin/wisent-backend",
-              ".wisent-output/evidence/DIGESTS": "evidence/DIGESTS"
-            }
-          }
-        },
-        "promotion": {
-          "channels": [
-            "candidate",
-            "stable"
-          ],
-          "reconcile": false
-        },
-        "runtime": {
-          "binary": "bin/wisent-backend",
-          "launcher": "bin/wisent-backend",
-          "config_schema": 1,
-          "state_schema": 1,
-          "minimum_stado_version": "0.6.1",
-          "rollback_compatible_with": []
-        }
+        "product": "wisent-backend-test-day",
+        "releases": false,
+        "reason": "Superseded test-day repository; production wisent-backend owns the released service."
       }
     },
     {
@@ -4128,9 +4083,9 @@
       ],
       "releases": true,
       "product": "wisent-integrations",
-      "source_branch": "feat/stado-native-release-v1",
-      "source_commit": "edaafd2c65c090d2caf49fa3242e1c90820f0cb1",
-      "manifest_sha256": "59de4bedae91dfa76c190910d49a82fd8a0c1d7c10b925ab7126c44caae66287",
+      "source_branch": "main",
+      "source_commit": "b45065765c0acec65ae537576e41514f6a7b7c06",
+      "manifest_sha256": "9857d6a79f1d8018a367bedbe6f45fecac48cc4dc178ca859faa6c89f2986321",
       "manifest": {
         "schema_version": 1,
         "product": "wisent-integrations",
@@ -4164,14 +4119,6 @@
             "stable"
           ],
           "reconcile": false
-        },
-        "runtime": {
-          "binary": "bin/wisent-integrations",
-          "launcher": "bin/wisent-integrations",
-          "config_schema": 1,
-          "state_schema": 1,
-          "minimum_stado_version": "0.6.1",
-          "rollback_compatible_with": []
         }
       }
     },
