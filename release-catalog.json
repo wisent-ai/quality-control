@@ -2686,9 +2686,9 @@
       ],
       "releases": true,
       "product": "stado",
-      "source_branch": "feat/stado-native-release-submit",
-      "source_commit": "7836e92f13342270db44e825928f1637b07e59b1",
-      "manifest_sha256": "550ab942c93ef7e6277f5cc0859b8137e00edab39deab6b5863eaff591bbd7ff",
+      "source_branch": "main",
+      "source_commit": "e444745b84e143bee4037fef48eb9a2903b900fa",
+      "manifest_sha256": "d5aaa3bf47ef82d050cc448210aa5cd561f81bb4a317d6c81953755b12ce5f66",
       "manifest": {
         "schema_version": 1,
         "product": "stado",
@@ -2797,7 +2797,7 @@
           "launcher": "bin/stado",
           "config_schema": 1,
           "state_schema": 1,
-          "minimum_stado_version": "0.6.1",
+          "minimum_stado_version": "0.7.0",
           "rollback_compatible_with": [
             "0.6.1"
           ]
@@ -3261,9 +3261,9 @@
       ],
       "releases": true,
       "product": "weles-worker",
-      "source_branch": "feat/stado-native-release-v1",
-      "source_commit": "cdc0bec30254271012cf639075228f9a736ef679",
-      "manifest_sha256": "ec557f13a133d4cbaf040783d308aad63a7de546c576a98dceff357292c9805d",
+      "source_branch": "main",
+      "source_commit": "1581a1959c8677f9b785323c2c0976f596b54aa4",
+      "manifest_sha256": "f94c978db1998a640cb23cbb6279da77335fd8552ee145e6bbaab4ba20c2b4b6",
       "manifest": {
         "schema_version": 1,
         "product": "weles-worker",
@@ -3309,7 +3309,7 @@
           "launcher": "bin/start",
           "config_schema": 1,
           "state_schema": 1,
-          "minimum_stado_version": "0.6.1",
+          "minimum_stado_version": "0.7.0",
           "rollback_compatible_with": []
         },
         "promotion": {
