@@ -65,7 +65,7 @@
       "releases": true,
       "product": "entitlements-rotator",
       "source_branch": "feat/stado-native-release-rust-v1",
-      "source_commit": "b235eab093d746cc05806602e15bbbaedcd34bd8",
+      "source_commit": "42c3dbe4c9ed5a783bfedf46946cf3f6a720a3d3",
       "manifest_sha256": "3f8b9143361688244a5c526e36dfb1fb1aaeb654c57cdfaf9e2d3fe40c87540a",
       "manifest": {
         "schema_version": 1,
@@ -1239,7 +1239,7 @@
       "releases": true,
       "product": "image-video-router",
       "source_branch": "feat/stado-native-release-v1",
-      "source_commit": "c95e2fd91daf91dfd2326e714a66e10a342d2745",
+      "source_commit": "80fa40f92f3968da64b535217e4a323506914c18",
       "manifest_sha256": "6e6656143efce4d852314bf40bfc0cd7108a4637e330f7a4ac65d73d8da7ea72",
       "manifest": {
         "schema_version": 1,
@@ -1709,7 +1709,7 @@
       "releases": true,
       "product": "most",
       "source_branch": "feat/stado-native-release-rust-v1",
-      "source_commit": "8acf1c6bb706ba303cab6c7deb795ce4317243e0",
+      "source_commit": "aacc4b51fae3ec3955872cdeacd9607ff494b66c",
       "manifest_sha256": "97c48502aa8b7fbcc4468afe61e1fa103bac7d681463338049a142c10ff838de",
       "manifest": {
         "schema_version": 1,
@@ -1868,7 +1868,7 @@
       "releases": true,
       "product": "oko",
       "source_branch": "feature/stado-native-release-v1",
-      "source_commit": "dbe4665eb0b7facba815229334f226228da0ba34",
+      "source_commit": "f441e3862f07e68f795c74a879672813b476d0a5",
       "manifest_sha256": "2fc7b0d13234af7f4e28e3ff5a3e6cb23837e304e957fe026d39556eb49d7a9c",
       "manifest": {
         "schema_version": 1,
@@ -2323,7 +2323,7 @@
       "releases": false,
       "product": "quality-control",
       "source_branch": "feat/stado-native-release-policy",
-      "source_commit": "8d9e271e769840e7d15e605a212185bb196437a9",
+      "source_commit": "db622e14cdc4fc6d900c168c2a6a502aa63ba59d",
       "manifest_sha256": "060ddb5e7cbc5d01eb4c84c808503ce23980cb65bd8807ab3029d66a75541e56",
       "manifest": {
         "schema_version": 1,
@@ -2342,7 +2342,7 @@
       "releases": true,
       "product": "singularity",
       "source_branch": "feat/stado-native-release-rust-v1",
-      "source_commit": "9fb003ce1371646372ac902a5eafd1c9d92dc856",
+      "source_commit": "89e33e14761b6794e376e2367fde9abd704c885e",
       "manifest_sha256": "261ee4ebb0d94b29a4e1f1bebc2ef737d6ff74f2a5e3d64b9b25c781c6640ca7",
       "manifest": {
         "schema_version": 1,
@@ -2411,7 +2411,7 @@
       "releases": true,
       "product": "skarbiec",
       "source_branch": "feat/stado-native-release-v1",
-      "source_commit": "3e695278ff564271714b7a70ed7a3efb8dd9afa6",
+      "source_commit": "dc66ac53bc83c4882062bba8fda94d774c5575cd",
       "manifest_sha256": "142965f6eb7bd8e96ddc75e1bfc7069321743a205c87cbd80f3387a49d96a107",
       "manifest": {
         "schema_version": 1,
@@ -2669,7 +2669,7 @@
       "releases": true,
       "product": "stado",
       "source_branch": "feat/stado-native-release-submit",
-      "source_commit": "10c231b4aac2a664056f9ecc178a348fb42d2a14",
+      "source_commit": "7836e92f13342270db44e825928f1637b07e59b1",
       "manifest_sha256": "550ab942c93ef7e6277f5cc0859b8137e00edab39deab6b5863eaff591bbd7ff",
       "manifest": {
         "schema_version": 1,
@@ -2980,7 +2980,7 @@
       "releases": true,
       "product": "trading-tools",
       "source_branch": "feat/stado-native-release-rust-v1",
-      "source_commit": "115d645be34ae0d4cd17dbd9bf634e7c23c3374e",
+      "source_commit": "8cfb015346aee83f8d9903a61dc0718ea8210834",
       "manifest_sha256": "3a1f0f871244df17e90b63dd8ba6e1dc54ac613002cfd37a1a2e3bf429af35fd",
       "manifest": {
         "schema_version": 1,
@@ -3049,7 +3049,7 @@
       "releases": false,
       "product": "transcript-label-trainer",
       "source_branch": "feat/stado-native-release-policy",
-      "source_commit": "995b526632cc64df88ec3b64d87a56537e641e61",
+      "source_commit": "fbb4cb9f3398c93c2372ea4dfafea998b46de295",
       "manifest_sha256": "934342cb043e6c3835cdb7cce7545c5c59f83019577144c7352b14a2d611edad",
       "manifest": {
         "schema_version": 1,
@@ -3067,7 +3067,7 @@
       "releases": false,
       "product": "transcript-lake",
       "source_branch": "feat/stado-native-release-policy",
-      "source_commit": "2917f9b7310d7075b2a4ad680fc89f103c47acd7",
+      "source_commit": "6d13e4d61f59ec06d9c632efaf820da288db8858",
       "manifest_sha256": "04f5755b3cf131eca70879ea4724aabdf5533d1f993a8de008be1aca147f3324",
       "manifest": {
         "schema_version": 1,
@@ -3085,7 +3085,7 @@
       "releases": true,
       "product": "ugc-cli",
       "source_branch": "feat/stado-native-release-rust-v1",
-      "source_commit": "bcee29859a0a344246649e201ab2b20902598781",
+      "source_commit": "7379758d4945dd7340e4cd0253aed74dc4d1488f",
       "manifest_sha256": "f137bedc305e5399ae8c41c0011fc70d4ad815818e981e8acfc7a8820f09729a",
       "manifest": {
         "schema_version": 1,
