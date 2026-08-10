@@ -7,6 +7,8 @@ def canonical(value: object) -> bytes:
 
 def remote_slug(remote: str) -> str:
     value=remote.removesuffix(".git").rstrip("/")
+    if "huggingface.co/" in value:
+        return "huggingface:" + value.split("huggingface.co/", 1)[1]
     return "/".join(value.split("/")[-2:])
 
 def main() -> None:

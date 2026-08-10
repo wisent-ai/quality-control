@@ -2,6 +2,24 @@
   "schema_version": 1,
   "repositories": [
     {
+      "repository": "huggingface:spaces/wisent-ai/wisent",
+      "remote": "https://huggingface.co/spaces/wisent-ai/wisent",
+      "checkouts": [
+        ".deploy_space_wisent"
+      ],
+      "releases": false,
+      "product": "wisent-space-mirror",
+      "source_branch": "main",
+      "source_commit": "1036d2b9b318154b0ee75cca7668079c702f4ded",
+      "manifest_sha256": "df6bb667fccb3e257f1bffed2d74678c70df28428015d5de9e86d40663d20d99",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-space-mirror",
+        "releases": false,
+        "reason": "Provider mirror only; the canonical wisent repository builds and delivers the Hugging Face Space artifact through Stado."
+      }
+    },
+    {
       "repository": "lbartoszcze/AutoVersion",
       "remote": "https://github.com/lbartoszcze/AutoVersion.git",
       "checkouts": [
@@ -2323,7 +2341,7 @@
       "releases": false,
       "product": "quality-control",
       "source_branch": "feat/stado-native-release-policy",
-      "source_commit": "db622e14cdc4fc6d900c168c2a6a502aa63ba59d",
+      "source_commit": "1777bc85c7153184aa4b06b03e07a9a57b6283f9",
       "manifest_sha256": "060ddb5e7cbc5d01eb4c84c808503ce23980cb65bd8807ab3029d66a75541e56",
       "manifest": {
         "schema_version": 1,
@@ -3458,85 +3476,15 @@
     },
     {
       "repository": "wisent-ai/wisent",
-      "remote": "https://huggingface.co/spaces/wisent-ai/wisent",
-      "checkouts": [
-        ".deploy_space_wisent"
-      ],
-      "releases": true,
-      "product": "wisent",
-      "source_branch": "feat/stado-native-release",
-      "source_commit": "0b171ef8919a8251ef245b26fad17465eeeb31c8",
-      "manifest_sha256": "f7e95bc0ee273e9c9c79a331226ff251f257c20a21b365de3b99f330ec051fdc",
-      "manifest": {
-        "schema_version": 1,
-        "product": "wisent",
-        "releases": true,
-        "version_source": {
-          "kind": "text",
-          "path": "VERSION"
-        },
-        "platforms": {
-          "space": {
-            "runner_platform": "linux-amd64",
-            "quality": [
-              {
-                "name": "release-metadata",
-                "argv": [
-                  "python3",
-                  "scripts/stado_release.py",
-                  "quality"
-                ]
-              }
-            ],
-            "build": {
-              "argv": [
-                "python3",
-                "scripts/stado_release.py",
-                "build"
-              ]
-            },
-            "stage": {
-              "release/space-bundle.tar": "release/space-bundle.tar"
-            }
-          }
-        },
-        "promotion": {
-          "channels": [
-            "stable"
-          ],
-          "reconcile": false
-        },
-        "inputs": {},
-        "deliveries": [
-          {
-            "name": "huggingface-space",
-            "platform": "space",
-            "argv": [
-              "python3",
-              "scripts/stado_release.py",
-              "deliver-huggingface",
-              "--repo-id",
-              "wisent-ai/wisent"
-            ],
-            "required": true,
-            "secret_env": {
-              "HUGGINGFACE_TOKEN": "HUGGINGFACE_TOKEN#token"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "repository": "wisent-ai/wisent",
       "remote": "https://github.com/wisent-ai/wisent.git",
       "checkouts": [
         "wisent"
       ],
       "releases": true,
       "product": "wisent",
-      "source_branch": "feat/stado-native-release",
-      "source_commit": "eed465fb64d2e070169096c5adc7bf22c7c7d0a6",
-      "manifest_sha256": "009bf6ed43e710a9e4779d34efa9d55274795c26efc02b308938a398520ce680",
+      "source_branch": "main",
+      "source_commit": "5fd966c938a992e3ff90cfeca86bcb360c94b5b7",
+      "manifest_sha256": "3bcdfcb4ef614285336b270e0f78b9d6e127709ac854c45ef1f1ef077273ffd2",
       "manifest": {
         "schema_version": 1,
         "product": "wisent",
@@ -3569,6 +3517,20 @@
             "stage": {
               "release/python-distributions.tar": "release/python-distributions.tar"
             }
+          },
+          "space": {
+            "runner_platform": "linux-amd64",
+            "quality": [],
+            "build": {
+              "argv": [
+                "python3",
+                "scripts/stado_space_release.py",
+                "build"
+              ]
+            },
+            "stage": {
+              ".wisent-output/release/space-bundle.tar": "release/space-bundle.tar"
+            }
           }
         },
         "promotion": {
@@ -3590,6 +3552,19 @@
             "required": true,
             "secret_env": {
               "PYPI_TOKEN": "PYPI_TOKEN#token"
+            }
+          },
+          {
+            "name": "huggingface-space",
+            "platform": "space",
+            "argv": [
+              "python3",
+              "scripts/stado_space_release.py",
+              "deliver"
+            ],
+            "required": true,
+            "secret_env": {
+              "HUGGINGFACE_TOKEN": "HUGGINGFACE_TOKEN#token"
             }
           }
         ]
