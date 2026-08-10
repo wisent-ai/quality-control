@@ -1257,7 +1257,7 @@
       "releases": true,
       "product": "image-video-router",
       "source_branch": "main",
-      "source_commit": "00884f60125c239fbbbc2199ec3556262f9e09c4",
+      "source_commit": "eb5a8aa61141a2df4633d798c18ad3146998ba7e",
       "manifest_sha256": "763b6c81771e0ba35e534b78a47b0242f90bbabce52093572670e4c8cb353c0b",
       "manifest": {
         "schema_version": 1,
@@ -2680,7 +2680,7 @@
       "releases": true,
       "product": "stado",
       "source_branch": "main",
-      "source_commit": "7471353dbda86eecb4ee78d42f06ce98fa44a483",
+      "source_commit": "47cccbb753aace894dc823b605e884e88343f3ac",
       "manifest_sha256": "04ad3ab17432a423fbd1a739f9061c86c0143499d9c21f523d4f40e7c961fcab",
       "manifest": {
         "schema_version": 1,
@@ -2936,9 +2936,9 @@
       ],
       "releases": true,
       "product": "trading-autonomy",
-      "source_branch": "feat/stado-native-release",
-      "source_commit": "15ed2b5a93a0c783924ef042fd4b298842f4dba2",
-      "manifest_sha256": "e90776ff0ba631f8ac780ca11fb0f4b327b121717c7104440ffaa3ccdde18408",
+      "source_branch": "main",
+      "source_commit": "1f882ba25863eff6ead0f5a10d033519ac239dca",
+      "manifest_sha256": "6b297c92523b349c8efa2889faf45b2fdbaf32d7ea01268acc0b9ca0af4489cd",
       "manifest": {
         "schema_version": 1,
         "product": "trading-autonomy",
@@ -2958,18 +2958,16 @@
               ]
             },
             "stage": {
-              "dist/bin": "bin",
-              "dist/agent": "agent",
-              "dist/agent_runtime": "agent_runtime"
+              "dist/bin/trading-autonomy-agent.pyz": "bin/trading-autonomy-agent.pyz"
             }
           }
         },
         "runtime": {
-          "binary": "bin/trading-autonomy-agent",
-          "launcher": "bin/trading-autonomy-agent",
+          "binary": "bin/trading-autonomy-agent.pyz",
+          "launcher": "bin/trading-autonomy-agent.pyz",
           "config_schema": 1,
           "state_schema": 1,
-          "minimum_stado_version": "0.1.0",
+          "minimum_stado_version": "0.7.0",
           "rollback_compatible_with": []
         },
         "promotion": {
