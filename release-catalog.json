@@ -1256,9 +1256,9 @@
       ],
       "releases": true,
       "product": "image-video-router",
-      "source_branch": "feat/stado-native-release-v1",
-      "source_commit": "80fa40f92f3968da64b535217e4a323506914c18",
-      "manifest_sha256": "6e6656143efce4d852314bf40bfc0cd7108a4637e330f7a4ac65d73d8da7ea72",
+      "source_branch": "main",
+      "source_commit": "00884f60125c239fbbbc2199ec3556262f9e09c4",
+      "manifest_sha256": "763b6c81771e0ba35e534b78a47b0242f90bbabce52093572670e4c8cb353c0b",
       "manifest": {
         "schema_version": 1,
         "product": "image-video-router",
@@ -1270,14 +1270,7 @@
         },
         "platforms": {
           "linux-amd64": {
-            "quality": [
-              {
-                "name": "image-video-router-release-quality",
-                "argv": [
-                  "scripts/release/quality.sh"
-                ]
-              }
-            ],
+            "quality": [],
             "build": {
               "argv": [
                 "scripts/release/build.sh"
@@ -1295,7 +1288,7 @@
           "launcher": "bin/start",
           "config_schema": 1,
           "state_schema": 1,
-          "minimum_stado_version": "0.6.1",
+          "minimum_stado_version": "0.7.0",
           "rollback_compatible_with": []
         },
         "promotion": {
