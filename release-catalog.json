@@ -1257,7 +1257,7 @@
       "releases": true,
       "product": "image-video-router",
       "source_branch": "main",
-      "source_commit": "29bad488a939468f891d4d9c6256657d177718a2",
+      "source_commit": "ab593feac67495352229c495fb57456dd9cf4e6e",
       "manifest_sha256": "840c471e4ada4a60c5e2c918e751b1ec31a91296cae107025b3d27c40c4c8628",
       "manifest": {
         "schema_version": 1,
