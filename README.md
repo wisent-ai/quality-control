@@ -10,6 +10,18 @@
 
 # Wisent Quality Control
 
+The Rules You Keep Repeating in Code Review, Enforced Before You Read the Diff.
+
+Every team has the same three arguments on every pull request: a commit subject
+that says "fix stuff", a silent fallback that will hide the next outage, and a
+number nobody can explain six months from now. Writing them into a style guide
+changes nothing, because a style guide is not a gate. Quality Control turns those
+rules into one required workflow and three scripts you can run before you commit,
+so the argument happens once and then never again. It reads only the lines your
+change actually touched, and it answers with the file, the line, the rule, and
+what to do instead — not a red cross on a job called `lint`. Seven Wisent
+repositories already merge through it.
+
 **Wisent Quality Control is a small, dependency-free Node.js policy toolkit and
 reusable GitHub workflow for rejecting vague commit subjects and selected forms
 of newly introduced lexical gates, implicit fallback behavior, and magic
@@ -250,6 +262,35 @@ Name the value, derive it from typed metadata, or load it from configuration.
 The action checks the subject (first line), ignores merge commits, recognizes a
 Conventional Commit prefix, requires at least 12 characters, and applies token
 specificity rules. The token threshold alone is not the full acceptance rule.
+
+### Reusable workflows
+
+Two workflows are consumed by other repositories directly, pinned to an exact
+revision rather than a branch, so a change here cannot alter a consumer's gate
+until that consumer moves its pin.
+
+```yaml
+jobs:
+  gates:
+    uses: wisent-ai/quality-control/.github/workflows/rust-gates.yml@<sha>
+  tag:
+    uses: wisent-ai/quality-control/.github/workflows/tag-on-manifest-bump.yml@<sha>
+```
+
+`rust-gates.yml` runs `cargo fmt --all --check`, `cargo clippy --all-targets -- -D
+warnings`, and `cargo build --locked --release`. It accepts `runs-on`
+(`ubuntu-latest`), `toolchain` (`stable`), and `working-directory` (`.`).
+
+`tag-on-manifest-bump.yml` tags the version declared in a manifest exactly once.
+It accepts `manifest` (`Cargo.toml`) and `runs-on` (`ubuntu-latest`).
+
+`required-pr-quality.yml` is the required pull-request workflow described above,
+and `repository-audit.yml` is the manual, always-green baseline inventory.
+
+Consumers as of 2026-08-11: `brama`, `jeden`, `skarbiec`, `transcript-lake`,
+`wisent-backend`, `wisent-integrations`, and `image-video-router`. Pins are not
+synchronized automatically; `skarbiec` currently sits on an older `rust-gates`
+revision than the other six.
 
 ## Organization enforcement
 
