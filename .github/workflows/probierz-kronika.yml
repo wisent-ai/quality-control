@@ -1,0 +1,275 @@
+name: Probierz and Kronika evidence
+
+on:
+  workflow_call:
+    inputs:
+      app-id:
+        description: Probierz application ID registered in wisent-ai/probierz.
+        required: true
+        type: string
+      target:
+        description: Probierz execution target.
+        required: true
+        type: string
+      spec:
+        description: Probierz spec filename or glob.
+        required: true
+        type: string
+      journeys:
+        description: Comma-delimited Probierz journey names the receipt must cover.
+        required: true
+        type: string
+      mode:
+        description: Probierz evidence profile, such as pull-request or release.
+        required: true
+        type: string
+      base-sha:
+        description: Base commit of the exact change under review.
+        required: true
+        type: string
+      head-sha:
+        description: Head commit tested, documented, and admitted by the gate.
+        required: true
+        type: string
+      cargo-manifest:
+        description: Cargo manifest used to build the tested binary.
+        required: true
+        type: string
+      binary-path:
+        description: Repository-relative path to the release binary tested by Probierz.
+        required: true
+        type: string
+      receipt-public-key-fingerprint:
+        description: Trusted SHA-256 fingerprint for the Probierz receipt signing key.
+        required: true
+        type: string
+      runs-on:
+        description: Runner label or JSON label array.
+        type: string
+        default: ubuntu-latest
+      kronika-sources:
+        description: Newline-delimited repository paths supplied to Kronika.
+        type: string
+        default: |-
+          README.md
+          docs
+          src
+          Cargo.toml
+          .github
+      brama-url:
+        description: Authenticated Brama endpoint used by Kronika.
+        type: string
+        default: https://brama.wisent.com
+      kronika-model:
+        description: Brama model selector used by Kronika.
+        type: string
+        default: any
+    secrets:
+      PROBIERZ_RECEIPT_PRIVATE_KEY:
+        description: Ed25519 private key that signs the exact-run evidence receipt.
+        required: true
+      BRAMA_API_KEY:
+        description: Dedicated Brama client bearer used by Kronika.
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    name: Probierz E2 and Kronika documentation gate
+    runs-on: ${{ fromJSON(startsWith(inputs.runs-on, '[') && inputs.runs-on || format('"{0}"', inputs.runs-on)) }}
+    steps:
+      - name: Check out the exact product revision
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ inputs.head-sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          path: product
+
+      - name: Check out the pinned Probierz harness
+        uses: actions/checkout@v4
+        with:
+          repository: wisent-ai/probierz
+          ref: f1e7e0adf3d7f760b3f098916d6df11d145aa566
+          persist-credentials: false
+          path: probierz
+
+      - name: Check out the pinned Kronika gate
+        uses: actions/checkout@v4
+        with:
+          repository: wisent-ai/kronika
+          ref: 27e75055f8d4e5f9460feeacf8b889de57c8dc53
+          persist-credentials: false
+          path: kronika
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            probierz/package-lock.json
+            kronika/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install pinned evidence tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix probierz --no-audit --no-fund
+          npm ci --prefix kronika --no-audit --no-fund
+          npm --prefix kronika run build
+
+      - name: Build the exact product revision
+        shell: bash
+        working-directory: product
+        run: cargo build --locked --release --manifest-path "${{ inputs.cargo-manifest }}"
+
+      - name: Bind Probierz to the product checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest="probierz/apps/${{ inputs.app-id }}/probierz.yaml"
+          test -f "$manifest"
+          python3 - "$manifest" "$GITHUB_WORKSPACE/product" <<'PY'
+          from pathlib import Path
+          import sys
+
+          manifest = Path(sys.argv[1])
+          root = sys.argv[2]
+          lines = manifest.read_text(encoding="utf-8").splitlines()
+          replaced = False
+          for index, line in enumerate(lines):
+              if not replaced and line.startswith("  - root: "):
+                  lines[index] = f"  - root: {root}"
+                  replaced = True
+          if not replaced:
+              raise SystemExit("Probierz application manifest has no repository root")
+          manifest.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
+      - name: Record exact source identities
+        id: identity
+        shell: bash
+        working-directory: probierz
+        run: |
+          set -euo pipefail
+          mkdir -p ../evidence
+          node agent/cli.mjs source-identity "${{ inputs.app-id }}" | tee ../evidence/source-identity.json
+          harness_sha="$(jq -er '.harness.sha256' ../evidence/source-identity.json)"
+          source_sha="$(jq -er '.app.sha256' ../evidence/source-identity.json)"
+          printf 'harness-sha=%s\n' "$harness_sha" >> "$GITHUB_OUTPUT"
+          printf 'source-sha=%s\n' "$source_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Run declared journeys through Probierz
+        id: probierz
+        shell: bash
+        working-directory: probierz
+        env:
+          PRODUCT_BINARY: ${{ github.workspace }}/product/${{ inputs.binary-path }}
+          PRODUCT_REVISION: ${{ inputs.head-sha }}
+        run: |
+          set -euo pipefail
+          test -x "$PRODUCT_BINARY"
+          node agent/cli.mjs run "${{ inputs.target }}" \
+            --app "${{ inputs.app-id }}" \
+            --spec "${{ inputs.spec }}" \
+            --timeout 1200000 \
+            --record \
+            "TUI_CMD=$PRODUCT_BINARY" \
+            "PROBIERZ_BUILD_PATH=$PRODUCT_BINARY" \
+            "PROBIERZ_APP_VERSION=$PRODUCT_REVISION" \
+            "PROBIERZ_RUN_KIND=${{ inputs.mode }}" \
+            | tee ../evidence/probierz-run.json
+          run_id="$(jq -er '.runId' ../evidence/probierz-run.json)"
+          printf 'run-id=%s\n' "$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Sign and verify the Probierz evidence receipt
+        id: receipt
+        shell: bash
+        working-directory: probierz
+        env:
+          PROBIERZ_RECEIPT_PRIVATE_KEY: ${{ secrets.PROBIERZ_RECEIPT_PRIVATE_KEY }}
+          RECEIPT_FINGERPRINT: ${{ inputs.receipt-public-key-fingerprint }}
+          PRODUCT_REVISION: ${{ inputs.head-sha }}
+          RUN_ID: ${{ steps.probierz.outputs.run-id }}
+          HARNESS_SHA: ${{ steps.identity.outputs.harness-sha }}
+          SOURCE_SHA: ${{ steps.identity.outputs.source-sha }}
+          JOURNEYS: ${{ inputs.journeys }}
+        run: |
+          set -euo pipefail
+          umask 077
+          key_file="$RUNNER_TEMP/probierz-receipt-ed25519.pem"
+          printf '%s' "$PROBIERZ_RECEIPT_PRIVATE_KEY" > "$key_file"
+          test -s "$key_file"
+          export PROBIERZ_RECEIPT_PRIVATE_KEY_FILE="$key_file"
+          node agent/cli.mjs receipt \
+            "${{ inputs.app-id }}" "commit-$PRODUCT_REVISION" "$HARNESS_SHA" \
+            --source-sha "$SOURCE_SHA" \
+            --runs "$RUN_ID" \
+            --journeys "$JOURNEYS" \
+            --minimum E2 \
+            > ../evidence/receipt-result.json
+          receipt_file="$(jq -er '.file' ../evidence/receipt-result.json)"
+          node agent/cli.mjs verify-receipt "$receipt_file" \
+            --fingerprint "$RECEIPT_FINGERPRINT" \
+            | tee ../evidence/receipt-verification.json
+          cp "$receipt_file" ../evidence/probierz-receipt.json
+          printf 'receipt-file=%s\n' "$receipt_file" >> "$GITHUB_OUTPUT"
+
+      - name: Enforce the Probierz evidence gate
+        shell: bash
+        working-directory: probierz
+        env:
+          RUN_ID: ${{ steps.probierz.outputs.run-id }}
+          HARNESS_SHA: ${{ steps.identity.outputs.harness-sha }}
+          SOURCE_SHA: ${{ steps.identity.outputs.source-sha }}
+        run: |
+          set -euo pipefail
+          node agent/cli.mjs gate-evaluate \
+            "${{ inputs.app-id }}" "${{ inputs.mode }}" "$HARNESS_SHA" \
+            --source-sha "$SOURCE_SHA" \
+            --runs "$RUN_ID" \
+            | tee ../evidence/probierz-gate.json
+
+      - name: Audit documentation with Kronika
+        shell: bash
+        working-directory: product
+        env:
+          BRAMA_URL: ${{ inputs.brama-url }}
+          BRAMA_API_KEY: ${{ secrets.BRAMA_API_KEY }}
+          KRONIKA_MODEL: ${{ inputs.kronika-model }}
+          KRONIKA_SOURCES: ${{ inputs.kronika-sources }}
+        run: |
+          set -euo pipefail
+          source_args=()
+          while IFS= read -r source; do
+            if [ -n "$source" ]; then
+              source_args+=(--source "$source")
+            fi
+          done <<< "$KRONIKA_SOURCES"
+          node ../kronika/dist/src/cli.js check \
+            --repo . \
+            --base "${{ inputs.base-sha }}" \
+            --head "${{ inputs.head-sha }}" \
+            --model "$KRONIKA_MODEL" \
+            --max-input-bytes 800000 \
+            --max-file-bytes 128000 \
+            --max-diff-bytes 400000 \
+            --json \
+            "${source_args[@]}" \
+            | tee ../evidence/kronika-verdict.json
+
+      - name: Retain receipts, reports, and verdicts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.app-id }}-${{ inputs.head-sha }}-quality-evidence
+          path: |
+            evidence/
+            probierz/test-results/${{ inputs.app-id }}/
+          if-no-files-found: error
+          retention-days: 14
