@@ -93,7 +93,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: wisent-ai/probierz
-          ref: f1e7e0adf3d7f760b3f098916d6df11d145aa566
+          ref: 11429ff83239ddbfbfc2937d79ce558fa4a530fe
           persist-credentials: false
           path: probierz
 
