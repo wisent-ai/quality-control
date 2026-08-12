@@ -251,9 +251,13 @@ jobs:
               source_args+=(--source "$source")
             fi
           done <<< "$KRONIKA_SOURCES"
+          base="${{ inputs.base-sha }}"
+          if [[ "$base" =~ ^0+$ ]]; then
+            base="${{ inputs.head-sha }}^"
+          fi
           node ../kronika/dist/src/cli.js check \
             --repo . \
-            --base "${{ inputs.base-sha }}" \
+            --base "$base" \
             --head "${{ inputs.head-sha }}" \
             --model "$KRONIKA_MODEL" \
             --max-input-bytes 800000 \
