@@ -15,6 +15,14 @@ on:
         description: Probierz spec filename or glob.
         required: true
         type: string
+      journeys:
+        description: Comma-delimited Probierz journey names the receipt must cover.
+        required: true
+        type: string
+      mode:
+        description: Probierz evidence profile, such as pull-request or release.
+        required: true
+        type: string
       base-sha:
         description: Base commit of the exact change under review.
         required: true
@@ -60,11 +68,8 @@ on:
       PROBIERZ_RECEIPT_PRIVATE_KEY:
         description: Ed25519 private key that signs the exact-run evidence receipt.
         required: true
-      KRONIKA_AGENT_ID:
-        description: Dedicated Brama HMAC client identity for Kronika.
-        required: true
-      KRONIKA_AGENT_AUTH_SECRET:
-        description: HMAC secret paired with the dedicated Kronika identity.
+      BRAMA_API_KEY:
+        description: Dedicated Brama client bearer used by Kronika.
         required: true
 
 permissions:
@@ -96,7 +101,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: wisent-ai/kronika
-          ref: cd2615dbdf95ff15c8051e4b6576b41fc04aaadb
+          ref: 27e75055f8d4e5f9460feeacf8b889de57c8dc53
           persist-credentials: false
           path: kronika
 
@@ -173,10 +178,11 @@ jobs:
             --app "${{ inputs.app-id }}" \
             --spec "${{ inputs.spec }}" \
             --timeout 1200000 \
+            --record \
             "TUI_CMD=$PRODUCT_BINARY" \
             "PROBIERZ_BUILD_PATH=$PRODUCT_BINARY" \
             "PROBIERZ_APP_VERSION=$PRODUCT_REVISION" \
-            PROBIERZ_RUN_KIND=pull-request \
+            "PROBIERZ_RUN_KIND=${{ inputs.mode }}" \
             | tee ../evidence/probierz-run.json
           run_id="$(jq -er '.runId' ../evidence/probierz-run.json)"
           printf 'run-id=%s\n' "$run_id" >> "$GITHUB_OUTPUT"
@@ -192,6 +198,7 @@ jobs:
           RUN_ID: ${{ steps.probierz.outputs.run-id }}
           HARNESS_SHA: ${{ steps.identity.outputs.harness-sha }}
           SOURCE_SHA: ${{ steps.identity.outputs.source-sha }}
+          JOURNEYS: ${{ inputs.journeys }}
         run: |
           set -euo pipefail
           umask 077
@@ -199,12 +206,11 @@ jobs:
           printf '%s' "$PROBIERZ_RECEIPT_PRIVATE_KEY" > "$key_file"
           test -s "$key_file"
           export PROBIERZ_RECEIPT_PRIVATE_KEY_FILE="$key_file"
-          journeys="onboarding-first-use,initialize-vault,manage-secrets,delete-and-restore-secret,manage-users-and-sharing,recover-vault-access,use-json-output"
           node agent/cli.mjs receipt \
             "${{ inputs.app-id }}" "commit-$PRODUCT_REVISION" "$HARNESS_SHA" \
             --source-sha "$SOURCE_SHA" \
             --runs "$RUN_ID" \
-            --journeys "$journeys" \
+            --journeys "$JOURNEYS" \
             --minimum E2 \
             > ../evidence/receipt-result.json
           receipt_file="$(jq -er '.file' ../evidence/receipt-result.json)"
@@ -214,7 +220,7 @@ jobs:
           cp "$receipt_file" ../evidence/probierz-receipt.json
           printf 'receipt-file=%s\n' "$receipt_file" >> "$GITHUB_OUTPUT"
 
-      - name: Enforce the Probierz pull-request gate
+      - name: Enforce the Probierz evidence gate
         shell: bash
         working-directory: probierz
         env:
@@ -224,7 +230,7 @@ jobs:
         run: |
           set -euo pipefail
           node agent/cli.mjs gate-evaluate \
-            "${{ inputs.app-id }}" pull-request "$HARNESS_SHA" \
+            "${{ inputs.app-id }}" "${{ inputs.mode }}" "$HARNESS_SHA" \
             --source-sha "$SOURCE_SHA" \
             --runs "$RUN_ID" \
             | tee ../evidence/probierz-gate.json
@@ -234,8 +240,7 @@ jobs:
         working-directory: product
         env:
           BRAMA_URL: ${{ inputs.brama-url }}
-          WISENT_APP_AGENT_ID: ${{ secrets.KRONIKA_AGENT_ID }}
-          WISENT_APP_AGENT_AUTH_SECRET: ${{ secrets.KRONIKA_AGENT_AUTH_SECRET }}
+          BRAMA_API_KEY: ${{ secrets.BRAMA_API_KEY }}
           KRONIKA_MODEL: ${{ inputs.kronika-model }}
           KRONIKA_SOURCES: ${{ inputs.kronika-sources }}
         run: |
