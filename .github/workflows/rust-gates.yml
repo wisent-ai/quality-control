@@ -40,7 +40,7 @@ on:
         type: string
         default: .
     secrets:
-      repository-token:
+      repository_token:
         description: Token used only when Cargo must read a private Git dependency.
         required: false
 
@@ -58,15 +58,14 @@ jobs:
         with:
           persist-credentials: false
       - name: Configure private Git dependency access
-        if: ${{ secrets.repository-token != '' }}
+        if: ${{ secrets.repository_token != '' }}
         env:
-          REPOSITORY_TOKEN: ${{ secrets.repository-token }}
+          REPOSITORY_TOKEN: ${{ secrets.repository_token }}
         run: |
           git config --global \
             url."https://x-access-token:${REPOSITORY_TOKEN}@github.com/".insteadOf \
             https://github.com/
           printf '%s\n' 'CARGO_NET_GIT_FETCH_WITH_CLI=true' >> "$GITHUB_ENV"
-
 
       - uses: dtolnay/rust-toolchain@stable
         with:
