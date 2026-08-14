@@ -58,10 +58,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Configure private Git dependency access
-        if: ${{ secrets.repository_token != '' }}
         env:
           REPOSITORY_TOKEN: ${{ secrets.repository_token }}
         run: |
+          [ -z "$REPOSITORY_TOKEN" ] && exit 0
           git config --global \
             url."https://x-access-token:${REPOSITORY_TOKEN}@github.com/".insteadOf \
             https://github.com/
