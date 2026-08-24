@@ -44,9 +44,9 @@ on:
         required: true
         type: string
       runs-on:
-        description: Runner label or JSON label array.
+        description: Stado-managed runner labels as a JSON array.
         type: string
-        default: ubuntu-latest
+        default: '["self-hosted","macOS","ARM64","stado-precheck"]'
       kronika-sources:
         description: Newline-delimited repository paths supplied to Kronika.
         type: string
@@ -56,10 +56,10 @@ on:
           src
           Cargo.toml
           .github
-      brama-url:
-        description: Authenticated Brama endpoint used by Kronika.
+      stado-binary:
+        description: Stado binary installed on the managed runner.
         type: string
-        default: https://brama.wisent.com
+        default: /Users/charles/.stado/bin/stado
       kronika-model:
         description: Brama model selector used by Kronika.
         type: string
@@ -235,11 +235,36 @@ jobs:
             --runs "$RUN_ID" \
             | tee ../evidence/probierz-gate.json
 
+      - name: Resolve private Brama route through Stado
+        id: brama
+        shell: bash
+        env:
+          STADO_BINARY: ${{ inputs.stado-binary }}
+        run: |
+          set -euo pipefail
+          test -x "$STADO_BINARY"
+          "$STADO_BINARY" resolver resolve stado://service/brama \
+            --consumer kronika \
+            --json \
+            > evidence/brama-resolution.json
+          "$STADO_BINARY" service directory connect brama \
+            --json \
+            > evidence/brama-route.json
+          brama_url="$(jq -er '.url' evidence/brama-route.json)"
+          case "$brama_url" in
+            http://127.0.0.1:*|http://localhost:*) ;;
+            *)
+              printf '%s\n' "Stado resolved Brama outside the runner's private loopback route: $brama_url"
+              exit 1
+              ;;
+          esac
+          printf 'url=%s\n' "$brama_url" >> "$GITHUB_OUTPUT"
+
       - name: Audit documentation with Kronika
         shell: bash
         working-directory: product
         env:
-          BRAMA_URL: ${{ inputs.brama-url }}
+          BRAMA_URL: ${{ steps.brama.outputs.url }}
           BRAMA_API_KEY: ${{ secrets.BRAMA_API_KEY }}
           KRONIKA_MODEL: ${{ inputs.kronika-model }}
           KRONIKA_SOURCES: ${{ inputs.kronika-sources }}
