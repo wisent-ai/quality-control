@@ -9,12 +9,14 @@
   "bin": {
     "wisent-check-keyword-logic": "scripts/check-no-keyword-logic.mjs",
     "wisent-check-fallbacks": "scripts/check-no-fallbacks.mjs",
-    "wisent-check-magic-constants": "scripts/check-no-magic-constants.mjs"
+    "wisent-check-magic-constants": "scripts/check-no-magic-constants.mjs",
+    "wisent-check-desktop-cli-coupling": "scripts/check-no-desktop-cli-coupling.mjs"
   },
   "files": [
     "scripts/check-no-keyword-logic.mjs",
     "scripts/check-no-fallbacks.mjs",
     "scripts/check-no-magic-constants.mjs",
+    "scripts/check-no-desktop-cli-coupling.mjs",
     "LICENSE",
     "README.md"
   ],

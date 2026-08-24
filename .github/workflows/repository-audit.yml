@@ -51,6 +51,8 @@ jobs:
 
           node ../quality-control/scripts/check-no-magic-constants.mjs --all > ../audit-results/constants-policy.log 2>&1
           echo "$?" > ../audit-results/constants-policy.exit
+          node ../quality-control/scripts/check-no-desktop-cli-coupling.mjs --all > ../audit-results/desktop-cli-policy.log 2>&1
+          echo "$?" > ../audit-results/desktop-cli-policy.exit
 
           {
             echo "# Repository audit"
@@ -58,7 +60,7 @@ jobs:
             echo "Repository: ${{ inputs.repository }}"
             echo "Ref: ${{ inputs.ref }}"
             echo
-            for policy in lexical-policy fallback-policy constants-policy; do
+            for policy in lexical-policy fallback-policy constants-policy desktop-cli-policy; do
               status="$(cat "../audit-results/${policy}.exit")"
               if [ "$status" = "0" ]; then
                 echo "- ${policy}: pass"

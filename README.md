@@ -12,11 +12,11 @@
 
 The Rules You Keep Repeating in Code Review, Enforced Before You Read the Diff.
 
-Every team has the same three arguments on every pull request: a commit subject
-that says "fix stuff", a silent fallback that will hide the next outage, and a
-number nobody can explain six months from now. Writing them into a style guide
+Every team has the same four arguments on every pull request: a commit subject
+that says "fix stuff", a silent fallback that will hide the next outage, a number nobody can explain six months from now, and a
+desktop application that shells out to its product instead of using an API. Writing them into a style guide
 changes nothing, because a style guide is not a gate. Quality Control turns those
-rules into one required workflow and three scripts you can run before you commit,
+rules into one required workflow and four scripts you can run before you commit,
 so the argument happens once and then never again. It reads only the lines your
 change actually touched, and it answers with the file, the line, the rule, and
 what to do instead — not a red cross on a job called `lint`. Seven Wisent
@@ -24,8 +24,8 @@ repositories already merge through it.
 
 **Wisent Quality Control is a small, dependency-free Node.js policy toolkit and
 reusable GitHub workflow for rejecting vague commit subjects and selected forms
-of newly introduced lexical gates, implicit fallback behavior, and magic
-constants.**
+of newly introduced lexical gates, implicit fallback behavior, magic
+constants, and desktop applications coupled to a product command-line interface.**
 
 It is a source-review guard, not a compiler, semantic analyzer, security scanner,
 proof of correctness, or substitute for product-specific review and tests.
@@ -67,6 +67,8 @@ Quality Control serves:
 - changed-line scanning for selected hidden fallback/default patterns;
 - changed-line scanning for significant string and numeric literals embedded in
   logic;
+- desktop-repository scanning for product-CLI process launches and command
+  strings in user-visible text;
 - `--all`, `--staged`, `--worktree`, `--base`, and `--range` scan modes;
 - a reusable required GitHub workflow for pull requests and merge queues;
 - an organization-ruleset installer targeting all repositories except the host;
@@ -104,6 +106,7 @@ Quality Control serves:
 | no keyword logic | Swift, MJS, JS, TS, TSX, Python, shell, YAML, JSON |
 | no fallbacks | Swift, MJS, JS, TS, TSX, Python |
 | no magic constants | Swift, MJS, JS, TS, TSX, Python |
+| no desktop CLI coupling | Swift (repositories named `*-desktop` only) |
 
 Common exclusions include `.build/`, `.git/`, `.swiftpm/`, `.work/`,
 `node_modules/`, and test paths. Exact exclusions are the source of truth in each
@@ -133,7 +136,7 @@ script; they are not guaranteed to remain identical across policies.
 
 - **Actor:** a migration owner.
 - **Initial state:** an existing repository may predate the policy.
-- **Outcome:** the manual `Repository audit` workflow uploads three logs, three
+- **Outcome:** the manual `Repository audit` workflow uploads four logs, four
   exit-status files, and a summary artifact while leaving the workflow green.
 - **Boundary:** the artifact reports heuristic findings; it does not prioritize,
   waive, or repair them.
@@ -156,7 +159,7 @@ Git change boundary
 GitHub PR / merge group
            │
            ├─ informative-commits composite action
-           └─ reusable workflow runs three policy jobs
+           └─ reusable workflow runs four policy jobs
                          │
                   organization ruleset gate
 ```
@@ -181,6 +184,7 @@ cd quality-control
 node scripts/check-no-keyword-logic.mjs --all
 node scripts/check-no-fallbacks.mjs --all
 node scripts/check-no-magic-constants.mjs --all
+node scripts/check-no-desktop-cli-coupling.mjs --all
 ```
 
 Run against staged changes (the default mode):
@@ -189,6 +193,7 @@ Run against staged changes (the default mode):
 node scripts/check-no-keyword-logic.mjs --staged
 node scripts/check-no-fallbacks.mjs --staged
 node scripts/check-no-magic-constants.mjs --staged
+node scripts/check-no-desktop-cli-coupling.mjs --staged
 ```
 
 Expected result: each guard prints a pass with its candidate-file count, or prints
@@ -199,13 +204,15 @@ source:
 
 - `wisent-check-keyword-logic`;
 - `wisent-check-fallbacks`;
-- `wisent-check-magic-constants`.
+- `wisent-check-magic-constants`.;
+- `wisent-check-desktop-cli-coupling`.
+
 
 No public npm availability is promised by this README.
 
 ## Primary interfaces
 
-All three source guards accept exactly one mode:
+All four source guards accept exactly one mode:
 
 ```text
 --all
@@ -249,6 +256,19 @@ node scripts/check-no-magic-constants.mjs --range <before>..<after>
 
 Flags selected significant literals in assignment and logic-sensitive lines.
 Name the value, derive it from typed metadata, or load it from configuration.
+### No-desktop-cli-coupling
+
+```bash
+node scripts/check-no-desktop-cli-coupling.mjs --base <base-sha>
+```
+
+Runs only in repositories whose name ends in `-desktop`; any other repository is
+skipped with a pass. Flags process launching outside the allowlisted
+backend-launcher file (a `BackendProcess` or `Runtime` file name), `command:`
+arguments on UI panels, and user-visible string literals containing shell
+commands, install instructions, or environment assignments. A desktop
+application reaches its product over loopback HTTP/JSON, local state files, or
+a linked library instead of its command-line interface.
 
 ### Informative commit action
 

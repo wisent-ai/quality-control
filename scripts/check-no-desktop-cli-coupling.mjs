@@ -6,20 +6,9 @@ import { spawnSync } from 'node:child_process';
 const ROOT = git(['rev-parse', '--show-toplevel']).trim();
 const ZERO_SHA = /^0+$/;
 const SOURCE_EXTENSIONS = new Set([
-  '.swift',
-  '.mjs',
-  '.js',
-  '.ts',
-  '.tsx',
-  '.py',
-  '.sh',
-  '.yml',
-  '.yaml',
-  '.json'
+  '.swift'
 ]);
 const EXCLUDED_FILES = new Set([
-  '.github/workflows/no-fallbacks.yml',
-  '.github/workflows/no-keyword-logic.yml',
   'scripts/check-no-desktop-cli-coupling.mjs',
   'scripts/check-no-fallbacks.mjs',
   'scripts/check-no-keyword-logic.mjs',
@@ -34,13 +23,16 @@ const EXCLUDED_PREFIXES = [
   'node_modules/'
 ];
 
-const KEYWORD_IDENTIFIER_RE = /\b[A-Za-z_][A-Za-z0-9_]*(?:keyword|keywords)[A-Za-z0-9_]*\b/i;
-const SUSPICIOUS_LIST_NAME_RE = /\b(?:signals?|fragments?|phrases?|prefixes?|suffixes?|triggers?|words?|terms?|markers?|patterns?)\b/i;
-const DECLARES_LIST_RE = /\b(?:let|var|const|static\s+let|static\s+var)\s+[A-Za-z_][A-Za-z0-9_]*\s*(?::[^=]+)?=\s*(?:\[|Set\s*\(|new\s+Set\s*\()/;
-const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|`([^`\\]*(?:\\.[^`\\]*)*)`/g;
-const LEXICAL_GATE_RE = /\.(?:contains|hasPrefix|hasSuffix|localizedCaseInsensitiveContains|range|includes|startsWith|endsWith|some|every|test|match)\b|\b(?:contains|hasPrefix|startswith|endswith|includes|re\.search|RegExp|NSRegularExpression|localizedLowercase|lowercased|toLowerCase|lower)\b/;
-const DIRECT_LITERAL_GATE_RE = /\.(?:contains|hasPrefix|hasSuffix|localizedCaseInsensitiveContains|includes|startsWith|endsWith|test|match)\s*\(\s*(["'`])([^"'`]{3,})\1/;
-const REGEX_ALTERNATION_RE = /\/[^/\n]*(?:[A-Za-z][A-Za-z0-9_-]{2,}\|){2,}[A-Za-z][A-Za-z0-9_-]{2,}[^/\n]*\/|#["'][^"'\n]*(?:[A-Za-z][A-Za-z0-9_-]{2,}\|){2,}[A-Za-z][A-Za-z0-9_-]{2,}[^"'\n]*["']/;
+const PROCESS_LAUNCH_RE = /\bProcess\s*\(\s*\)|\bexecutableURL\b|\bNSTask\b/;
+const BACKEND_LAUNCHER_FILE_RE = /(?:BackendProcess|Runtime)[^/]*\.swift$/;
+const PANEL_COMMAND_RE = /\bcommand\s*:/;
+const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"/g;
+const COMMAND_STRING_RE = /`[a-z-]+ [a-z-]+`|curl |export [A-Z_]+=|npm install|brew install/;
+
+if (!isDesktopRepository()) {
+  console.log(`No-desktop-cli-coupling guard skipped (${repositoryName()} is not a desktop repository).`);
+  process.exit(0);
+}
 
 const args = parseArgs(process.argv.slice(2));
 const mode = resolveMode(args);
@@ -62,50 +54,35 @@ for (const file of files) {
   for (const lineNumber of changedLines) {
     const line = lines[lineNumber - 1] ?? '';
     if (isCommentOnlyLine(line)) continue;
-    if (isLikelyDocumentationLine(line)) continue;
 
-    if (KEYWORD_IDENTIFIER_RE.test(line)) {
+    if (PROCESS_LAUNCH_RE.test(line) && !BACKEND_LAUNCHER_FILE_RE.test(file)) {
       violations.push({
         file,
         line: lineNumber,
-        rule: 'keyword-identifier',
-        detail: 'identifier names cannot introduce keyword-based logic',
+        rule: 'process-launch',
+        detail: 'desktop code must not launch processes outside the allowlisted backend-launcher file (BackendProcess/Runtime)',
         source: line.trim()
       });
       continue;
     }
 
-    if (REGEX_ALTERNATION_RE.test(line)) {
+    if (PANEL_COMMAND_RE.test(line)) {
       violations.push({
         file,
         line: lineNumber,
-        rule: 'regex-keyword-gate',
-        detail: 'regex alternation over words is keyword-based logic',
+        rule: 'panel-command-argument',
+        detail: 'UI panels must not receive command arguments; state the fact in plain prose instead',
         source: line.trim()
       });
       continue;
     }
 
-    if (DIRECT_LITERAL_GATE_RE.test(line) && directGateHasNaturalLanguageLiteral(line)) {
+    if (hasCommandString(line)) {
       violations.push({
         file,
         line: lineNumber,
-        rule: 'literal-keyword-gate',
-        detail: 'natural-language literals cannot drive contains/prefix/match logic',
-        source: line.trim()
-      });
-      continue;
-    }
-
-    if (!isPotentialStringListGateLine(line)) continue;
-
-    const window = sourceWindow(lines, lineNumber, 12);
-    if (isStringListGate(window.text)) {
-      violations.push({
-        file,
-        line: lineNumber,
-        rule: 'string-list-keyword-gate',
-        detail: 'string lists cannot drive lexical contains/prefix/match decisions',
+        rule: 'ui-command-string',
+        detail: 'user-visible strings must not contain shell commands, install instructions, or environment assignments',
         source: line.trim()
       });
     }
@@ -113,19 +90,35 @@ for (const file of files) {
 }
 
 if (violations.length > 0) {
-  console.error('No-keyword-logic guard failed.');
+  console.error('No-desktop-cli-coupling guard failed.');
   console.error('');
   for (const violation of violations) {
     console.error(`${violation.file}:${violation.line}: ${violation.rule}: ${violation.detail}`);
     if (violation.source) console.error(`  ${violation.source}`);
   }
   console.error('');
-  console.error('Use structured state, typed metadata, parser output, or model/classifier output.');
-  console.error('Do not make behavior depend on word lists, phrase lists, prefix lists, or contains checks.');
+  console.error('A desktop application reaches its product over loopback HTTP/JSON, local state files, or a linked library.');
+  console.error('Do not build argv for the product CLI or render command strings in the interface.');
   process.exit(1);
 }
 
-console.log(`No-keyword-logic guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
+console.log(`No-desktop-cli-coupling guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
+
+function isDesktopRepository() {
+  return repositoryName().endsWith('-desktop');
+}
+
+function repositoryName() {
+  const result = spawnSync('git', ['config', '--get', 'remote.origin.url'], {
+    cwd: ROOT,
+    encoding: 'utf8'
+  });
+  if (result.status === 0) {
+    const base = result.stdout.trim().split('/').pop().replace(/\.git$/, '');
+    if (base) return base;
+  }
+  return path.basename(ROOT);
+}
 
 function parseArgs(raw) {
   const parsed = { all: false, staged: false, worktree: false, base: '', range: '' };
@@ -160,7 +153,7 @@ function resolveMode(parsed) {
 
 function usage(message) {
   console.error(message);
-  console.error('usage: node check-no-keyword-logic.mjs [--all | --staged | --worktree | --base <sha> | --range <before>..<after>]');
+  console.error('usage: node check-no-desktop-cli-coupling.mjs [--all | --staged | --worktree | --base <sha> | --range <before>..<after>]');
   process.exit(2);
 }
 
@@ -254,76 +247,15 @@ function isCommentOnlyLine(line) {
   const trimmed = line.trim();
   return trimmed.startsWith('//')
     || trimmed.startsWith('///')
-    || trimmed.startsWith('#')
     || trimmed.startsWith('*')
-    || trimmed.startsWith('/*')
-    || trimmed.startsWith('<!--');
+    || trimmed.startsWith('/*');
 }
 
-function sourceWindow(lines, lineNumber, radius) {
-  const start = Math.max(1, lineNumber - radius);
-  const end = Math.min(lines.length, lineNumber + radius);
-  return {
-    start,
-    end,
-    text: lines
-      .slice(start - 1, end)
-      .filter(line => !isCommentOnlyLine(line))
-      .filter(line => !isLikelyDocumentationLine(line))
-      .join('\n')
-  };
-}
-
-function isStringListGate(text) {
-  const literalCount = naturalLanguageLiterals(text).length;
-  if (literalCount < 3) return false;
-  if (!LEXICAL_GATE_RE.test(text)) return false;
-  if (SUSPICIOUS_LIST_NAME_RE.test(text)) return true;
-  return false;
-}
-
-function isPotentialStringListGateLine(line) {
-  const code = codeWithoutStrings(line);
-  if (SUSPICIOUS_LIST_NAME_RE.test(code)) return true;
-  if (DECLARES_LIST_RE.test(code)) return true;
-  return LEXICAL_GATE_RE.test(code) && naturalLanguageLiterals(line).length > 0;
-}
-
-function directGateHasNaturalLanguageLiteral(line) {
-  return naturalLanguageLiterals(line)
-    .some(value => !/^[A-Za-z0-9_.-]+:$/.test(value));
-}
-
-function naturalLanguageLiterals(text) {
-  const literals = [];
-  for (const match of text.matchAll(STRING_LITERAL_RE)) {
-    const value = (match[1] ?? match[2] ?? match[3] ?? '').trim();
-    if (isNaturalLanguageToken(value)) literals.push(value);
+function hasCommandString(line) {
+  for (const match of line.matchAll(STRING_LITERAL_RE)) {
+    if (COMMAND_STRING_RE.test(match[1] ?? '')) return true;
   }
-  return literals;
-}
-
-function isNaturalLanguageToken(value) {
-  if (value.length < 3) return false;
-  if (!/[A-Za-z]/.test(value)) return false;
-  if (/[/_]/.test(value)) return false;
-  if (/^[A-Z0-9_./:-]+$/.test(value)) return false;
-  if (/^https?:\/\//.test(value)) return false;
-  if (/^[./~]/.test(value)) return false;
-  return true;
-}
-
-function codeWithoutStrings(text) {
-  return text.replace(STRING_LITERAL_RE, '""');
-}
-
-function isLikelyDocumentationLine(line) {
-  const trimmed = line.trim();
-  if (!trimmed) return true;
-  if (trimmed.startsWith('"""') || trimmed.startsWith("'''")) return true;
-  if (trimmed.endsWith('"""') || trimmed.endsWith("'''")) return true;
-  if (/[=({[;]|^\s*(?:if|for|while|return|const|let|var|def|class|func)\b/.test(trimmed)) return false;
-  return /\s/.test(trimmed) && /[A-Za-z]/.test(trimmed);
+  return false;
 }
 
 function isTrackedFile(file) {

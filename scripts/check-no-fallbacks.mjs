@@ -14,6 +14,7 @@ const SOURCE_EXTENSIONS = new Set([
   '.py'
 ]);
 const EXCLUDED_FILES = new Set([
+  'scripts/check-no-desktop-cli-coupling.mjs',
   'scripts/check-no-fallbacks.mjs',
   'scripts/check-no-keyword-logic.mjs',
   'scripts/check-no-magic-constants.mjs'
