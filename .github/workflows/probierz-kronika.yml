@@ -56,10 +56,10 @@ on:
           src
           Cargo.toml
           .github
-      stado-binary:
-        description: Stado binary installed on the managed runner.
+      stado-brama-route-file:
+        description: Private Brama route published by Stado on the managed runner.
         type: string
-        default: /Users/charles/.stado/bin/stado
+        default: /Users/Shared/stado-precheck-runner/routes/brama.url
       kronika-model:
         description: Brama model selector used by Kronika.
         type: string
@@ -78,6 +78,9 @@ permissions:
 jobs:
   evidence:
     name: Probierz E2 and Kronika documentation gate
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ${{ fromJSON(startsWith(inputs.runs-on, '[') && inputs.runs-on || format('"{0}"', inputs.runs-on)) }}
     steps:
       - name: Check out the exact product revision
@@ -235,29 +238,29 @@ jobs:
             --runs "$RUN_ID" \
             | tee ../evidence/probierz-gate.json
 
-      - name: Resolve private Brama route through Stado
+      - name: Read the private Brama route published by Stado
         id: brama
         shell: bash
         env:
-          STADO_BINARY: ${{ inputs.stado-binary }}
+          STADO_BRAMA_ROUTE_FILE: ${{ inputs.stado-brama-route-file }}
         run: |
           set -euo pipefail
-          test -x "$STADO_BINARY"
-          "$STADO_BINARY" resolver resolve stado://service/brama \
-            --consumer kronika \
-            --json \
-            > evidence/brama-resolution.json
-          "$STADO_BINARY" service directory connect brama \
-            --json \
-            > evidence/brama-route.json
-          brama_url="$(jq -er '.url' evidence/brama-route.json)"
+          test -r "$STADO_BRAMA_ROUTE_FILE"
+          brama_url="$(tr -d '\r\n' < "$STADO_BRAMA_ROUTE_FILE")"
           case "$brama_url" in
             http://127.0.0.1:*|http://localhost:*) ;;
             *)
-              printf '%s\n' "Stado resolved Brama outside the runner's private loopback route: $brama_url"
+              printf '%s\n' "Stado published an invalid private Brama route: $brama_url"
               exit 1
               ;;
           esac
+          jq -n \
+            --arg service "stado://service/brama" \
+            --arg consumer "kronika" \
+            --arg url "$brama_url" \
+            --arg source "$STADO_BRAMA_ROUTE_FILE" \
+            '{service: $service, consumer: $consumer, url: $url, source: $source}' \
+            > evidence/brama-route.json
           printf 'url=%s\n' "$brama_url" >> "$GITHUB_OUTPUT"
 
       - name: Audit documentation with Kronika
