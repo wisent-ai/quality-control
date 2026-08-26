@@ -34,6 +34,11 @@ proof of correctness, or substitute for product-specific review and tests.
 [Organization rollout](#organization-enforcement) ·
 [Canonical repository](https://github.com/wisent-ai/quality-control)
 
+Durable platform documentation is published at
+[`wisent.com/docs/ground-truth`](https://wisent.com/docs/ground-truth). This
+README remains the repository-local contract for installing and operating the
+policy toolkit.
+
 Current boundary: public development source under Apache-2.0. The repository
 contains reusable scripts, a composite action, an organization-ruleset installer,
 and GitHub workflows. It does not promise a published npm package, immutable
