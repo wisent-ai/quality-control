@@ -32,9 +32,14 @@ on:
       runs-on:
         type: string
         default: ubuntu-latest
+      release-workflow:
+        description: Workflow to dispatch on the version tag; empty means tag only.
+        type: string
+        default: ""
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   tag:
@@ -72,3 +77,29 @@ jobs:
           git tag -a "$tag" -m "$declared, from the version declared in $MANIFEST at ${GITHUB_SHA}"
           git push origin "$tag"
           printf '%s\n' "tagged $tag"
+
+      - name: Dispatch the release workflow
+        if: inputs.release-workflow != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MANIFEST: ${{ inputs.manifest }}
+          RELEASE_WORKFLOW: ${{ inputs.release-workflow }}
+        run: |
+          set -euo pipefail
+          declared="$(sed -n 's/^version = "\(.*\)"/\1/p' "$MANIFEST" | head -1)"
+          test -n "$declared"
+          tag="v$declared"
+          active_or_complete="$(
+            gh run list \
+              --workflow "$RELEASE_WORKFLOW" \
+              --branch "$tag" \
+              --limit 1 \
+              --json databaseId,status,conclusion \
+              --jq '.[0] | select(.status != "completed" or .conclusion == "success") | .databaseId'
+          )"
+          if [ -n "$active_or_complete" ]; then
+            printf '%s\n' "$RELEASE_WORKFLOW already has an active or successful run for $tag."
+            exit 0
+          fi
+          gh workflow run "$RELEASE_WORKFLOW" --ref "$tag"
+          printf '%s\n' "dispatched $RELEASE_WORKFLOW at $tag"
