@@ -60,18 +60,10 @@ on:
         description: Private Brama route published by Stado on the managed runner.
         type: string
         default: /Users/Shared/stado-precheck-runner/routes/brama.url
-      stado-kronika-agent-id-file:
-        description: Kronika agent identity published by Stado on the managed runner.
-        type: string
-        default: /Users/Shared/stado-precheck-runner/routes/kronika-agent-id
-      stado-kronika-agent-secret-file:
-        description: Owner-only Kronika signing secret materialized by Stado from Skarbiec.
-        type: string
-        default: /Users/Shared/stado-precheck-runner/.stado/kronika-agent-auth-secret
       kronika-model:
         description: Brama model selector used by Kronika.
         type: string
-        default: any
+        default: wisent-backend/evaluation
     secrets:
       PROBIERZ_RECEIPT_PRIVATE_KEY:
         description: Ed25519 private key that signs the exact-run evidence receipt.
@@ -251,25 +243,14 @@ jobs:
         shell: bash
         env:
           STADO_BRAMA_ROUTE_FILE: ${{ inputs.stado-brama-route-file }}
-          STADO_KRONIKA_AGENT_ID_FILE: ${{ inputs.stado-kronika-agent-id-file }}
-          STADO_KRONIKA_AGENT_SECRET_FILE: ${{ inputs.stado-kronika-agent-secret-file }}
         run: |
           set -euo pipefail
           test -r "$STADO_BRAMA_ROUTE_FILE"
-          test -r "$STADO_KRONIKA_AGENT_ID_FILE"
-          test -r "$STADO_KRONIKA_AGENT_SECRET_FILE"
           brama_url="$(tr -d '\r\n' < "$STADO_BRAMA_ROUTE_FILE")"
-          agent_id="$(tr -d '\r\n' < "$STADO_KRONIKA_AGENT_ID_FILE")"
           case "$brama_url" in
             http://127.0.0.1:*|http://localhost:*) ;;
             *)
               printf '%s\n' "Stado published an invalid private Brama route: $brama_url"
-              exit 1
-              ;;
-          esac
-          case "$agent_id" in
-            ""|*[!A-Za-z0-9._-]*)
-              printf '%s\n' "Stado published an invalid Kronika agent identity"
               exit 1
               ;;
           esac
@@ -278,13 +259,10 @@ jobs:
             --arg consumer "kronika" \
             --arg url "$brama_url" \
             --arg source "$STADO_BRAMA_ROUTE_FILE" \
-            --arg agentId "$agent_id" \
-            --arg agentIdSource "$STADO_KRONIKA_AGENT_ID_FILE" \
-            --arg authSecretSource "$STADO_KRONIKA_AGENT_SECRET_FILE" \
-            '{service: $service, consumer: $consumer, url: $url, source: $source, agent_id: $agentId, agent_id_source: $agentIdSource, auth_secret_source: $authSecretSource}' \
+            --arg model "${{ inputs.kronika-model }}" \
+            '{service: $service, consumer: $consumer, url: $url, source: $source, authentication: "bounded_bearer", model: $model}' \
             > evidence/brama-route.json
           printf 'url=%s\n' "$brama_url" >> "$GITHUB_OUTPUT"
-          printf 'agent-id=%s\n' "$agent_id" >> "$GITHUB_OUTPUT"
 
       - name: Audit documentation with Kronika
         shell: bash
@@ -294,15 +272,8 @@ jobs:
           BRAMA_API_KEY: ${{ secrets.BRAMA_API_KEY }}
           KRONIKA_MODEL: ${{ inputs.kronika-model }}
           KRONIKA_SOURCES: ${{ inputs.kronika-sources }}
-          WISENT_APP_AGENT_ID: ${{ steps.brama.outputs.agent-id }}
-          WISENT_APP_AGENT_AUTH_SECRET_FILE: ${{ inputs.stado-kronika-agent-secret-file }}
         run: |
           set -euo pipefail
-          test -r "$WISENT_APP_AGENT_AUTH_SECRET_FILE"
-          WISENT_APP_AGENT_AUTH_SECRET="$(cat "$WISENT_APP_AGENT_AUTH_SECRET_FILE")"
-          test -n "$WISENT_APP_AGENT_AUTH_SECRET"
-          printf '::add-mask::%s\n' "$WISENT_APP_AGENT_AUTH_SECRET"
-          export WISENT_APP_AGENT_AUTH_SECRET
           source_args=()
           while IFS= read -r source; do
             if [ -n "$source" ]; then
