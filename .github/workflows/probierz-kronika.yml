@@ -289,7 +289,7 @@ jobs:
             fi
           done <<< "$KRONIKA_SOURCES"
           base="${{ inputs.base-sha }}"
-          if [[ "$base" =~ ^0+$ ]]; then
+          if [ -z "$base" ] || [[ "$base" =~ ^0+$ ]]; then
             base="${{ inputs.head-sha }}^"
           fi
           node ../kronika/dist/src/cli.js check \
