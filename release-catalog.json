@@ -3678,6 +3678,24 @@
       }
     },
     {
+      "repository": "wisent-ai/wisent-backend",
+      "remote": "https://github.com/wisent-ai/wisent-backend.git",
+      "checkouts": [
+        "wisent-backend"
+      ],
+      "releases": false,
+      "product": "wisent-backend",
+      "source_branch": "main",
+      "source_commit": "b9c193779c95c1a976a4aa20966c6d4e7b9d2472",
+      "manifest_sha256": "88f2c22040d937e4a0806d6f2c7c4ed0936a51c2d80d65090abe95921ddbeda0",
+      "manifest": {
+        "schema_version": 1,
+        "product": "wisent-backend",
+        "releases": false,
+        "reason": "The production backend declares no .wisent-release.json and has no tag or release; its api_service, inference_service, training_service, and asc_webhook_bridge are delivered as a hosted deployment through deploy/publish-stado-api-release and .github/workflows/deploy-api.yml rather than a versioned artifact publisher."
+      }
+    },
+    {
       "repository": "wisent-ai/wisent-backend-images",
       "remote": "https://github.com/wisent-ai/wisent-backend-images.git",
       "checkouts": [
@@ -3699,7 +3717,8 @@
       "repository": "wisent-ai/wisent-backend-test-day",
       "remote": "https://github.com/wisent-ai/wisent-backend-test-day.git",
       "checkouts": [
-        "wisent-backend"
+        "wisent-backend-test-day",
+        "wisent-backend-test-day-original-clone"
       ],
       "releases": false,
       "product": "wisent-backend-test-day",
