@@ -290,7 +290,7 @@ specificity rules. The token threshold alone is not the full acceptance rule.
 
 ### Reusable workflows
 
-Two workflows are consumed by other repositories directly, pinned to an exact
+Three workflows are consumed by other repositories directly, pinned to an exact
 revision rather than a branch, so a change here cannot alter a consumer's gate
 until that consumer moves its pin.
 
@@ -306,14 +306,23 @@ jobs:
 warnings`, and `cargo build --locked --release`. It accepts `runs-on`
 (`ubuntu-latest`), `toolchain` (`stable`), and `working-directory` (`.`).
 
+`swift-gates.yml` runs `swift build --build-tests` and `swift test`. It accepts
+`runs-on` (the fleet's `["self-hosted", "macOS", "stado"]` runner, which holds
+the credentials that resolve this organization's private SwiftPM dependencies),
+`working-directory` (`.`), and the three `fixture-*` inputs that hand the tests
+a product binary built earlier in the same run. It exists because 51 of the
+repositories beside it carry a `Package.swift`, at least 20 carry a `Tests`
+directory, and before it none of them ran `swift test` in CI.
+
 `tag-on-manifest-bump.yml` tags the version declared in a manifest exactly once.
 It accepts `manifest` (`Cargo.toml`) and `runs-on` (`ubuntu-latest`).
 
 `required-pr-quality.yml` is the required pull-request workflow described above,
 and `repository-audit.yml` is the manual, always-green baseline inventory.
 
-Consumers as of 2026-08-11: `brama`, `jeden`, `skarbiec`, `transcript-lake`,
-`wisent-backend`, `wisent-integrations`, and `image-video-router`. Pins are not
+Consumers as of 2026-09-01: `brama`, `jeden`, `skarbiec`, `transcript-lake`,
+`wisent-backend`, `wisent-integrations`, and `image-video-router` on
+`rust-gates`, and `skarbiec-desktop` on `swift-gates`. Pins are not
 synchronized automatically; `skarbiec` currently sits on an older `rust-gates`
 revision than the other six.
 

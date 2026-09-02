@@ -1,0 +1,181 @@
+# The gates every Swift repository in the pack runs, in one place.
+#
+# Measured on 2026-09-01, across the 489 clones beside this one: 51 repositories
+# carry a Package.swift, at least 20 of them carry a Tests directory, and the
+# number that run `swift test` anywhere in CI is zero. Their workflows are
+# release.yml, version-check.yml and testflight.yml - publication, not proof. So
+# a Swift test in this pack is written once, passes on the author's machine, and
+# is never executed again by anything.
+#
+# skarbiec-desktop is where that stopped being theoretical. Its
+# BackendClient.updateCredentialFields reads a credential, merges one field and
+# writes the whole item back; if the merge becomes an overwrite the operator's
+# username and password are destroyed silently. A test now drives that against a
+# real broker over loopback. Without this workflow that test would have been run
+# on the evening it was written and never again.
+#
+# It lives here rather than in skarbiec-desktop for the reason rust-gates.yml
+# states: a gate copied into one repository protects one repository, and 51 is
+# 51 places for it to drift. The desktop side already proved the shape - nine
+# applications share one reusable release workflow and each carries a short
+# caller.
+#
+# The gates are FIXED. There is no input to skip the build, skip the tests, or
+# pick a laxer configuration, because an input like that is how a repository
+# quietly opts out of the standard while still appearing to call it.
+#
+# What IS an input is the fixture: a Swift application whose tests drive its
+# product binary needs that binary on disk. This pack is full of that pairing -
+# skarbiec-desktop against skarbiec, and every other <product>-desktop against
+# its product - and quality-control's own no-desktop-cli-coupling rule is about
+# exactly this boundary. The caller builds the product in its own job, uploads
+# it, and names it here. That is a prerequisite, not a relaxation: it cannot
+# make a failing test pass.
+
+name: swift gates
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: >-
+          Runner label set. Defaults to the fleet's self-hosted macOS runner,
+          which is where the desktop applications already build: it holds the
+          git credentials that resolve this organization's private SwiftPM
+          dependencies. A GitHub-hosted macOS label works for a repository
+          whose dependencies are all public, or when repository_token is
+          supplied.
+        type: string
+        default: '["self-hosted", "macOS", "stado"]'
+      working-directory:
+        description: >-
+          Directory holding Package.swift, for repositories whose package is
+          not at the root.
+        type: string
+        default: .
+      fixture-artifact:
+        description: >-
+          Name of an artifact uploaded earlier in the same run holding the
+          product binary the tests drive. Empty means the tests need no
+          product binary.
+        type: string
+        default: ''
+      fixture-executable:
+        description: >-
+          Path, relative to the extracted artifact, of the file to mark
+          executable. Required with fixture-artifact.
+        type: string
+        default: ''
+      fixture-environment:
+        description: >-
+          Name of the environment variable the tests read to find that binary,
+          for example SKARBIEC_BIN. Required with fixture-artifact. Pointing
+          the tests at an absolute path is why the fixture does not have to
+          guess a sibling directory layout.
+        type: string
+        default: ''
+    secrets:
+      repository_token:
+        description: Token used only when SwiftPM must read a private Git dependency.
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ${{ fromJSON(startsWith(inputs.runs-on, '[') && inputs.runs-on || format('"{0}"', inputs.runs-on)) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Same mechanism rust-gates uses for a private cargo dependency: SwiftPM
+      # fetches over https, so rewriting the origin is enough.
+      - name: Configure private Git dependency access
+        env:
+          REPOSITORY_TOKEN: ${{ secrets.repository_token }}
+        run: |
+          [ -z "$REPOSITORY_TOKEN" ] && exit 0
+          git config --global \
+            url."https://x-access-token:${REPOSITORY_TOKEN}@github.com/".insteadOf \
+            https://github.com/
+
+      # Which compiler answered is part of the evidence, not an assumption. A
+      # self-hosted runner's toolchain changes when somebody updates that
+      # machine, and the log is where that becomes visible.
+      - name: Report the toolchain under test
+        run: |
+          swift --version
+          xcodebuild -version || true
+
+      # A fixture named in halves is a fixture that silently does nothing: the
+      # artifact downloads, no variable is exported, and the tests fall back to
+      # whatever path they guess. Refuse instead.
+      - name: Refuse a half-named fixture
+        env:
+          ARTIFACT: ${{ inputs.fixture-artifact }}
+          EXECUTABLE: ${{ inputs.fixture-executable }}
+          VARIABLE: ${{ inputs.fixture-environment }}
+        run: |
+          set -eu
+          if [ -z "$ARTIFACT" ] && [ -z "$EXECUTABLE" ] && [ -z "$VARIABLE" ]; then
+            printf '%s\n' "No product fixture requested."
+            exit 0
+          fi
+          if [ -z "$ARTIFACT" ] || [ -z "$EXECUTABLE" ] || [ -z "$VARIABLE" ]; then
+            printf '%s\n' \
+              "fixture-artifact, fixture-executable and fixture-environment are named together or not at all." \
+              "Got artifact='$ARTIFACT' executable='$EXECUTABLE' environment='$VARIABLE'." \
+              "Two of the three would download a binary the tests are never told about."
+            exit 1
+          fi
+          case "$VARIABLE" in
+            [A-Za-z_]*)
+              if printf '%s' "$VARIABLE" | grep -q '[^A-Za-z0-9_]'; then
+                printf '%s\n' "fixture-environment must be a shell identifier, got '$VARIABLE'."
+                exit 1
+              fi
+              ;;
+            *)
+              printf '%s\n' "fixture-environment must be a shell identifier, got '$VARIABLE'."
+              exit 1
+              ;;
+          esac
+
+      - name: Download the product fixture
+        if: inputs.fixture-artifact != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.fixture-artifact }}
+          path: ${{ runner.temp }}/swift-gates-fixture
+
+      - name: Publish the product fixture to the tests
+        if: inputs.fixture-artifact != ''
+        env:
+          EXECUTABLE: ${{ inputs.fixture-executable }}
+          VARIABLE: ${{ inputs.fixture-environment }}
+          FIXTURE_DIRECTORY: ${{ runner.temp }}/swift-gates-fixture
+        run: |
+          set -eu
+          binary="$FIXTURE_DIRECTORY/$EXECUTABLE"
+          if [ ! -f "$binary" ]; then
+            printf '%s\n' "The fixture artifact holds no $EXECUTABLE. It holds:"
+            ls -R "$FIXTURE_DIRECTORY"
+            exit 1
+          fi
+          chmod +x "$binary"
+          printf '%s=%s\n' "$VARIABLE" "$binary" >> "$GITHUB_ENV"
+          printf '%s\n' "$VARIABLE=$binary"
+
+      # Compiling the tests is its own gate. A test file that has never been
+      # compiled is not a test, and this pack has already shipped one: commit
+      # ade4d3e in skarbiec-desktop pushed a test calling an initializer that
+      # does not exist and an identifier with a space in it.
+      - name: swift build --build-tests
+        working-directory: ${{ inputs.working-directory }}
+        run: swift build --build-tests
+
+      - name: swift test
+        working-directory: ${{ inputs.working-directory }}
+        run: swift test
