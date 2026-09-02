@@ -323,18 +323,26 @@ repository pins: raw colors outside the tokens, Tailwind's default palette,
 gradients, backdrop blur, spinners, oversize radii and shadows, emoji, generic
 icon sets, Google fonts, local primitives, marketing vocabulary and an
 unpinned dependency all fail it. It accepts `runs-on` (the fleet's
-`["self-hosted", "stado"]` runner) and `working-directory` (`.`). It is the
-first shared gate for the Node repositories; until 2026-09-01 none existed
-because no check was common to them, and the design lint is that check.
+`["self-hosted", "stado"]` runner) and `working-directory` (`.`), and the
+secret `repository_token`, the same contract as `swift-gates`: a token with
+`Contents: read` on the organization's private packages, used only to rewrite
+`github.com` origins (https, `ssh://git@github.com/` and `git@github.com:`,
+because npm pins `github:` dependencies over ssh) before `npm ci`. Without it
+a private dependency must resolve through the runner's own git credentials,
+and the fleet's publisher runner has none: measured on `preferences` run
+33672201154, it died on the first private package with `Permission denied
+(publickey)`. It is the first shared gate for the Node repositories; until
+2026-09-01 none existed because no check was common to them, and the design
+lint is that check.
 
 `required-pr-quality.yml` is the required pull-request workflow described above,
 and `repository-audit.yml` is the manual, always-green baseline inventory.
 
-Consumers as of 2026-09-01: `brama`, `jeden`, `skarbiec`, `transcript-lake`,
+Consumers as of 2026-09-02: `brama`, `jeden`, `skarbiec`, `transcript-lake`,
 `wisent-backend`, `wisent-integrations`, and `image-video-router` on
-`rust-gates`, and `skarbiec-desktop` on `swift-gates`. Pins are not
-synchronized automatically; `skarbiec` currently sits on an older `rust-gates`
-revision than the other six.
+`rust-gates`, `skarbiec-desktop` on `swift-gates`, and `preferences` and
+`echo-web` on `design-gate`. Pins are not synchronized automatically;
+`skarbiec` currently sits on an older `rust-gates` revision than the other six.
 
 ## Organization enforcement
 

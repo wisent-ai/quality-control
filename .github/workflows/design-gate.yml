@@ -36,6 +36,13 @@ on:
           application is not at the root.
         type: string
         default: .
+    secrets:
+      repository_token:
+        description: >-
+          Token used only when npm must read a private Git dependency of this
+          organization (Contents: read on those repositories). The same
+          contract as swift-gates.
+        required: false
 
 permissions:
   contents: read
@@ -50,6 +57,36 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      # npm resolves `github:owner/repo#sha` to `git+ssh://git@github.com/...`
+      # and a lockfile pins it that way, so both the ssh and the https origins
+      # are rewritten. Measured on preferences run 33672201154: the fleet's
+      # publisher runner has no ssh key and cannot create `$HOME/.ssh`, so the
+      # first private dependency died with `Permission denied (publickey)`
+      # under a step named "Install the pinned design system". The rewrite
+      # lives in a config file under $RUNNER_TEMP, exported through
+      # GIT_CONFIG_GLOBAL, because that runner's home is not writable either.
+      - name: Configure private Git dependency access
+        env:
+          REPOSITORY_TOKEN: ${{ secrets.repository_token }}
+        run: |
+          set -eu
+          if [ -z "$REPOSITORY_TOKEN" ]; then
+            printf '%s\n' \
+              "No repository_token. Any private dependency must resolve through" \
+              "this runner's own git credentials."
+            exit 0
+          fi
+          printf '%s\n' "repository_token supplied; rewriting github.com origins."
+          config="$RUNNER_TEMP/design-gate-gitconfig"
+          : > "$config"
+          chmod 600 "$config"
+          for origin in https://github.com/ ssh://git@github.com/ git@github.com:; do
+            git config --file "$config" --add \
+              "url.https://x-access-token:${REPOSITORY_TOKEN}@github.com/.insteadOf" \
+              "$origin"
+          done
+          printf 'GIT_CONFIG_GLOBAL=%s\n' "$config" >> "$GITHUB_ENV"
 
       # The lint is part of the pinned package, so `npm ci` installs the exact
       # rule set the repository's dependency names. `--ignore-scripts` keeps
