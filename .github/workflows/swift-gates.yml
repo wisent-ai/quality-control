@@ -39,12 +39,14 @@ on:
     inputs:
       runs-on:
         description: >-
-          Runner label set. Defaults to the fleet's self-hosted macOS runner,
-          which is where the desktop applications already build: it holds the
-          git credentials that resolve this organization's private SwiftPM
-          dependencies. A GitHub-hosted macOS label works for a repository
-          whose dependencies are all public, or when repository_token is
-          supplied.
+          Runner label set. Defaults to the fleet's self-hosted macOS builder,
+          which is where the desktop applications already build. That host
+          resolves this organization's private SwiftPM dependencies through a
+          provisioned `credential.helper store` file rather than a workflow
+          secret - see stado/deploy/configure_git_credentials.sh, and
+          report_git_auth.sh beside it when a fetch fails. A GitHub-hosted
+          macOS label works for a package whose dependencies are all public,
+          or when repository_token is supplied.
         type: string
         default: '["self-hosted", "macOS", "stado"]'
       working-directory:
@@ -92,11 +94,27 @@ jobs:
 
       # Same mechanism rust-gates uses for a private cargo dependency: SwiftPM
       # fetches over https, so rewriting the origin is enough.
+      #
+      # Which of the two paths ran is printed. rust-gates exits silently when no
+      # token is supplied, and a silent exit here would leave a resolution
+      # failure on a hosted runner looking like a compiler problem.
       - name: Configure private Git dependency access
         env:
           REPOSITORY_TOKEN: ${{ secrets.repository_token }}
         run: |
-          [ -z "$REPOSITORY_TOKEN" ] && exit 0
+          set -eu
+          if [ -z "$REPOSITORY_TOKEN" ]; then
+            printf '%s\n' \
+              "No repository_token supplied. Any private SwiftPM dependency must" \
+              "resolve through this runner's own git credentials; on the fleet's" \
+              "macOS builder that is the credential.helper store file installed by" \
+              "stado host install-secret. If a fetch fails with 'failed to acquire" \
+              "username/password', that helper is missing on this host, or this" \
+              "caller needs repository_token with Contents: read on the private" \
+              "dependency."
+            exit 0
+          fi
+          printf '%s\n' "repository_token supplied; rewriting github.com origins."
           git config --global \
             url."https://x-access-token:${REPOSITORY_TOKEN}@github.com/".insteadOf \
             https://github.com/
