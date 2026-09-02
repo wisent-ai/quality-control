@@ -93,11 +93,9 @@ jobs:
           persist-credentials: false
 
       # Same mechanism rust-gates uses for a private cargo dependency: SwiftPM
-      # fetches over https, so rewriting the origin is enough.
-      #
-      # Which of the two paths ran is printed. rust-gates exits silently when no
-      # token is supplied, and a silent exit here would leave a resolution
-      # failure on a hosted runner looking like a compiler problem.
+      # fetches over https, so rewriting the origin is enough. When no token is
+      # supplied, say so rather than exiting in silence - the resolution step
+      # below is what decides whether that was survivable.
       - name: Configure private Git dependency access
         env:
           REPOSITORY_TOKEN: ${{ secrets.repository_token }}
@@ -105,19 +103,55 @@ jobs:
           set -eu
           if [ -z "$REPOSITORY_TOKEN" ]; then
             printf '%s\n' \
-              "No repository_token supplied. Any private SwiftPM dependency must" \
-              "resolve through this runner's own git credentials; on the fleet's" \
-              "macOS builder that is the credential.helper store file installed by" \
-              "stado host install-secret. If a fetch fails with 'failed to acquire" \
-              "username/password', that helper is missing on this host, or this" \
-              "caller needs repository_token with Contents: read on the private" \
-              "dependency."
+              "No repository_token. Any private dependency must resolve through" \
+              "this runner's own git credentials."
             exit 0
           fi
           printf '%s\n' "repository_token supplied; rewriting github.com origins."
           git config --global \
             url."https://x-access-token:${REPOSITORY_TOKEN}@github.com/".insteadOf \
             https://github.com/
+
+      # Resolution is its own step so that a credential problem is reported as a
+      # credential problem. Measured on skarbiec-desktop run 33581106456: the
+      # fleet's macOS builder resolved four public dependencies and then died on
+      # the private one with `could not read Username for
+      # 'https://github.com': terminal prompts disabled`, forty lines into a
+      # resolution log, under a step named "swift build".
+      #
+      # This runs the real resolution rather than probing for a credential
+      # first. `git credential fill` was tried and rejected: on macOS it is
+      # answered by the system osxkeychain helper and reports success while the
+      # fetch still fails, which is a green check in front of a broken build -
+      # the exact shape of defect this pack's gates exist to refuse.
+      - name: swift package resolve
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          set -u
+          status=0
+          swift package resolve > resolve.log 2>&1 || status=$?
+          cat resolve.log
+          if [ "$status" -eq 0 ]; then
+            rm -f resolve.log
+            exit 0
+          fi
+          if grep -qE "could not read Username|Authentication failed|terminal prompts disabled|Repository not found|Permission denied" resolve.log; then
+            printf '\n%s\n' \
+              "Resolution failed on authentication, not on a version." \
+              "" \
+              "A dependency above is private to this organization and this runner" \
+              "cannot read it. Two ways out:" \
+              "  1. Install the credential helper on this host:" \
+              "     stado host install-secret, then" \
+              "     stado/deploy/configure_git_credentials.sh. Run" \
+              "     stado/deploy/report_git_auth.sh to see what is present now." \
+              "  2. Or pass repository_token to this workflow, holding a" \
+              "     fine-grained personal access token or GitHub App installation" \
+              "     token with Contents: read on the private packages this" \
+              "     Package.swift names."
+          fi
+          rm -f resolve.log
+          exit 1
 
       # Which compiler answered is part of the evidence, not an assumption. A
       # self-hosted runner's toolchain changes when somebody updates that
