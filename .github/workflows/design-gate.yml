@@ -1,0 +1,74 @@
+# The one gate every Wisent web repository runs, in one place.
+#
+# Measured on 2026-09-01 across the web fleet (wisent-components/DESIGN-PLAN.md):
+# echo-web carried 1,863 Tailwind default-palette classes, 2,974 raw hex
+# colors and 117 icon-library imports; wisent-enterprise 994 and 974;
+# needher-ai-web 51 gradients and 49 backdrop blurs. None of it was a defect
+# any check could name, because no check looked. Every one of those values is
+# what an agent substitutes when it lacks the exact design value, and the
+# substitution is what makes an interface read as generated.
+#
+# `wisent-design-lint` (shipped by @wisent-ai/components) names each
+# substitution and exits non-zero on it. This workflow runs that lint on the
+# calling repository at the exact package revision the repository pins, so
+# the rules a repository is held to are the rules of the design system it
+# ships with.
+#
+# The gate is FIXED. There is no input to skip a rule or lower a threshold;
+# a repository that carries a design exception writes it in place with its
+# reason (`wisent-design-lint-allow <rule>: why`), where a reviewer sees it.
+
+name: design gate
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: >-
+          Runner label set. Defaults to the fleet's self-hosted Stado runner,
+          which carries the credentials that install this organization's
+          private packages and is not billed against hosted minutes.
+        type: string
+        default: '["self-hosted", "stado"]'
+      working-directory:
+        description: >-
+          Directory holding package.json, for repositories whose web
+          application is not at the root.
+        type: string
+        default: .
+
+permissions:
+  contents: read
+
+jobs:
+  design:
+    runs-on: ${{ fromJSON(startsWith(inputs.runs-on, '[') && inputs.runs-on || format('"{0}"', inputs.runs-on)) }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # The lint is part of the pinned package, so `npm ci` installs the exact
+      # rule set the repository's dependency names. `--ignore-scripts` keeps
+      # this a read of the lockfile rather than a build of the application.
+      - name: Install the pinned design system
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --ignore-scripts --no-audit --no-fund
+          else
+            npm install --ignore-scripts --no-audit --no-fund
+          fi
+
+      - name: wisent-design-lint
+        run: |
+          if [ -x node_modules/.bin/wisent-design-lint ]; then
+            node_modules/.bin/wisent-design-lint
+          elif [ -f node_modules/@wisent-ai/components/bin/wisent-design-lint.mjs ]; then
+            node node_modules/@wisent-ai/components/bin/wisent-design-lint.mjs
+          else
+            echo '@wisent-ai/components is not a dependency of this repository; the design gate has nothing to run' >&2
+            exit 1
+          fi

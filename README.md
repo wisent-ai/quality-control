@@ -290,7 +290,7 @@ specificity rules. The token threshold alone is not the full acceptance rule.
 
 ### Reusable workflows
 
-Three workflows are consumed by other repositories directly, pinned to an exact
+Four workflows are consumed by other repositories directly, pinned to an exact
 revision rather than a branch, so a change here cannot alter a consumer's gate
 until that consumer moves its pin.
 
@@ -316,6 +316,16 @@ directory, and before it none of them ran `swift test` in CI.
 
 `tag-on-manifest-bump.yml` tags the version declared in a manifest exactly once.
 It accepts `manifest` (`Cargo.toml`) and `runs-on` (`ubuntu-latest`).
+
+`design-gate.yml` runs `wisent-design-lint`, the check shipped by
+`@wisent-ai/components`, on a web repository at the package revision that
+repository pins: raw colors outside the tokens, Tailwind's default palette,
+gradients, backdrop blur, spinners, oversize radii and shadows, emoji, generic
+icon sets, Google fonts, local primitives, marketing vocabulary and an
+unpinned dependency all fail it. It accepts `runs-on` (the fleet's
+`["self-hosted", "stado"]` runner) and `working-directory` (`.`). It is the
+first shared gate for the Node repositories; until 2026-09-01 none existed
+because no check was common to them, and the design lint is that check.
 
 `required-pr-quality.yml` is the required pull-request workflow described above,
 and `repository-audit.yml` is the manual, always-green baseline inventory.
