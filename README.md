@@ -317,6 +317,12 @@ directory, and before it none of them ran `swift test` in CI.
 `tag-on-manifest-bump.yml` tags the version declared in a manifest exactly once.
 It accepts `manifest` (`Cargo.toml`) and `runs-on` (`ubuntu-latest`).
 
+A caller must pin with the full forty-character commit. On 2026-09-03 nine
+repositories pinned `design-gate.yml@73dd0c7`; every run ended as "This run
+likely failed because of a workflow file issue" with zero jobs, and the same
+file at `@73dd0c7e988227eeedc91e0c9f9b9ba9c4f3ba60` ran on the first push. The
+resolver does not abbreviate.
+
 `design-gate.yml` runs `wisent-design-lint`, the check shipped by
 `@wisent-ai/components`, on a web repository at the package revision that
 repository pins: raw colors outside the tokens, Tailwind's default palette,
