@@ -1257,8 +1257,8 @@
       "releases": true,
       "product": "image-video-router",
       "source_branch": "main",
-      "source_commit": "ab593feac67495352229c495fb57456dd9cf4e6e",
-      "manifest_sha256": "840c471e4ada4a60c5e2c918e751b1ec31a91296cae107025b3d27c40c4c8628",
+      "source_commit": "f1702ae858d357610271e4b7c4307ee428664633",
+      "manifest_sha256": "cfd352817f052211369f8d7a53c0d8fd6b94623aa5728eee26471a37dd3478d5",
       "manifest": {
         "schema_version": 1,
         "product": "image-video-router",
@@ -1277,17 +1277,10 @@
               ]
             },
             "stage": {
-              "stage/bin/image-video-router": "bin/image-video-router",
-              "stage/bin/start": "bin/start"
+              ".wisent-output/stage/bin/image-video-router": "bin/image-video-router",
+              ".wisent-output/stage/bin/start": "bin/start"
             },
             "runner_platform": "linux-amd64"
-          }
-        },
-        "inputs": {
-          "onboarding-client-source": {
-            "uri": "stado://sources/echo-rust-onboarding/b863a5522d051f4046e318da4831443d8bb2d42cf9cd5e23a32ee8be242b1ecc/source.tar.gz",
-            "sha256": "b863a5522d051f4046e318da4831443d8bb2d42cf9cd5e23a32ee8be242b1ecc",
-            "mount": "onboarding-client-source"
           }
         },
         "runtime": {
@@ -3775,9 +3768,9 @@
       ],
       "releases": true,
       "product": "wisent-desktop-auth",
-      "source_branch": "feat/stado-native-release",
-      "source_commit": "9d451d38ef40cbcff349dbb2af809bce5bd794a2",
-      "manifest_sha256": "32fc2dc2c08d2cfe1213c7f647e174bcb9ed006298c936fedad4cf18150832b1",
+      "source_branch": "main",
+      "source_commit": "799714fbaadc7f1bfba5b802c7816c414aaad7b6",
+      "manifest_sha256": "88ff4e662a5844a076424d2cb9616d4088300c82bdd04dbd2a249b7705691b8f",
       "manifest": {
         "schema_version": 1,
         "product": "wisent-desktop-auth",
@@ -3808,19 +3801,10 @@
               ]
             },
             "stage": {
-              "dist/wisent-auth-onboarding-host": "bin/wisent-auth-onboarding-host",
               "dist/wisent-desktop-auth-source.tar.gz": "source/wisent-desktop-auth-source.tar.gz",
               "dist/SOURCE_REVISION": "SOURCE_REVISION",
               "dist/build-evidence.json": "evidence/build-evidence.json"
             }
-          }
-        },
-        "inputs": {
-          "echo": {
-            "uri": "stado://sources/echo/sha256/b086ee88ca870556f738589dd5548efea515bcc4f4831fa2d36cba93465113ba/source.tar.gz",
-            "sha256": "b086ee88ca870556f738589dd5548efea515bcc4f4831fa2d36cba93465113ba",
-            "mount": "echo.tar.gz",
-            "extract": false
           }
         },
         "promotion": {
