@@ -26,7 +26,11 @@ on:
   workflow_call:
     inputs:
       manifest:
-        description: Path to the Cargo.toml whose version is the product's.
+        description: >-
+          Path to the file whose version is the product's. Read by shape:
+          a Cargo.toml or other .toml by its `version = "..."` line, an
+          Info.plist by CFBundleShortVersionString, a package.json by its
+          version field, and a bare VERSION file by its one line.
         type: string
         default: Cargo.toml
       runs-on:
@@ -52,18 +56,49 @@ jobs:
           # published.
           fetch-depth: 0
 
-      - name: Tag the declared version, once
+      # One reader for every manifest shape this pack releases from, so a Swift
+      # application's Info.plist or a VERSION file is tagged by the same rule as
+      # a crate. The shape is decided by the file, never by an input a caller
+      # could set wrong.
+      - name: Read the declared version
+        id: declared
         env:
-          GH_TOKEN: ${{ github.token }}
           MANIFEST: ${{ inputs.manifest }}
         run: |
           set -euo pipefail
-          declared="$(sed -n 's/^version = "\(.*\)"/\1/p' "$MANIFEST" | head -1)"
+          test -f "$MANIFEST" || { echo "::error::$MANIFEST does not exist, so there is no version to tag."; exit 1; }
+          case "$(basename "$MANIFEST")" in
+            *.toml)
+              declared="$(sed -n 's/^version = "\(.*\)"/\1/p' "$MANIFEST" | head -1)" ;;
+            *.plist)
+              declared="$(python3 -c 'import plistlib, sys; print(plistlib.load(open(sys.argv[1], "rb")).get("CFBundleShortVersionString", ""))' "$MANIFEST")" ;;
+            package.json)
+              declared="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1])).get("version", ""))' "$MANIFEST")" ;;
+            VERSION)
+              declared="$(tr -d '[:space:]' < "$MANIFEST")" ;;
+            *)
+              echo "::error::$MANIFEST is not a manifest shape this workflow reads (.toml, .plist, package.json, VERSION)."
+              exit 1 ;;
+          esac
           if [ -z "$declared" ]; then
             echo "::error::$MANIFEST declares no version, so there is no number to tag."
             exit 1
           fi
-          tag="v$declared"
+          case "$declared" in
+            [0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "::error::$MANIFEST declares '$declared', which is not MAJOR.MINOR.PATCH."; exit 1 ;;
+          esac
+          printf 'version=%s\n' "$declared" >> "$GITHUB_OUTPUT"
+          printf 'declared %s\n' "$declared"
+
+      - name: Tag the declared version, once
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MANIFEST: ${{ inputs.manifest }}
+          DECLARED: ${{ steps.declared.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag="v$DECLARED"
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
             printf '%s\n' "$tag already exists; the manifest names a version that is" \
               "already published or already queued. Nothing to do."
@@ -74,7 +109,7 @@ jobs:
           # from without anyone having to guess from the commit it points at.
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$tag" -m "$declared, from the version declared in $MANIFEST at ${GITHUB_SHA}"
+          git tag -a "$tag" -m "$DECLARED, from the version declared in $MANIFEST at ${GITHUB_SHA}"
           git push origin "$tag"
           printf '%s\n' "tagged $tag"
 
@@ -82,13 +117,11 @@ jobs:
         if: inputs.release-workflow != ''
         env:
           GH_TOKEN: ${{ github.token }}
-          MANIFEST: ${{ inputs.manifest }}
           RELEASE_WORKFLOW: ${{ inputs.release-workflow }}
+          DECLARED: ${{ steps.declared.outputs.version }}
         run: |
           set -euo pipefail
-          declared="$(sed -n 's/^version = "\(.*\)"/\1/p' "$MANIFEST" | head -1)"
-          test -n "$declared"
-          tag="v$declared"
+          tag="v$DECLARED"
           active_or_complete="$(
             gh run list \
               --workflow "$RELEASE_WORKFLOW" \
