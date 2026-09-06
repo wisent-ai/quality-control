@@ -29,7 +29,7 @@ jobs:
           fetch-depth: 1
           path: target
 
-      - name: Check out quality-control scripts
+      - name: Check out quality-control
         uses: actions/checkout@v4
         with:
           repository: wisent-ai/quality-control
@@ -43,15 +43,15 @@ jobs:
           set +e
           mkdir -p ../audit-results
 
-          node ../quality-control/scripts/check-no-keyword-logic.mjs --all > ../audit-results/lexical-policy.log 2>&1
+          node ../quality-control/src/check-no-keyword-logic.mjs --all > ../audit-results/lexical-policy.log 2>&1
           echo "$?" > ../audit-results/lexical-policy.exit
 
-          node ../quality-control/scripts/check-no-fallbacks.mjs --all > ../audit-results/fallback-policy.log 2>&1
+          node ../quality-control/src/check-no-fallbacks.mjs --all > ../audit-results/fallback-policy.log 2>&1
           echo "$?" > ../audit-results/fallback-policy.exit
 
-          node ../quality-control/scripts/check-no-magic-constants.mjs --all > ../audit-results/constants-policy.log 2>&1
+          node ../quality-control/src/check-no-magic-constants.mjs --all > ../audit-results/constants-policy.log 2>&1
           echo "$?" > ../audit-results/constants-policy.exit
-          node ../quality-control/scripts/check-no-desktop-cli-coupling.mjs --all > ../audit-results/desktop-cli-policy.log 2>&1
+          node ../quality-control/src/check-no-desktop-cli-coupling.mjs --all > ../audit-results/desktop-cli-policy.log 2>&1
           echo "$?" > ../audit-results/desktop-cli-policy.exit
 
           {

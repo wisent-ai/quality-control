@@ -7,16 +7,16 @@
   "type": "module",
   "description": "Stable local policy checks and reusable organization quality gates.",
   "bin": {
-    "wisent-check-keyword-logic": "scripts/check-no-keyword-logic.mjs",
-    "wisent-check-fallbacks": "scripts/check-no-fallbacks.mjs",
-    "wisent-check-magic-constants": "scripts/check-no-magic-constants.mjs",
-    "wisent-check-desktop-cli-coupling": "scripts/check-no-desktop-cli-coupling.mjs"
+    "wisent-check-keyword-logic": "src/check-no-keyword-logic.mjs",
+    "wisent-check-fallbacks": "src/check-no-fallbacks.mjs",
+    "wisent-check-magic-constants": "src/check-no-magic-constants.mjs",
+    "wisent-check-desktop-cli-coupling": "src/check-no-desktop-cli-coupling.mjs"
   },
   "files": [
-    "scripts/check-no-keyword-logic.mjs",
-    "scripts/check-no-fallbacks.mjs",
-    "scripts/check-no-magic-constants.mjs",
-    "scripts/check-no-desktop-cli-coupling.mjs",
+    "src/check-no-keyword-logic.mjs",
+    "src/check-no-fallbacks.mjs",
+    "src/check-no-magic-constants.mjs",
+    "src/check-no-desktop-cli-coupling.mjs",
     "LICENSE",
     "README.md"
   ],
