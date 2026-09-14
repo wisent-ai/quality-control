@@ -2,17 +2,21 @@
 #
 # Measured on 2026-09-01 across the web fleet (wisent-components/DESIGN-PLAN.md):
 # echo-web carried 1,863 Tailwind default-palette classes, 2,974 raw hex
-# colors and 117 icon-library imports; wisent-enterprise 994 and 974;
-# needher-ai-web 51 gradients and 49 backdrop blurs. None of it was a defect
-# any check could name, because no check looked. Every one of those values is
-# what an agent substitutes when it lacks the exact design value, and the
+# colors and 117 icon-library imports; wisent-enterprise 994 and 974. None of
+# it was a defect any check could name, because no check looked. Those values
+# are what an agent substitutes when it lacks the exact design value, and the
 # substitution is what makes an interface read as generated.
 #
 # `wisent-design-lint` (shipped by @wisent-ai/components) names each
-# substitution and exits non-zero on it. This workflow runs that lint on the
-# calling repository at the exact package revision the repository pins, so
-# the rules a repository is held to are the rules of the design system it
-# ships with.
+# substitution and exits non-zero on it. What the design holds is measured
+# from the Figma exports into the package's figma/vocabulary.json — every
+# drawn colour, the largest drawn corner — and the lint reads that beside
+# tokens.json. Gradients and backdrop blurs are not tells: the Figma files
+# draw thousands of both, and a lint of the package's first week that banned
+# them stripped wisent.com of its drawn design on 2026-09-03. This workflow
+# runs the lint on the calling repository at the exact package revision the
+# repository pins, so the rules a repository is held to are the rules of the
+# design system it ships with.
 #
 # The gate is FIXED. There is no input to skip a rule or lower a threshold;
 # a repository that carries a design exception writes it in place with its
