@@ -52,7 +52,8 @@ const QUOTED_NUMBER_RE = new RegExp(`\\b(?:Number|parseInt|parseFloat|Int|UInt|D
 const NAMED_CONSTANT_RE = /^\s*(?:(?:pub(?:\([^)]*\))?|export|private|fileprivate|public|internal)\s+)*(?:(?:const|let|var|static(?:\s+(?:let|var))?)\s+)?_?[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
 const IMPORT_RE = /^\s*(?:import|export)\b.*\bfrom\b|^\s*(?:import|require)\s*\(/;
 const LOCAL_LITERAL_ASSIGN_RE = new RegExp(`^\\s*(?:const|let|var)?\\s*[a-z_][A-Za-z0-9_]*\\s*(?::[^=]+)?=\\s*(?:["'\`]|[-+]?${NUMBER_LITERAL_SOURCE}(?![A-Za-z0-9_$]))`, 'i');
-const LOGIC_LITERAL_RE = /^\s*(?:if|elif|while|for|return|assert)\b|(?:[=!<>]=|[<>])|[-+*/%]=|\b(?:range|sleep|timeout|limit|max|min)\s*\(/;
+// A bare `<` or `>` is a comparison when written with spaces around it; `Vec<u8>`, `<code>` and `->` are not.
+const LOGIC_LITERAL_RE = /^\s*(?:if|elif|while|for|return|assert)\b|(?:[=!<>]=|\s[<>]\s)|[-+*/%]=|\b(?:range|sleep|timeout|limit|max|min)\s*\(/;
 const ALLOWED_NUMBER_LITERALS = new Set(['-1', '0', '1', '2']);
 const ELLIPSIS = '...';
 // A finding quotes its line only up to this many characters, so a minified line stays one finding, not a report.
