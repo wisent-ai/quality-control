@@ -270,8 +270,7 @@ constant is never a finding, so `const RETRY_LIMIT = 3` passes and
 `Number('127')`, `Int("3")`, `"8080".parse()` — is reported as `number
 literal N is hidden in a string`, because that is the same literal wearing
 quotes. A value with a unit or percent sign (`260px`, `100%`) is a dimension
-and is left alone.
-`let retries = 3` does not. `--numbers-only` ignores string literals.
+and is left alone. `--numbers-only` ignores string literals.
 `--json` prints one report object on stdout — `schemaVersion`, `root`, `mode`,
 `checkedFiles`, `sourceDigest` (SHA-256 over every checked file) and
 `violations` (`file`, `line`, `rule`, `detail`, `source`) — and still exits
