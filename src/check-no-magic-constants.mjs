@@ -45,8 +45,9 @@ const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'
 const REGEX_LITERAL_RE = /(?<=^|[=(,:[!&|?{};]|\breturn|\btest|\bmatch)\s*\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\])*\]|[^/\\[\n])+\/[a-z]*/g;
 // A tuple field such as `.0` or `.1` follows a closing bracket or an identifier, never an operator.
 const NUMBER_LITERAL_SOURCE = '(?:0x[\\da-f_]+|0b[01_]+|0o[0-7_]+|(?:\\d[\\d_]*(?:\\.[\\d_]+)?|(?<![\\])])\\.\\d[\\d_]*)(?:e[-+]?[\\d_]+)?)(?:_?(?:[ui](?:8|16|32|64|128|size)|f(?:32|64)))?';
-// A unit or percent sign after the digits makes the value a dimension, which the guard leaves alone.
-const NUMBER_LITERAL_RE = new RegExp(`(?<![A-Za-z0-9_$.])[-+]?${NUMBER_LITERAL_SOURCE}(?![A-Za-z0-9_$%])`, 'gi');
+// A unit or percent sign after the digits makes the value a dimension, and a digit glued to a
+// hyphenated word (utf-8, sha-256) is part of the word; the guard leaves both alone.
+const NUMBER_LITERAL_RE = new RegExp(`(?<![A-Za-z0-9_$.]|[A-Za-z]-)[-+]?${NUMBER_LITERAL_SOURCE}(?![A-Za-z0-9_$%])`, 'gi');
 const QUOTED_NUMBER_RE = new RegExp(`\\b(?:Number|parseInt|parseFloat|Int|UInt|Double|Float|CGFloat|int|float|Decimal)\\s*\\(\\s*["'](?<value>[-+]?${NUMBER_LITERAL_SOURCE})["']|["'](?<value2>[-+]?\\d[\\d_]*(?:\\.\\d+)?)["']\\s*\\.parse(?:::<[^>]+>)?\\(`, 'gi');
 const NAMED_CONSTANT_RE = /^\s*(?:(?:pub(?:\([^)]*\))?|export|private|fileprivate|public|internal)\s+)*(?:(?:const|let|var|static(?:\s+(?:let|var))?)\s+)?_?[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
 const IMPORT_RE = /^\s*(?:import|export)\b.*\bfrom\b|^\s*(?:import|require)\s*\(/;
