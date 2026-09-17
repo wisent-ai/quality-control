@@ -26,11 +26,16 @@ function git(args, cwd) {
 function parseArgs() {
   const args = process.argv.slice(2);
   const options = {};
+  const skip = new Set();
   for (let index = 0; index < args.length; index += 1) {
     const key = args[index];
-    if (!['--workspace', '--output'].includes(key) || options[key]) throw new Error(`unknown or repeated argument: ${key}`);
     const value = args[++index];
     if (!value || value.startsWith('--')) throw new Error(`${key} requires a value`);
+    if (key === '--skip') {
+      skip.add(value);
+      continue;
+    }
+    if (!['--workspace', '--output'].includes(key) || options[key]) throw new Error(`unknown or repeated argument: ${key}`);
     options[key] = value;
   }
   if (!options['--workspace']) throw new Error('--workspace is required');
@@ -41,11 +46,11 @@ function parseArgs() {
   // A direct child prevents symlinked parents from writing outside the owned build directory.
   if (path.dirname(output) !== build || realpathSync(build) !== build) throw new Error('--output must be a new direct child of quality-control/.build');
   if (existsSync(output)) throw new Error(`output already exists: ${output}`);
-  return { workspace, output };
+  return { workspace, output, skip };
 }
 
 function main() {
-  const { workspace, output } = parseArgs();
+  const { workspace, output, skip } = parseArgs();
   const entries = readdirSync(workspace, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name));
   const checker = {
     revision: git(['rev-parse', 'HEAD'], PACKAGE_ROOT),
@@ -58,6 +63,10 @@ function main() {
     const directory = path.join(workspace, entry.name);
     if (!entry.isDirectory() || !existsSync(path.join(directory, '.git'))) {
       report.skipped.push({ name: entry.name, reason: 'not an immediate Git repository directory' });
+      continue;
+    }
+    if (skip.has(entry.name)) {
+      report.skipped.push({ name: entry.name, reason: 'named by --skip' });
       continue;
     }
     const record = { name: entry.name, directory };
@@ -110,6 +119,6 @@ try {
   main();
 } catch (error) {
   console.error(error.message);
-  console.error('usage: node src/magic-numbers/audit.mjs --workspace <directory> [--output <new quality-control/.build/directory>]');
+  console.error('usage: node src/magic-numbers/audit.mjs --workspace <directory> [--output <new quality-control/.build/directory>] [--skip <repository>]...');
   process.exitCode = EXIT.error;
 }

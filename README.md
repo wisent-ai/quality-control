@@ -270,19 +270,25 @@ constant is never a finding, so `const RETRY_LIMIT = 3` passes and
 `--json` prints one report object on stdout — `schemaVersion`, `root`, `mode`,
 `checkedFiles`, `sourceDigest` (SHA-256 over every checked file) and
 `violations` (`file`, `line`, `rule`, `detail`, `source`) — and still exits
-`1` on findings. Test directories (`Tests/`, `test/`, `tests/`), `target/` and
-`.build/` are never scanned.
+`1` on findings. A directory named `Tests`, `test`, `tests`, `__tests__`,
+`target`, `node_modules`, `vendor`, `_catalog`, `profiles`, `.build`,
+`.swiftpm` or `.work` is never scanned wherever it sits, and neither is a
+test file (`test_*.py`, `*_test.py`, `*.test.*`, `*.spec.*`, `*Tests.swift`),
+a minified script (`*.min.js`) or `config.py`.
 
 ### Fleet audit of magic numbers
 
 ```bash
-node src/magic-numbers/audit.mjs --workspace ~/Documents/CodingProjects/Wisent [--output .build/<name>]
+node src/magic-numbers/audit.mjs --workspace ~/Documents/CodingProjects/Wisent [--output .build/<name>] [--skip <repository>]...
 ```
 
 Runs `check-no-magic-constants --all --numbers-only --json` in every immediate
 Git repository of the workspace and writes `report.json` plus one evidence
 directory per repository (`stdout.json`, `stderr.log`, `execution.json`) under
-`quality-control/.build/`. The report records the checker revision and SHA-256,
+`quality-control/.build/`. `--skip <name>` leaves a repository out and records
+it under `skipped` with the reason `named by --skip`; the workspace's checkout
+of the upstream agent harness is audited that way. The report records the
+checker revision and SHA-256,
 each repository's revision, branch, porcelain status, origin, checked-file
 count, source digest and violations, every skipped entry with its reason, and
 `counts` (`repositories`, `clean`, `findings`, `error`, `violations`). The

@@ -22,17 +22,23 @@ const EXCLUDED_FILES = new Set([
   'src/check-no-keyword-logic.mjs',
   'src/check-no-magic-constants.mjs'
 ]);
-const EXCLUDED_PREFIXES = [
-  '.build/',
-  '.git/',
-  '.swiftpm/',
-  '.work/',
-  'Tests/',
-  'test/',
-  'tests/',
-  'target/',
-  'node_modules/'
-];
+// A directory of tests or third-party code is skipped wherever it sits in the tree.
+const EXCLUDED_DIRECTORIES = new Set([
+  '.build',
+  '.git',
+  '.swiftpm',
+  '.work',
+  'Tests',
+  'test',
+  'tests',
+  '__tests__',
+  'target',
+  'node_modules',
+  'vendor',
+  '_catalog',
+  'profiles'
+]);
+const EXCLUDED_BASENAME_RE = /(?:^config\.py|^test_.*\.py|_test\.py|\.test\.[cm]?[jt]sx?|\.spec\.[cm]?[jt]sx?|Tests\.swift|\.min\.[cm]?js)$/;
 
 const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|`([^`\\]*(?:\\.[^`\\]*)*)`/g;
 const NUMBER_LITERAL_SOURCE = '(?:0x[\\da-f_]+|0b[01_]+|0o[0-7_]+|(?:\\d[\\d_]*(?:\\.[\\d_]+)?|\\.\\d[\\d_]*)(?:e[-+]?[\\d_]+)?)(?:_?(?:[ui](?:8|16|32|64|128|size)|f(?:32|64)))?';
@@ -42,6 +48,10 @@ const IMPORT_RE = /^\s*(?:import|export)\b.*\bfrom\b|^\s*(?:import|require)\s*\(
 const LOCAL_LITERAL_ASSIGN_RE = new RegExp(`^\\s*(?:const|let|var)?\\s*[a-z_][A-Za-z0-9_]*\\s*(?::[^=]+)?=\\s*(?:["'\`]|[-+]?${NUMBER_LITERAL_SOURCE}(?![A-Za-z0-9_$]))`, 'i');
 const LOGIC_LITERAL_RE = /^\s*(?:if|elif|while|for|return|assert)\b|(?:[=!<>]=|[<>])|[-+*/%]=|\b(?:range|sleep|timeout|limit|max|min)\s*\(/;
 const ALLOWED_NUMBER_LITERALS = new Set(['-1', '0', '1', '2']);
+const ELLIPSIS = '...';
+// A finding quotes its line only up to this many characters, so a minified line stays one finding, not a report.
+const SOURCE_EXCERPT_LIMIT = 160;
+const DETAIL_EXCERPT_LIMIT = 32;
 
 const args = parseArgs(process.argv.slice(2));
 const mode = resolveMode(args);
@@ -76,7 +86,7 @@ for (const file of files) {
         file,
         line: lineNumber,
         ...violation,
-        source: line.trim()
+        source: abbreviate(line.trim(), SOURCE_EXCERPT_LIMIT)
       });
     }
   }
@@ -234,9 +244,9 @@ function normalizeNumberLiteral(value) {
   return String(Number(value.replace(/_?(?:[ui](?:8|16|32|64|128|size)|f(?:32|64))$/i, '').replaceAll('_', '')));
 }
 
-function abbreviate(value) {
-  if (value.length <= 32) return value;
-  return `${value.slice(0, 29)}...`;
+function abbreviate(value, limit = DETAIL_EXCERPT_LIMIT) {
+  if (value.length <= limit) return value;
+  return `${value.slice(0, limit - ELLIPSIS.length)}${ELLIPSIS}`;
 }
 
 function parseArgs(raw) {
@@ -360,14 +370,11 @@ function allLineNumbers(lines) {
 
 function isScannedFile(file) {
   if (EXCLUDED_FILES.has(file)) return false;
-  if (EXCLUDED_PREFIXES.some(prefix => file.startsWith(prefix))) return false;
-  if (file.includes('/_catalog/')) return false;
-  if (file.endsWith('/config.py') || file === 'config.py') return false;
-  if (file.includes('/profiles/')) return false;
-  const extension = path.extname(file);
-  if (!SOURCE_EXTENSIONS.has(extension)) return false;
-  if (file.includes('/node_modules/')) return false;
-  return true;
+  const segments = file.split('/');
+  const basename = segments.pop();
+  if (segments.some(segment => EXCLUDED_DIRECTORIES.has(segment))) return false;
+  if (EXCLUDED_BASENAME_RE.test(basename)) return false;
+  return SOURCE_EXTENSIONS.has(path.extname(basename));
 }
 
 function isCommentOnlyLine(line) {
