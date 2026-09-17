@@ -51,7 +51,7 @@ const NUMBER_LITERAL_RE = new RegExp(`(?<![A-Za-z0-9_$.]|[A-Za-z]-)[-+]?${NUMBER
 const QUOTED_NUMBER_RE = new RegExp(`\\b(?:Number|parseInt|parseFloat|Int|UInt|Double|Float|CGFloat|int|float|Decimal)\\s*\\(\\s*["'](?<value>[-+]?${NUMBER_LITERAL_SOURCE})["']|["'](?<value2>[-+]?\\d[\\d_]*(?:\\.\\d+)?)["']\\s*\\.parse(?:::<[^>]+>)?\\(`, 'gi');
 const NAMED_CONSTANT_RE = /^\s*(?:(?:pub(?:\([^)]*\))?|export|private|fileprivate|public|internal)\s+)*(?:(?:const|let|var|static(?:\s+(?:let|var))?)\s+)?_?[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
 const IMPORT_RE = /^\s*(?:import|export)\b.*\bfrom\b|^\s*(?:import|require)\s*\(/;
-const LOCAL_LITERAL_ASSIGN_RE = new RegExp(`^\\s*(?:const|let|var)?\\s*[a-z_][A-Za-z0-9_]*\\s*(?::[^=]+)?=\\s*(?:["'\`]|[-+]?${NUMBER_LITERAL_SOURCE}(?![A-Za-z0-9_$]))`, 'i');
+const LOCAL_LITERAL_ASSIGN_RE = new RegExp(`^\\s*(?:const|let|var)?\\s*[a-z_][A-Za-z0-9_]*\\s*(?::[^="'\`]+)?=\\s*(?:["'\`]|[-+]?${NUMBER_LITERAL_SOURCE}(?![A-Za-z0-9_$]))`, 'i');
 // A bare `<` or `>` is a comparison when written with spaces around it; `Vec<u8>`, `<code>` and `->` are not.
 const LOGIC_LITERAL_RE = /^\s*(?:if|elif|while|for|return|assert)\b|(?:[=!<>]=|\s[<>]\s)|[-+*/%]=|\b(?:range|sleep|timeout|limit|max|min)\s*\(/;
 const ALLOWED_NUMBER_LITERALS = new Set(['-1', '0', '1', '2']);
