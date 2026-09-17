@@ -59,6 +59,9 @@ const ELLIPSIS = '...';
 // A finding quotes its line only up to this many characters, so a minified line stays one finding, not a report.
 const SOURCE_EXCERPT_LIMIT = 160;
 const DETAIL_EXCERPT_LIMIT = 32;
+// A file whose head says it is generated is the generator's output; the generator's source is what gets read.
+const GENERATED_HEADER_LINES = 5;
+const GENERATED_HEADER_RE = /generated\b[\s\S]*do not edit/i;
 
 const args = parseArgs(process.argv.slice(2));
 const mode = resolveMode(args);
@@ -74,6 +77,7 @@ for (const file of files) {
   const text = readFileSync(absolute, 'utf8');
   sourceDigest.update(file).update('\0').update(text).update('\0');
   const lines = text.split(/\r?\n/);
+  if (GENERATED_HEADER_RE.test(lines.slice(0, GENERATED_HEADER_LINES).join('\n'))) continue;
   const documentationLines = documentationLineNumbers(lines);
   const changedLines = mode.all || (mode.kind === 'worktree' && !isTrackedFile(file))
     ? allLineNumbers(lines)

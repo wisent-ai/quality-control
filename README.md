@@ -278,7 +278,8 @@ and is left alone. `--numbers-only` ignores string literals.
 `target`, `node_modules`, `vendor`, `_catalog`, `profiles`, `.build`,
 `.swiftpm` or `.work` is never scanned wherever it sits, and neither is a
 test file (`test_*.py`, `*_test.py`, `*.test.*`, `*.spec.*`, `*Tests.swift`),
-a minified script (`*.min.js`) or `config.py`.
+a minified script (`*.min.js`), `config.py`, or a file whose first five lines say it is
+generated and not to be edited: its generator is the source that is read.
 
 ### Fleet audit of magic numbers
 
