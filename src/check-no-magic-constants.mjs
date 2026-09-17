@@ -2,6 +2,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 
 const ROOT = git(['rev-parse', '--show-toplevel']).trim();
 const ZERO_SHA = /^0+$/;
@@ -11,7 +12,8 @@ const SOURCE_EXTENSIONS = new Set([
   '.js',
   '.ts',
   '.tsx',
-  '.py'
+  '.py',
+  '.rs'
 ]);
 const EXCLUDED_FILES = new Set([
   'src/check-no-desktop-cli-coupling.mjs',
@@ -26,14 +28,17 @@ const EXCLUDED_PREFIXES = [
   '.work/',
   'Tests/',
   'test/',
+  'tests/',
+  'target/',
   'node_modules/'
 ];
 
 const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|`([^`\\]*(?:\\.[^`\\]*)*)`/g;
-const NUMBER_LITERAL_RE = /(?<![A-Za-z0-9_$])[-+]?(?:\d+\.\d+|\d+)(?:e[-+]?\d+)?(?![A-Za-z0-9_$])/gi;
-const NAMED_CONSTANT_RE = /^\s*(?:(?:export\s+)?(?:const|let|var|static\s+let|static\s+var)\s+)?_?[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
+const NUMBER_LITERAL_SOURCE = '(?:0x[\\da-f_]+|0b[01_]+|0o[0-7_]+|(?:\\d[\\d_]*(?:\\.[\\d_]+)?|\\.\\d[\\d_]*)(?:e[-+]?[\\d_]+)?)(?:_?(?:[ui](?:8|16|32|64|128|size)|f(?:32|64)))?';
+const NUMBER_LITERAL_RE = new RegExp(`(?<![A-Za-z0-9_$.])[-+]?${NUMBER_LITERAL_SOURCE}(?![A-Za-z0-9_$])`, 'gi');
+const NAMED_CONSTANT_RE = /^\s*(?:(?:pub(?:\([^)]*\))?|export|private|fileprivate|public|internal)\s+)*(?:(?:const|let|var|static(?:\s+(?:let|var))?)\s+)?_?[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
 const IMPORT_RE = /^\s*(?:import|export)\b.*\bfrom\b|^\s*(?:import|require)\s*\(/;
-const LOCAL_LITERAL_ASSIGN_RE = /^\s*(?:const|let|var)?\s*[a-z_][A-Za-z0-9_]*\s*(?::[^=]+)?=\s*(?:["'`]|[-+]?(?:\d+\.\d+|\d+)(?:e[-+]?\d+)?\b)/i;
+const LOCAL_LITERAL_ASSIGN_RE = new RegExp(`^\\s*(?:const|let|var)?\\s*[a-z_][A-Za-z0-9_]*\\s*(?::[^=]+)?=\\s*(?:["'\`]|[-+]?${NUMBER_LITERAL_SOURCE}(?![A-Za-z0-9_$]))`, 'i');
 const LOGIC_LITERAL_RE = /^\s*(?:if|elif|while|for|return|assert)\b|(?:[=!<>]=|[<>])|[-+*/%]=|\b(?:range|sleep|timeout|limit|max|min)\s*\(/;
 const ALLOWED_NUMBER_LITERALS = new Set(['-1', '0', '1', '2']);
 
@@ -41,6 +46,7 @@ const args = parseArgs(process.argv.slice(2));
 const mode = resolveMode(args);
 const files = candidateFiles(mode);
 const violations = [];
+const sourceDigest = createHash('sha256');
 
 for (const file of files) {
   const absolute = path.join(ROOT, file);
@@ -48,6 +54,7 @@ for (const file of files) {
   if (!isScannedFile(file)) continue;
 
   const text = readFileSync(absolute, 'utf8');
+  sourceDigest.update(file).update('\0').update(text).update('\0');
   const lines = text.split(/\r?\n/);
   const documentationLines = documentationLineNumbers(lines);
   const changedLines = mode.all || (mode.kind === 'worktree' && !isTrackedFile(file))
@@ -74,7 +81,12 @@ for (const file of files) {
   }
 }
 
-if (violations.length > 0) {
+// The report is set as the exit code rather than through process.exit(): on macOS a pipe is
+// written asynchronously, and exiting right after console.log truncated reports at the pipe buffer.
+if (args.json) {
+  console.log(JSON.stringify({ schemaVersion: 1, root: ROOT, mode: mode.kind, checkedFiles: files.length, sourceDigest: sourceDigest.digest('hex'), violations }));
+  process.exitCode = violations.length > 0 ? 1 : 0;
+} else if (violations.length > 0) {
   console.error('No-magic-constants guard failed.');
   console.error('');
   for (const violation of violations) {
@@ -83,10 +95,10 @@ if (violations.length > 0) {
   }
   console.error('');
   console.error('Name the value, load it from configuration, or derive it from typed metadata instead of embedding it in logic.');
-  process.exit(1);
+  process.exitCode = 1;
+} else {
+  console.log(`No-magic-constants guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
 }
-
-console.log(`No-magic-constants guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
 
 function literalViolations(line) {
   const code = codeWithoutInlineComment(line);
@@ -95,7 +107,7 @@ function literalViolations(line) {
 
   for (const match of code.matchAll(STRING_LITERAL_RE)) {
     const value = (match[1] ?? match[2] ?? match[3] ?? '').trim();
-    if (!isSignificantString(value)) continue;
+    if (args.numbersOnly || !isSignificantString(value)) continue;
     if (isSchemaKeyAccess(code, match.index ?? 0, match[0].length)) continue;
     found.push({
       rule: 'magic-string',
@@ -218,7 +230,7 @@ function isLikelyDocumentationLine(line) {
 }
 
 function normalizeNumberLiteral(value) {
-  return String(Number(value));
+  return String(Number(value.replace(/_?(?:[ui](?:8|16|32|64|128|size)|f(?:32|64))$/i, '').replaceAll('_', '')));
 }
 
 function abbreviate(value) {
@@ -227,14 +239,19 @@ function abbreviate(value) {
 }
 
 function parseArgs(raw) {
-  const parsed = { all: false, staged: false, worktree: false, base: '', range: '' };
+  const parsed = { all: false, staged: false, worktree: false, base: '', range: '', json: false, numbersOnly: false };
   for (let i = 0; i < raw.length; i += 1) {
     const arg = raw[i];
     if (arg === '--all') parsed.all = true;
     else if (arg === '--staged') parsed.staged = true;
     else if (arg === '--worktree') parsed.worktree = true;
-    else if (arg === '--base') parsed.base = raw[++i] ?? '';
-    else if (arg === '--range') parsed.range = raw[++i] ?? '';
+    else if (arg === '--json') parsed.json = true;
+    else if (arg === '--numbers-only') parsed.numbersOnly = true;
+    else if (arg === '--base' || arg === '--range') {
+      const value = raw[++i];
+      if (!value || value.startsWith('--')) usage(`${arg} requires a value`);
+      parsed[arg.slice(2)] = value;
+    }
     else usage(`unknown argument: ${arg}`);
   }
   return parsed;
@@ -259,7 +276,7 @@ function resolveMode(parsed) {
 
 function usage(message) {
   console.error(message);
-  console.error('usage: node check-no-magic-constants.mjs [--all | --staged | --worktree | --base <sha> | --range <before>..<after>]');
+  console.error('usage: node check-no-magic-constants.mjs [--all | --staged | --worktree | --base <sha> | --range <before>..<after>] [--numbers-only] [--json]');
   process.exit(2);
 }
 

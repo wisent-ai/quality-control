@@ -110,7 +110,7 @@ Quality Control serves:
 |---|---|
 | no keyword logic | Swift, MJS, JS, TS, TSX, Python, shell, YAML, JSON |
 | no fallbacks | Swift, MJS, JS, TS, TSX, Python |
-| no magic constants | Swift, MJS, JS, TS, TSX, Python |
+| no magic constants | Swift, MJS, JS, TS, TSX, Python, Rust |
 | no desktop CLI coupling | Swift (repositories named `*-desktop` only) |
 
 Common exclusions include `.build/`, `.git/`, `.swiftpm/`, `.work/`,
@@ -142,7 +142,9 @@ script; they are not guaranteed to remain identical across policies.
 - **Actor:** a migration owner.
 - **Initial state:** an existing repository may predate the policy.
 - **Outcome:** the manual `Repository audit` workflow uploads four logs, four
-  exit-status files, and a summary artifact while leaving the workflow green.
+  exit-status files, and a summary artifact while leaving the workflow green;
+  `wisent-audit-magic-numbers` writes one report for every repository in a
+  local workspace.
 - **Boundary:** the artifact reports heuristic findings; it does not prioritize,
   waive, or repair them.
 
@@ -186,19 +188,19 @@ Run the source scripts directly:
 ```bash
 git clone https://github.com/wisent-ai/quality-control.git
 cd quality-control
-node scripts/check-no-keyword-logic.mjs --all
-node scripts/check-no-fallbacks.mjs --all
-node scripts/check-no-magic-constants.mjs --all
-node scripts/check-no-desktop-cli-coupling.mjs --all
+node src/check-no-keyword-logic.mjs --all
+node src/check-no-fallbacks.mjs --all
+node src/check-no-magic-constants.mjs --all
+node src/check-no-desktop-cli-coupling.mjs --all
 ```
 
 Run against staged changes (the default mode):
 
 ```bash
-node scripts/check-no-keyword-logic.mjs --staged
-node scripts/check-no-fallbacks.mjs --staged
-node scripts/check-no-magic-constants.mjs --staged
-node scripts/check-no-desktop-cli-coupling.mjs --staged
+node src/check-no-keyword-logic.mjs --staged
+node src/check-no-fallbacks.mjs --staged
+node src/check-no-magic-constants.mjs --staged
+node src/check-no-desktop-cli-coupling.mjs --staged
 ```
 
 Expected result: each guard prints a pass with its candidate-file count, or prints
@@ -234,7 +236,7 @@ all-files scan.
 ### No-keyword-logic
 
 ```bash
-node scripts/check-no-keyword-logic.mjs --base <base-sha>
+node src/check-no-keyword-logic.mjs --base <base-sha>
 ```
 
 Flags selected keyword-named identifiers, word-list gates, natural-language
@@ -245,7 +247,7 @@ output instead of word matching.
 ### No-fallbacks
 
 ```bash
-node scripts/check-no-fallbacks.mjs --worktree
+node src/check-no-fallbacks.mjs --worktree
 ```
 
 Flags selected fallback identifiers, nullish/logical defaulting, optional Swift
@@ -256,15 +258,44 @@ logging, and selected accumulation patterns.
 ### No-magic-constants
 
 ```bash
-node scripts/check-no-magic-constants.mjs --range <before>..<after>
+node src/check-no-magic-constants.mjs --range <before>..<after>
+node src/check-no-magic-constants.mjs --all --numbers-only --json
 ```
 
 Flags selected significant literals in assignment and logic-sensitive lines.
 Name the value, derive it from typed metadata, or load it from configuration.
+`-1`, `0`, `1` and `2` are never findings; a line that names an upper-case
+constant is never a finding, so `const RETRY_LIMIT = 3` passes and
+`let retries = 3` does not. `--numbers-only` ignores string literals.
+`--json` prints one report object on stdout — `schemaVersion`, `root`, `mode`,
+`checkedFiles`, `sourceDigest` (SHA-256 over every checked file) and
+`violations` (`file`, `line`, `rule`, `detail`, `source`) — and still exits
+`1` on findings. Test directories (`Tests/`, `test/`, `tests/`), `target/` and
+`.build/` are never scanned.
+
+### Fleet audit of magic numbers
+
+```bash
+node src/magic-numbers/audit.mjs --workspace ~/Documents/CodingProjects/Wisent [--output .build/<name>]
+```
+
+Runs `check-no-magic-constants --all --numbers-only --json` in every immediate
+Git repository of the workspace and writes `report.json` plus one evidence
+directory per repository (`stdout.json`, `stderr.log`, `execution.json`) under
+`quality-control/.build/`. The report records the checker revision and SHA-256,
+each repository's revision, branch, porcelain status, origin, checked-file
+count, source digest and violations, every skipped entry with its reason, and
+`counts` (`repositories`, `clean`, `findings`, `error`, `violations`). The
+report is rewritten after every repository, so an interrupted run keeps what
+it finished. Exit status `0` means no repository has findings, `1` means at
+least one has, and `2` means a repository could not be audited or the arguments
+were refused: `--workspace is required`; `--output must be a new direct child
+of quality-control/.build`; `output already exists: <path>`.
+
 ### No-desktop-cli-coupling
 
 ```bash
-node scripts/check-no-desktop-cli-coupling.mjs --base <base-sha>
+node src/check-no-desktop-cli-coupling.mjs --base <base-sha>
 ```
 
 Runs only in repositories whose name ends in `-desktop`; any other repository is
@@ -352,33 +383,32 @@ Consumers as of 2026-09-02: `brama`, `jeden`, `skarbiec`, `transcript-lake`,
 
 ## Organization enforcement
 
-The supplied installer creates an active organization ruleset for default
-branches of all repositories except the Quality Control host repository. It
-requires pull requests and the host workflow.
+`required-pr-quality.yml` blocks a pull request only where a ruleset requires
+it. The organization-ruleset installer that used to live at
+`scripts/install-org-ruleset.mjs` was removed on 2026-09-06 (`ccb2c63`, "no
+scripts in our repositories") and nothing replaced it. Measured on 2026-09-17
+with `gh api /repos/wisent-ai/<repo>/rulesets?includes_parents=true` and
+`/rules/branches/main`: `brama`, `skarbiec` and `quality-control` have no
+ruleset, organization-level or repository-level, and `main` is not protected.
+The fleet works on `main` directly, so today the workflow gates nothing.
 
-```bash
-gh auth refresh -h github.com -s admin:org
-node scripts/install-org-ruleset.mjs
-```
+What does gate a magic number today is the write-time hook the fleet's agent
+harness runs on every edit (`tama/shared-hooks/check_unsubstantiated_constants.py`,
+hook `pre-write-edit`), which allows numeric constants only in files named
+`constants.*` or under a `constants/` directory. A stricter registered hook,
+`block-numeric-literals`, is not enabled on the operator's machine. The two
+policies compose: a value the guard flags is named in upper case in the
+repository's constants module, and the code reads the name.
 
-This is a mutating organization-admin operation. Review the script and policy
-first. Defaults can be changed with:
-
-- `QUALITY_CONTROL_ORG`;
-- `QUALITY_CONTROL_HOST_REPO`;
-- `QUALITY_CONTROL_RULESET_NAME`;
-- `QUALITY_CONTROL_WORKFLOW_PATH`;
-- `QUALITY_CONTROL_WORKFLOW_REF`.
-
-The installer sends a `POST`; it is not an idempotent update command and can
-create another ruleset when rerun. The default workflow and script checkouts use
-`main`, so policy changes can alter future results without a release-tag change.
-Pin an audited revision where immutable policy is required.
+A ruleset is created through the GitHub REST API with an `admin:org` token; the
+default workflow and checkouts use `main`, so policy changes can alter future
+results without a release-tag change. Pin an audited revision where immutable
+policy is required.
 
 ## Security and privacy
 
-- Workflow permissions are read-only for contents and pull requests, but the
-  installer requires organization-administration authority.
+- Workflow permissions are read-only for contents and pull requests; creating
+  an organization ruleset requires organization-administration authority.
 - Findings and audit artifacts can include source lines. Treat logs as source
   disclosure and apply repository-appropriate retention/access policy.
 - Do not run unreviewed forks of these scripts with privileged tokens.
