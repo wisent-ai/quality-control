@@ -266,6 +266,11 @@ Flags selected significant literals in assignment and logic-sensitive lines.
 Name the value, derive it from typed metadata, or load it from configuration.
 `-1`, `0`, `1` and `2` are never findings; a line that names an upper-case
 constant is never a finding, so `const RETRY_LIMIT = 3` passes and
+`let retries = 3` does not. A number handed to a parser as a string —
+`Number('127')`, `Int("3")`, `"8080".parse()` — is reported as `number
+literal N is hidden in a string`, because that is the same literal wearing
+quotes. A value with a unit or percent sign (`260px`, `100%`) is a dimension
+and is left alone.
 `let retries = 3` does not. `--numbers-only` ignores string literals.
 `--json` prints one report object on stdout — `schemaVersion`, `root`, `mode`,
 `checkedFiles`, `sourceDigest` (SHA-256 over every checked file) and
