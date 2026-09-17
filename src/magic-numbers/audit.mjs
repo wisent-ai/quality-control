@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { EXIT, REPORT_SCHEMA_VERSION, MAX_OUTPUT_BYTES } from './constants.mjs';
+import { EXIT, REPORT_SCHEMA_VERSION, MAX_OUTPUT_BYTES } from '../constants.mjs';
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const CHECKER = path.join(PACKAGE_ROOT, 'src/check-no-magic-constants.mjs');

@@ -3,6 +3,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { MAX_OUTPUT_BYTES } from './constants.mjs';
 
 const ROOT = git(['rev-parse', '--show-toplevel']).trim();
 const ZERO_SHA = /^0+$/;
@@ -391,15 +392,12 @@ function isTrackedFile(file) {
 }
 
 function git(args) {
-  const result = spawnSync('git', args, {
-    cwd: process.cwd(),
-    encoding: 'utf8'
-  });
-  if (result.status !== 0) {
+  const result = spawnSync('git', args, { cwd: process.cwd(), encoding: 'utf8', maxBuffer: MAX_OUTPUT_BYTES });
+  if (result.error || result.status !== 0) {
     const command = `git ${args.join(' ')}`;
-    const detail = (result.stderr || result.stdout || '').trim();
-    console.error(`${command} failed${detail ? `: ${detail}` : ''}`);
-    process.exit(result.status ?? 1);
+    const detail = result.error ? result.error.message : result.stderr.trim();
+    console.error(`${command} failed: ${detail}`);
+    process.exit(result.status === null ? 1 : result.status);
   }
   return result.stdout;
 }

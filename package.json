@@ -18,6 +18,7 @@
     "src/check-no-fallbacks.mjs",
     "src/check-no-magic-constants.mjs",
     "src/check-no-desktop-cli-coupling.mjs",
+    "src/constants.mjs",
     "src/magic-numbers/",
     "LICENSE",
     "README.md"
