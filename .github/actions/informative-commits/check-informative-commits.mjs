@@ -2,6 +2,13 @@ import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 const CONVENTIONAL_PREFIX = /^[a-z]+(\([^)]+\))?!?:\s+(.+)$/i;
+// A token of this length or more is a word rather than an article or abbreviation.
+const LONG_TOKEN_LENGTH = 4;
+const MIN_SUBJECT_LENGTH = 12;
+// Object, action and one qualifier: the shortest subject that says what changed.
+const MIN_SUBJECT_TOKENS = 3;
+// GitHub's largest page for pull-request commits; a shorter page is the last one.
+const COMMITS_PAGE_SIZE = 100;
 
 function normalizeSubject(subject) {
   return subject
@@ -58,14 +65,14 @@ export function evaluateCommitMessage(message, options = {}) {
   const { hasConventionalPrefix, scoringSubject } = stripConventionalPrefix(subject);
   const tokens = tokenize(scoringSubject);
   const uniqueTokens = new Set(tokens);
-  const longTokens = tokens.filter((token) => token.length >= 4);
+  const longTokens = tokens.filter((token) => token.length >= LONG_TOKEN_LENGTH);
   const hasSpecificMarker = /[._/-]/.test(scoringSubject);
 
-  if (subject.length < 12) {
-    reasons.push("subject is shorter than 12 characters");
+  if (subject.length < MIN_SUBJECT_LENGTH) {
+    reasons.push(`subject is shorter than ${MIN_SUBJECT_LENGTH} characters`);
   }
 
-  if (!hasConventionalPrefix && tokens.length < 3) {
+  if (!hasConventionalPrefix && tokens.length < MIN_SUBJECT_TOKENS) {
     reasons.push("subject should describe the changed object and action");
   }
 
@@ -125,10 +132,10 @@ async function collectPullRequestCommits(owner, repo, pullNumber) {
 
   for (let page = 1; ; page += 1) {
     const batch = await githubJson(
-      `/repos/${owner}/${repo}/pulls/${pullNumber}/commits?per_page=100&page=${page}`,
+      `/repos/${owner}/${repo}/pulls/${pullNumber}/commits?per_page=${COMMITS_PAGE_SIZE}&page=${page}`,
     );
     commits.push(...batch);
-    if (batch.length < 100) {
+    if (batch.length < COMMITS_PAGE_SIZE) {
       return commits.map((commit) => ({
         sha: commit.sha,
         message: commit.commit?.message,
