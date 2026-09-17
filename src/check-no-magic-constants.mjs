@@ -47,6 +47,7 @@ const REGEX_LITERAL_RE = /(?<=^|[=(,:[!&|?{};]|\breturn|\btest|\bmatch)\s*\/(?![
 const NUMBER_LITERAL_SOURCE = '(?:0x[\\da-f_]+|0b[01_]+|0o[0-7_]+|(?:\\d[\\d_]*(?:\\.[\\d_]+)?|(?<![\\])])\\.\\d[\\d_]*)(?:e[-+]?[\\d_]+)?)(?:_?(?:[ui](?:8|16|32|64|128|size)|f(?:32|64)))?';
 // A unit or percent sign after the digits makes the value a dimension, which the guard leaves alone.
 const NUMBER_LITERAL_RE = new RegExp(`(?<![A-Za-z0-9_$.])[-+]?${NUMBER_LITERAL_SOURCE}(?![A-Za-z0-9_$%])`, 'gi');
+const QUOTED_NUMBER_RE = new RegExp(`\\b(?:Number|parseInt|parseFloat|Int|UInt|Double|Float|CGFloat|int|float|Decimal)\\s*\\(\\s*["'](?<value>[-+]?${NUMBER_LITERAL_SOURCE})["']|["'](?<value2>[-+]?\\d[\\d_]*(?:\\.\\d+)?)["']\\s*\\.parse(?:::<[^>]+>)?\\(`, 'gi');
 const NAMED_CONSTANT_RE = /^\s*(?:(?:pub(?:\([^)]*\))?|export|private|fileprivate|public|internal)\s+)*(?:(?:const|let|var|static(?:\s+(?:let|var))?)\s+)?_?[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
 const IMPORT_RE = /^\s*(?:import|export)\b.*\bfrom\b|^\s*(?:import|require)\s*\(/;
 const LOCAL_LITERAL_ASSIGN_RE = new RegExp(`^\\s*(?:const|let|var)?\\s*[a-z_][A-Za-z0-9_]*\\s*(?::[^=]+)?=\\s*(?:["'\`]|[-+]?${NUMBER_LITERAL_SOURCE}(?![A-Za-z0-9_$]))`, 'i');
@@ -139,6 +140,16 @@ function literalViolations(line) {
     });
   }
 
+  // Number('127'), Int("3") or "3".parse() is the same literal wearing quotes to slip past a guard.
+  for (const match of code.matchAll(QUOTED_NUMBER_RE)) {
+    const value = normalizeNumberLiteral(match.groups.value ?? match.groups.value2);
+    if (ALLOWED_NUMBER_LITERALS.has(value)) continue;
+    found.push({
+      rule: 'magic-number',
+      detail: `number literal ${value} is hidden in a string`
+    });
+  }
+
   return found;
 }
 
@@ -181,7 +192,7 @@ function isAllowedLiteralContext(line) {
 
 function isLiteralSensitiveContext(line) {
   const code = codeWithoutInlineComment(line);
-  return LOCAL_LITERAL_ASSIGN_RE.test(code) || LOGIC_LITERAL_RE.test(code);
+  return LOCAL_LITERAL_ASSIGN_RE.test(code) || LOGIC_LITERAL_RE.test(code) || code.search(QUOTED_NUMBER_RE) !== -1;
 }
 
 function isSchemaKeyAccess(code, start, length) {

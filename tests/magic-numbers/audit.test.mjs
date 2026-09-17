@@ -55,6 +55,13 @@ function flaggedSource(lineCount) {
 const CLEAN_SOURCE = 'export const RETRY_LIMIT = 3;\nexport function retries() {\n  return RETRY_LIMIT;\n}\n';
 const RUST_SOURCE = 'pub const RETRY_LIMIT: u32 = 3;\npub fn retries() -> u32 {\n    let attempts = 5_u32;\n    attempts + RETRY_LIMIT\n}\n';
 const RUST_TEST_SOURCE = 'fn ignored() -> u32 {\n    let attempts = 7;\n    attempts\n}\n';
+const DISGUISED_SOURCE = [
+  "const limit = Number('127');",
+  'let width = "100%";',
+  'if (Int("3") > 0) {}',
+  'let port: u16 = "8080".parse().unwrap();',
+  ''
+].join('\n');
 
 test('checker --json reports every finding even when the report exceeds a pipe buffer', () => {
   const workspace = fixtureRoot('checker');
@@ -82,6 +89,23 @@ test('checker scans Rust sources, skips the tests directory, and passes named co
     assert.equal(report.checkedFiles, 1);
     assert.deepEqual(report.violations.map(violation => [violation.file, violation.line, violation.detail]), [
       ['src/lib.rs', RUST_SOURCE.split('\n').findIndex(line => line.includes('5_u32')) + 1, 'number literal 5 is embedded in logic']
+    ]);
+  } finally {
+    rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+test('checker flags a number written as a string for a parser and leaves a dimension alone', () => {
+  const workspace = fixtureRoot('disguised');
+  try {
+    const directory = repository(workspace, 'site', { 'src/limits.mjs': DISGUISED_SOURCE });
+    const result = run(process.execPath, [CHECKER, '--all', '--numbers-only', '--json'], directory);
+    assert.equal(result.status, EXIT.findings, result.stderr);
+    const report = JSON.parse(result.stdout);
+    assert.deepEqual(report.violations.map(violation => [violation.line, violation.detail]), [
+      [1, 'number literal 127 is hidden in a string'],
+      [3, 'number literal 3 is hidden in a string'],
+      [4, 'number literal 8080 is hidden in a string']
     ]);
   } finally {
     rmSync(workspace, { recursive: true, force: true });
