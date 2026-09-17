@@ -174,6 +174,7 @@ function isAllowedLiteralContext(line) {
     || trimmed === 'if __name__ == "__main__":'
     || trimmed.startsWith('@')
     || trimmed.startsWith('"')
+    || trimmed.startsWith('{"')
     || trimmed.startsWith("'")
     || trimmed.startsWith('<')
     || trimmed.startsWith('help=')
