@@ -41,7 +41,10 @@ const EXCLUDED_DIRECTORIES = new Set([
 const EXCLUDED_BASENAME_RE = /(?:^config\.py|^test_.*\.py|_test\.py|\.test\.[cm]?[jt]sx?|\.spec\.[cm]?[jt]sx?|Tests\.swift|\.min\.[cm]?js)$/;
 
 const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|`([^`\\]*(?:\\.[^`\\]*)*)`/g;
-const NUMBER_LITERAL_SOURCE = '(?:0x[\\da-f_]+|0b[01_]+|0o[0-7_]+|(?:\\d[\\d_]*(?:\\.[\\d_]+)?|\\.\\d[\\d_]*)(?:e[-+]?[\\d_]+)?)(?:_?(?:[ui](?:8|16|32|64|128|size)|f(?:32|64)))?';
+// A JavaScript regular-expression literal after an operator, opening bracket or keyword; digits inside it are pattern text.
+const REGEX_LITERAL_RE = /(?<=^|[=(,:[!&|?{};]|\breturn|\btest|\bmatch)\s*\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\])*\]|[^/\\[\n])+\/[a-z]*/g;
+// A tuple field such as `.0` or `.1` follows a closing bracket or an identifier, never an operator.
+const NUMBER_LITERAL_SOURCE = '(?:0x[\\da-f_]+|0b[01_]+|0o[0-7_]+|(?:\\d[\\d_]*(?:\\.[\\d_]+)?|(?<![\\])])\\.\\d[\\d_]*)(?:e[-+]?[\\d_]+)?)(?:_?(?:[ui](?:8|16|32|64|128|size)|f(?:32|64)))?';
 const NUMBER_LITERAL_RE = new RegExp(`(?<![A-Za-z0-9_$.])[-+]?${NUMBER_LITERAL_SOURCE}(?![A-Za-z0-9_$])`, 'gi');
 const NAMED_CONSTANT_RE = /^\s*(?:(?:pub(?:\([^)]*\))?|export|private|fileprivate|public|internal)\s+)*(?:(?:const|let|var|static(?:\s+(?:let|var))?)\s+)?_?[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
 const IMPORT_RE = /^\s*(?:import|export)\b.*\bfrom\b|^\s*(?:import|require)\s*\(/;
@@ -113,7 +116,7 @@ if (args.json) {
 
 function literalViolations(line) {
   const code = codeWithoutInlineComment(line);
-  const withoutStrings = code.replace(STRING_LITERAL_RE, '""');
+  const withoutStrings = code.replace(STRING_LITERAL_RE, '""').replace(REGEX_LITERAL_RE, '/re/');
   const found = [];
 
   for (const match of code.matchAll(STRING_LITERAL_RE)) {

@@ -110,7 +110,13 @@ function main() {
   report.counts.violations = report.repositories.reduce((count, record) => count + (record.violations?.length ?? 0), 0);
   if (report.repositories.length === 0) report.error = 'workspace contains no immediate Git repositories';
   writeFileSync(path.join(output, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
+  const ranking = report.repositories
+    .filter(record => record.result === 'findings')
+    .sort((left, right) => right.violations.length - left.violations.length || left.name.localeCompare(right.name))
+    .map(record => `${record.violations.length}\t${record.name}`);
+  writeFileSync(path.join(output, 'ranking.tsv'), ranking.length ? `${ranking.join('\n')}\n` : '');
   console.log(`Report: ${path.join(output, 'report.json')}`);
+  console.log(`Ranking: ${path.join(output, 'ranking.tsv')}`);
   console.log(JSON.stringify(report.counts));
   process.exitCode = report.error || report.counts.error ? EXIT.error : report.counts.findings ? EXIT.findings : EXIT.clean;
 }
