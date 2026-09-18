@@ -7,6 +7,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { EXIT, MAX_OUTPUT_BYTES, REPORT_SCHEMA_VERSION } from './lib/constants.mjs';
+import { isGeneratedSource } from './lib/source-lines.mjs';
 
 const ROOT = git(['rev-parse', '--show-toplevel']).trim();
 export const MAX_FILE_LINES = 300;
@@ -58,7 +59,9 @@ for (const file of files) {
   if (LINE_LIMIT_EXEMPT_BASENAMES.has(basename)) continue;
   const text = readFileSync(absolute);
   if (text.subarray(0, BINARY_PROBE_BYTES).includes(0)) continue;
-  const lineCount = countLines(text.toString('utf8'));
+  const source = text.toString('utf8');
+  if (isGeneratedSource(source.split(/\r?\n/))) continue;
+  const lineCount = countLines(source);
   if (lineCount > MAX_FILE_LINES) {
     violations.push({
       file,

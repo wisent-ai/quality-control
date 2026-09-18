@@ -6,7 +6,7 @@ import { EXIT, REPORT_SCHEMA_VERSION } from './lib/constants.mjs';
 import {
   candidateFiles, isGuardSource, parseArgs, repositoryRoot, resolveMode, selectedLineNumbers, usageOf
 } from './lib/change-selection.mjs';
-import { documentationLineNumbers, isCommentOnlyLine, codeWithoutInlineComment } from './lib/source-lines.mjs';
+import { documentationLineNumbers, isCommentOnlyLine, codeWithoutInlineComment, isGeneratedSource } from './lib/source-lines.mjs';
 import {
   QUOTED_NUMBER_RE, isAllowedLiteralContext, isLikelyDocumentationLine, isLiteralSensitiveContext,
   literalViolations, withParseContinuation
@@ -42,9 +42,6 @@ const EXCLUDED_BASENAME_RE = /(?:^config\.py|^test_.*\.py|_test\.py|\.test\.[cm]
 // A finding quotes its line only up to this many characters, so a minified line stays one finding, not a report.
 const SOURCE_EXCERPT_LIMIT = 160;
 const ELLIPSIS = '...';
-// A file whose head says it is generated is the generator's output; the generator's source is what gets read.
-const GENERATED_HEADER_LINES = 5;
-const GENERATED_HEADER_RE = /generated\b[\s\S]*do not edit/i;
 
 const usage = usageOf('check-no-magic-constants.mjs', ' [--numbers-only] [--json]');
 const args = parseArgs(process.argv.slice(2), usage, { '--json': 'json', '--numbers-only': 'numbersOnly' });
@@ -60,7 +57,7 @@ for (const file of files) {
   const text = readFileSync(absolute, 'utf8');
   sourceDigest.update(file).update('\0').update(text).update('\0');
   const lines = text.split(/\r?\n/);
-  if (GENERATED_HEADER_RE.test(lines.slice(0, GENERATED_HEADER_LINES).join('\n'))) continue;
+  if (isGeneratedSource(lines)) continue;
   const documentationLines = documentationLineNumbers(lines);
   const changedLines = selectedLineNumbers(mode, file, lines, ROOT);
   if (changedLines.size === 0) continue;

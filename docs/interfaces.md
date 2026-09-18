@@ -44,7 +44,11 @@ positional second argument; `client.get(url, params=...)` is a call with a
 keyword argument and `isinstance(x.get(key), dict)` is a lookup, and neither
 is reported. Narrow source-level exceptions exist for environment lookup,
 logging, and selected accumulation patterns; no file is exempt by name, so a
-`config.py` or a `profiles/` folder is scanned like any other source. `--json`
+`config.py` or a `profiles/` folder is scanned like any other source. A test
+tree (`test/`, `tests/`, `Tests/`, `__tests__/`) and a file whose first five
+lines say it is generated and not to be edited are left alone, as the other
+guards leave them: the fixtures exercise these patterns on purpose, and the
+generator is the source that is read. `--json`
 prints the same report object as the magic-constants guard (`schemaVersion`,
 `root`, `mode`, `checkedFiles`, `sourceDigest`, `violations`) and exits `1` on
 findings. The remedy is never a substitute value: a missing input is refused
@@ -93,9 +97,12 @@ a folder holding more than five tracked files is a `folder-files` finding
 tree, so only `--all` is accepted; asking for anything else is refused with
 `--all is required`. Registries and manuscripts are exempt from the line count
 (`.json`, `.jsonl`, `.ndjson`, `.lock`, `.csv`, `.tsv`, `.tex`, `.bib`,
-`.sty`, `.bst`, `.cls`), and a directory named `test`, `tests*`, `__tests__`,
-`Tests`, `migrations*`, `node_modules`, `vendor`, `target`, `__pycache__`,
-`.build`, `.swiftpm` or `.git` is left out of both counts wherever it sits.
+`.sty`, `.bst`, `.cls`, `.svg`), as are a tokenizer's `merges.txt` and
+`vocab.txt`, a binary, and a file whose first five lines say it is generated
+and not to be edited (its generator is what has to fit); a directory named
+`test`, `tests*`, `__tests__`, `Tests`, `migrations*`, `node_modules`,
+`vendor`, `target`, `__pycache__`, `.build`, `.swiftpm` or `.git` is left out
+of both counts wherever it sits.
 The fix is the one the hooks ask for: split the file into modules; move the
 folder's files into sub-folders.
 

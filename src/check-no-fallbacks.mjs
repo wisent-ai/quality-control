@@ -6,7 +6,7 @@ import { EXIT, REPORT_SCHEMA_VERSION } from './lib/constants.mjs';
 import {
   candidateFiles, isGuardSource, parseArgs, repositoryRoot, resolveMode, selectedLineNumbers, usageOf
 } from './lib/change-selection.mjs';
-import { documentationLineNumbers, isCommentOnlyLine, codeWithoutInlineComment } from './lib/source-lines.mjs';
+import { documentationLineNumbers, isCommentOnlyLine, codeWithoutInlineComment, isGeneratedSource } from './lib/source-lines.mjs';
 
 const ROOT = repositoryRoot();
 const SOURCE_EXTENSIONS = new Set([
@@ -17,6 +17,8 @@ const SOURCE_EXTENSIONS = new Set([
   '.tsx',
   '.py'
 ]);
+// Test trees hold the fixtures that exercise these patterns on purpose, as the other guards
+// and the write hooks already leave them alone.
 const EXCLUDED_PREFIXES = [
   '.build/',
   '.git/',
@@ -24,6 +26,8 @@ const EXCLUDED_PREFIXES = [
   '.work/',
   'Tests/',
   'test/',
+  'tests/',
+  '__tests__/',
   'node_modules/'
 ];
 
@@ -52,6 +56,7 @@ for (const file of files) {
   const text = readFileSync(absolute, 'utf8');
   sourceDigest.update(file).update('\0').update(text).update('\0');
   const lines = text.split(/\r?\n/);
+  if (isGeneratedSource(lines)) continue;
   const documentationLines = documentationLineNumbers(lines);
   const changedLines = selectedLineNumbers(mode, file, lines, ROOT);
   if (changedLines.size === 0) continue;

@@ -18,6 +18,15 @@ export function codeWithoutInlineComment(line) {
   return line.replace(/\s+\/\/.*$/, '').replace(/\s+#.*$/, '');
 }
 
+// A file whose head says it is generated is the generator's output; the generator's source
+// is what a guard reads, so every guard leaves the rendered file alone.
+const GENERATED_HEADER_LINES = 5;
+const GENERATED_HEADER_RE = /generated\b[\s\S]*do not edit/i;
+
+export function isGeneratedSource(lines) {
+  return GENERATED_HEADER_RE.test(lines.slice(0, GENERATED_HEADER_LINES).join('\n'));
+}
+
 // The one-based numbers of every line inside or touching a Python triple-quoted string.
 export function documentationLineNumbers(lines) {
   const docs = new Set();
