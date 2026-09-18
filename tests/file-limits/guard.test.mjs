@@ -81,7 +81,7 @@ test('a file over the line limit and a folder over the file limit are findings; 
   }
 });
 
-test('registries, manuscripts, tokenizer lists, rendered files, licences, YAML registries, test trees and migrations are exempt', () => {
+test('registries, manuscripts, tokenizer lists, rendered files, licences, YAML registries, images, test trees and migrations are exempt', () => {
   const workspace = fixtureRoot('exempt');
   try {
     const directory = repository(workspace, 'exempt', {
@@ -91,6 +91,8 @@ test('registries, manuscripts, tokenizer lists, rendered files, licences, YAML r
       'dist/bundle.py': `# Generated from src/ by tools/render.py; do not edit.\n${sourceOf(MAX_FILE_LINES + 1)}`,
       'LICENSE': Array.from({ length: MAX_FILE_LINES + 1 }, () => 'GNU GENERAL PUBLIC LICENSE').join('\n') + '\n',
       'brand-assets.yml': `products:\n${Array.from({ length: MAX_FILE_LINES }, (_, i) => `  - product: p${i}`).join('\n')}\n`,
+      ...Object.fromEntries(Array.from({ length: MAX_FOLDER_FILES + 1 }, (_, i) => [`figures/plot${i}.png`, Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0x1a])])),
+      'figures/legend.svg': '<svg xmlns="http://www.w3.org/2000/svg"></svg>\n',
       ...folderOf('tests/unit', MAX_FOLDER_FILES + 1),
       ...folderOf('supabase/migrations', MAX_FOLDER_FILES + 1),
       'src/index.mjs': sourceOf(1),

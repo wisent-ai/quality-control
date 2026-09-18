@@ -2,7 +2,7 @@
 // The two size limits the workshop's write hooks enforce on every edit, applied to a whole
 // repository: no source file over 300 lines, no folder holding more than five files. The
 // hooks stop a new violation at the editor; this guard finds the ones that already exist.
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { closeSync, existsSync, openSync, readFileSync, readSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -22,8 +22,7 @@ const NO_LINE = null;
 const LINE_LIMIT_EXEMPT_EXTENSIONS = new Set([
   '.json', '.jsonl', '.ndjson', '.lock', '.csv', '.tsv',
   '.tex', '.bib', '.sty', '.bst', '.cls',
-  '.prisma',
-  '.svg'
+  '.prisma'
 ]);
 // A tokenizer's merge list and vocabulary are one row per token, written by the trainer
 // and read whole by the tokenizer; a checkpoint ships them as text next to its weights.
@@ -34,8 +33,11 @@ const LICENCE_BASENAME_RE = /^(?:LICEN[CS]E|COPYING|NOTICE)(?:\.(?:md|txt))?$/i;
 // decision; a workflow carries executable steps and is measured like any module.
 const YAML_EXTENSIONS = new Set(['.yml', '.yaml']);
 const WORKFLOWS_FOLDER = '.github/workflows';
-// A binary file is recognised by a NUL byte in its first kilobytes, whatever its name.
+// A binary file is recognised by a NUL byte in its first kilobytes, whatever its name. An
+// image, binary or `.svg`, is an asset a folder holds beside its modules and counts toward
+// neither limit: a figures folder of thirty plots is not thirty modules.
 const BINARY_PROBE_BYTES = 8 * 1024;
+const IMAGE_EXTENSIONS = new Set(['.svg']);
 // Third-party and generated trees are nobody's modules; test trees and migration ledgers
 // are lists by nature (the write hook's own exemptions).
 const EXEMPT_DIRECTORIES = new Set([
@@ -62,13 +64,17 @@ for (const file of files) {
   if (segments.some(segment => EXEMPT_DIRECTORIES.has(segment) || EXEMPT_DIRECTORY_RE.test(segment))) continue;
   sourceDigest.update(file).update('\0');
   const folder = segments.length === 0 ? '.' : segments.join('/');
-  folderCounts.set(folder, folderCounts.has(folder) ? folderCounts.get(folder) + 1 : 1);
   const extension = path.extname(basename).toLowerCase();
+  const head = Buffer.alloc(BINARY_PROBE_BYTES);
+  const descriptor = openSync(absolute, 'r');
+  const headLength = readSync(descriptor, head, 0, BINARY_PROBE_BYTES, 0);
+  closeSync(descriptor);
+  if (IMAGE_EXTENSIONS.has(extension) || head.subarray(0, headLength).includes(0)) continue;
+  folderCounts.set(folder, folderCounts.has(folder) ? folderCounts.get(folder) + 1 : 1);
   if (LINE_LIMIT_EXEMPT_EXTENSIONS.has(extension)) continue;
   if (LINE_LIMIT_EXEMPT_BASENAMES.has(basename) || LICENCE_BASENAME_RE.test(basename)) continue;
   if (YAML_EXTENSIONS.has(extension) && folder !== WORKFLOWS_FOLDER) continue;
   const text = readFileSync(absolute);
-  if (text.subarray(0, BINARY_PROBE_BYTES).includes(0)) continue;
   const source = text.toString('utf8');
   if (isGeneratedSource(source.split(/\r?\n/))) continue;
   const lineCount = countLines(source);

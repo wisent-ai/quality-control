@@ -105,8 +105,11 @@ tree, so only `--all` is accepted; asking for anything else is refused with
 `vocab.txt`, a licence text (`LICENSE`, `LICENCE`, `COPYING`, `NOTICE`, with
 or without `.md`/`.txt`), a `.yml`/`.yaml` file outside `.github/workflows`
 (a registry or configuration document; a workflow carries executable steps and
-is measured), a binary, and a file whose first five lines say it is generated
-and not to be edited (its generator is what has to fit); a directory named
+is measured), and a file whose first five lines say it is generated and not
+to be edited (its generator is what has to fit). An image or any other
+binary, recognised by a NUL byte in its first kilobytes or by the `.svg`
+extension, is an asset rather than a module and counts toward neither limit,
+so a figures folder of thirty plots is not a finding. A directory named
 `test`, `tests*`, `__tests__`, `Tests`, `migrations*`, `node_modules`,
 `vendor`, `target`, `__pycache__`, `.build`, `.swiftpm` or `.git` is left out
 of both counts wherever it sits.
