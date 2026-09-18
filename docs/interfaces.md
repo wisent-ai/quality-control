@@ -118,6 +118,17 @@ required`; `--checker must be one of magic-numbers, file-limits, fallbacks`;
 `--output must be a new direct child of quality-control/.build`; `output
 already exists: <path>`.
 
+```bash
+node src/magic-numbers/combine.mjs <audit output directory>...
+```
+
+Joins several fleet audits into one tab-separated table on stdout: a `total`
+column, one column per guard (named by the report's `checker.name`) and the
+repository, one row per repository with at least one finding, smallest total
+first, so a clean-up can be ordered by all the work a repository needs. An
+audit that could not read a repository stops the join with that repository's
+error rather than counting it as zero.
+
 ### No-desktop-cli-coupling
 
 ```bash

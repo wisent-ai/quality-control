@@ -165,7 +165,7 @@ function isAllowedFallbackContext(code) {
 }
 
 function isBooleanExpression(code) {
-  return /^\s*(?:if|while|for)\s*\(/.test(code)
+  return /^\s*(?:(?:\}\s*)?else\s+)?(?:if|while|for)\s*\(/.test(code)
     || /\b(?:true|false)\b\s*(?:\|\|)\s*\b(?:true|false)\b/.test(code)
     || /(?:&&|\|\|)\s*[A-Za-z_$][A-Za-z0-9_$]*\s*(?:&&|\|\|)/.test(code);
 }

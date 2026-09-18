@@ -11,6 +11,19 @@ const GUARD_PACKAGE_NAME = '@wisent-ai/quality-control';
 // The files whose text is made of the patterns the guards look for.
 const GUARD_PATTERN_FILE_RE = /^src\/(?:check-no-[a-z-]+\.mjs|lib\/source-lines\.mjs|magic-numbers\/literals\.mjs)$/;
 export const MODE_SYNTAX = '[--all | --staged | --worktree | --base <sha> | --range <before>..<after>]';
+const ONE_MODE_ONLY = 'choose only one of --all, --staged, --worktree, --base, or --range';
+const MODE = Object.freeze({ all: 'all', staged: 'staged', worktree: 'worktree', base: 'base', range: 'range' });
+// The Git diff every mode reads, in two shapes: the names of changed files, and one file's added lines.
+const DIFF_FILTER = '--diff-filter=ACMR';
+const DIFF_SELECTOR = {
+  [MODE.staged]: () => ['--cached'],
+  [MODE.worktree]: () => ['HEAD'],
+  [MODE.base]: mode => [`${mode.base}...HEAD`],
+  [MODE.range]: mode => [mode.range],
+};
+const GIT_LS_FILES = ['ls-files'];
+const GIT_ROOT = ['rev-parse', '--show-toplevel'];
+const TEXT = 'utf8';
 
 export function usageOf(script, extraSyntax = '') {
   return message => {
@@ -43,22 +56,22 @@ export function parseArgs(raw, usage, switches = {}) {
 export function resolveMode(parsed, usage) {
   const selected = [parsed.all, parsed.staged, parsed.worktree, Boolean(parsed.base), Boolean(parsed.range)]
     .filter(Boolean).length;
-  if (selected > 1) usage('choose only one of --all, --staged, --worktree, --base, or --range');
-  if (parsed.all) return { kind: 'all', all: true };
-  if (parsed.staged) return { kind: 'staged', all: false };
-  if (parsed.worktree) return { kind: 'worktree', all: false };
-  if (parsed.base) return { kind: 'base', base: parsed.base, all: false };
+  if (selected > 1) usage(ONE_MODE_ONLY);
+  if (parsed.all) return { kind: MODE.all, all: true };
+  if (parsed.staged) return { kind: MODE.staged, all: false };
+  if (parsed.worktree) return { kind: MODE.worktree, all: false };
+  if (parsed.base) return { kind: MODE.base, base: parsed.base, all: false };
   if (parsed.range) {
     const [before, after] = parsed.range.split('..');
     if (!before || !after) usage('--range must look like <before>..<after>');
-    if (ZERO_SHA.test(before)) return { kind: 'all', all: true };
-    return { kind: 'range', range: parsed.range, all: false };
+    if (ZERO_SHA.test(before)) return { kind: MODE.all, all: true };
+    return { kind: MODE.range, range: parsed.range, all: false };
   }
-  return { kind: 'staged', all: false };
+  return { kind: MODE.staged, all: false };
 }
 
 export function repositoryRoot() {
-  return git(['rev-parse', '--show-toplevel']).trim();
+  return git(GIT_ROOT).trim();
 }
 
 // Inside the guards' own package, the files made of guard patterns are not product code.
@@ -66,15 +79,15 @@ export function isGuardSource(root, file) {
   if (!GUARD_PATTERN_FILE_RE.test(file)) return false;
   const manifest = path.join(root, 'package.json');
   if (!existsSync(manifest)) return false;
-  return JSON.parse(readFileSync(manifest, 'utf8')).name === GUARD_PACKAGE_NAME;
+  return JSON.parse(readFileSync(manifest, TEXT)).name === GUARD_PACKAGE_NAME;
 }
 
 export function candidateFiles(mode, isScannedFile) {
   let output = mode.all
-    ? git(['ls-files'])
-    : git(diffNameOnlyArgs(mode));
-  if (mode.kind === 'worktree') {
-    output = [output, git(['ls-files', '--others', '--exclude-standard'])].join('\n');
+    ? git(GIT_LS_FILES)
+    : git(['diff', ...DIFF_SELECTOR[mode.kind](mode), '--name-only', DIFF_FILTER]);
+  if (mode.kind === MODE.worktree) {
+    output = [output, git([...GIT_LS_FILES, '--others', '--exclude-standard'])].join('\n');
   }
   return output
     .split('\n')
@@ -86,28 +99,12 @@ export function candidateFiles(mode, isScannedFile) {
 // The line numbers a guard reads in one file: every line under --all or for a file Git
 // does not know yet, and the lines the selected diff added in every other mode.
 export function selectedLineNumbers(mode, file, lines, root) {
-  if (mode.all || (mode.kind === 'worktree' && !isTrackedFile(root, file))) return allLineNumbers(lines);
+  if (mode.all || (mode.kind === MODE.worktree && !isTrackedFile(root, file))) return allLineNumbers(lines);
   return changedLineNumbers(mode, file);
 }
 
-function diffNameOnlyArgs(mode) {
-  if (mode.kind === 'staged') return ['diff', '--cached', '--name-only', '--diff-filter=ACMR'];
-  if (mode.kind === 'worktree') return ['diff', '--name-only', '--diff-filter=ACMR', 'HEAD'];
-  if (mode.kind === 'base') return ['diff', '--name-only', '--diff-filter=ACMR', `${mode.base}...HEAD`];
-  if (mode.kind === 'range') return ['diff', '--name-only', '--diff-filter=ACMR', mode.range];
-  throw new Error(`unsupported mode: ${mode.kind}`);
-}
-
-function diffPatchArgs(mode, file) {
-  if (mode.kind === 'staged') return ['diff', '--cached', '--unified=0', '--diff-filter=ACMR', '--', file];
-  if (mode.kind === 'worktree') return ['diff', '--unified=0', '--diff-filter=ACMR', 'HEAD', '--', file];
-  if (mode.kind === 'base') return ['diff', '--unified=0', '--diff-filter=ACMR', `${mode.base}...HEAD`, '--', file];
-  if (mode.kind === 'range') return ['diff', '--unified=0', '--diff-filter=ACMR', mode.range, '--', file];
-  throw new Error(`unsupported mode: ${mode.kind}`);
-}
-
 function changedLineNumbers(mode, file) {
-  const output = git(diffPatchArgs(mode, file));
+  const output = git(['diff', ...DIFF_SELECTOR[mode.kind](mode), '--unified=0', DIFF_FILTER, '--', file]);
   const numbers = new Set();
   let newLine = 0;
 
