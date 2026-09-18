@@ -99,9 +99,9 @@ to the whole tracked tree: a file over 300 lines is a `file-lines` finding and
 a folder holding more than five tracked files is a `folder-files` finding
 (`file` names the folder, `line` is `null`). The limits are properties of the
 tree, so only `--all` is accepted; asking for anything else is refused with
-`--all is required`. Registries and manuscripts are exempt from the line count
-(`.json`, `.jsonl`, `.ndjson`, `.lock`, `.csv`, `.tsv`, `.tex`, `.bib`, `.prisma`,
-`.sty`, `.bst`, `.cls`, `.svg`), as are a tokenizer's `merges.txt` and
+`--all is required`. Registries are exempt from the line count (`.json`,
+`.jsonl`, `.ndjson`, `.lock`, `.csv`, `.tsv`, `.prisma`), and so are a
+tokenizer's `merges.txt` and
 `vocab.txt`, a licence text (`LICENSE`, `LICENCE`, `COPYING`, `NOTICE`, with
 or without `.md`/`.txt`), a `.yml`/`.yaml` file outside `.github/workflows`
 (a registry or configuration document; a workflow carries executable steps and
@@ -109,7 +109,9 @@ is measured), and a file whose first five lines say it is generated and not
 to be edited (its generator is what has to fit). An image or any other
 binary, recognised by a NUL byte in its first kilobytes or by the `.svg`
 extension, is an asset rather than a module and counts toward neither limit,
-so a figures folder of thirty plots is not a finding. A directory named
+so a figures folder of thirty plots is not a finding; a manuscript's
+LaTeX-family files (`.tex`, `.bib`, `.sty`, `.bst`, `.cls`) count toward
+neither limit either, as the write hook exempts them. A directory named
 `test`, `tests*`, `__tests__`, `Tests`, `migrations*`, `node_modules`,
 `vendor`, `target`, `__pycache__`, `.build`, `.swiftpm` or `.git` is left out
 of both counts wherever it sits.

@@ -87,6 +87,7 @@ test('registries, manuscripts, tokenizer lists, rendered files, licences, YAML r
     const directory = repository(workspace, 'exempt', {
       'data/registry.json': `[${Array.from({ length: MAX_FILE_LINES + 1 }, () => '0').join(',\n')}]\n`,
       'paper/main.tex': sourceOf(MAX_FILE_LINES + 1),
+      ...Object.fromEntries(Array.from({ length: MAX_FOLDER_FILES + 1 }, (_, i) => [`paper/section${i}.tex`, sourceOf(1)])),
       'checkpoint/merges.txt': Array.from({ length: MAX_FILE_LINES + 1 }, (_, i) => `a b${i}`).join('\n') + '\n',
       'dist/bundle.py': `# Generated from src/ by tools/render.py; do not edit.\n${sourceOf(MAX_FILE_LINES + 1)}`,
       'LICENSE': Array.from({ length: MAX_FILE_LINES + 1 }, () => 'GNU GENERAL PUBLIC LICENSE').join('\n') + '\n',

@@ -21,7 +21,6 @@ const NO_LINE = null;
 // 2026-09-14). An image is not text at all.
 const LINE_LIMIT_EXEMPT_EXTENSIONS = new Set([
   '.json', '.jsonl', '.ndjson', '.lock', '.csv', '.tsv',
-  '.tex', '.bib', '.sty', '.bst', '.cls',
   '.prisma'
 ]);
 // A tokenizer's merge list and vocabulary are one row per token, written by the trainer
@@ -38,6 +37,10 @@ const WORKFLOWS_FOLDER = '.github/workflows';
 // neither limit: a figures folder of thirty plots is not thirty modules.
 const BINARY_PROBE_BYTES = 8 * 1024;
 const IMAGE_EXTENSIONS = new Set(['.svg']);
+// A manuscript's folder holds the document, its bibliography and the venue's style files
+// side by side; the venue template decides that layout (the write hook's own exemption,
+// 2026-09-14), so LaTeX-family files count toward neither limit.
+const LATEX_EXTENSIONS = new Set(['.tex', '.bib', '.sty', '.bst', '.cls']);
 // Third-party and generated trees are nobody's modules; test trees and migration ledgers
 // are lists by nature (the write hook's own exemptions).
 const EXEMPT_DIRECTORIES = new Set([
@@ -70,6 +73,7 @@ for (const file of files) {
   const headLength = readSync(descriptor, head, 0, BINARY_PROBE_BYTES, 0);
   closeSync(descriptor);
   if (IMAGE_EXTENSIONS.has(extension) || head.subarray(0, headLength).includes(0)) continue;
+  if (LATEX_EXTENSIONS.has(extension)) continue;
   folderCounts.set(folder, folderCounts.has(folder) ? folderCounts.get(folder) + 1 : 1);
   if (LINE_LIMIT_EXEMPT_EXTENSIONS.has(extension)) continue;
   if (LINE_LIMIT_EXEMPT_BASENAMES.has(basename) || LICENCE_BASENAME_RE.test(basename)) continue;
