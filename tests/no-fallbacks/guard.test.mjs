@@ -106,3 +106,38 @@ test('an HTTP get with keyword arguments and a lookup compared afterwards are no
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test('a Rust substitute and a serde default on a required field are findings; a default on an option is not', () => {
+  const directory = repository('rust', {
+    'src/config.rs': [
+      'pub fn timeout(value: Option<u64>) -> u64 {',
+      '    value.unwrap_or(30)',
+      '}',
+      '',
+    ].join('\n'),
+    'src/record.rs': [
+      '#[derive(Deserialize)]',
+      'pub struct Record {',
+      '    #[serde(default)]',
+      '    pub tags: Vec<String>,',
+      '    #[serde(default, skip_serializing_if = "Option::is_none")]',
+      '    pub note: Option<String>,',
+      '}',
+      '',
+      'pub fn ready(count: usize, limit: usize, done: bool) -> bool {',
+      '    count > limit || done',
+      '}',
+      '',
+    ].join('\n'),
+  });
+  try {
+    const { status, violations, stderr } = report(directory);
+    assert.equal(status, EXIT.findings, stderr);
+    assert.deepEqual(
+      violations.map(violation => [violation.file, violation.line, violation.rule]).sort(),
+      [['src/config.rs', 2, 'unwrap-or-substitute'], ['src/record.rs', 3, 'serde-default-substitute']]
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});

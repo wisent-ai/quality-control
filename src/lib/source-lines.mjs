@@ -1,11 +1,12 @@
 // Reading one source line the way every guard does: what is a comment, what is
 // documentation, and where a string literal starts and ends.
 
-// The comment openers a guard treats as "no code on this line". Swift has no `#`
+// The comment openers a guard treats as "no code on this line". Swift and Rust have no `#`
 // comments; YAML and Markdown carry `<!--`.
 export const CODE_COMMENT_MARKERS = ['//', '///', '#', '*', '/*'];
 export const MARKUP_COMMENT_MARKERS = [...CODE_COMMENT_MARKERS, '<!--'];
 export const SWIFT_COMMENT_MARKERS = ['//', '///', '*', '/*'];
+export const RUST_COMMENT_MARKERS = ['//', '///', '//!', '*', '/*'];
 
 export const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|`([^`\\]*(?:\\.[^`\\]*)*)`/g;
 
@@ -14,8 +15,11 @@ export function isCommentOnlyLine(line, markers = CODE_COMMENT_MARKERS) {
   return markers.some(marker => trimmed.startsWith(marker));
 }
 
-export function codeWithoutInlineComment(line) {
-  return line.replace(/\s+\/\/.*$/, '').replace(/\s+#.*$/, '');
+// `hashComments` is false for a language where `#` opens no comment: a Rust attribute such as
+// `#[serde(default)]` is code, and stripping from the `#` left the guard nothing to read.
+export function codeWithoutInlineComment(line, { hashComments = true } = {}) {
+  const withoutLineComment = line.replace(/\s+\/\/.*$/, '');
+  return hashComments ? withoutLineComment.replace(/\s+#.*$/, '') : withoutLineComment;
 }
 
 // A file whose head says it is generated is the generator's output; the generator's source

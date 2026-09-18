@@ -6,7 +6,10 @@ import { EXIT, REPORT_SCHEMA_VERSION } from './lib/constants.mjs';
 import {
   candidateFiles, isGuardSource, parseArgs, repositoryRoot, resolveMode, selectedLineNumbers, usageOf
 } from './lib/change-selection.mjs';
-import { documentationLineNumbers, isCommentOnlyLine, codeWithoutInlineComment, isGeneratedSource } from './lib/source-lines.mjs';
+import {
+  CODE_COMMENT_MARKERS, RUST_COMMENT_MARKERS, codeWithoutInlineComment, documentationLineNumbers,
+  isCommentOnlyLine, isGeneratedSource
+} from './lib/source-lines.mjs';
 
 const ROOT = repositoryRoot();
 const SOURCE_EXTENSIONS = new Set([
@@ -17,7 +20,8 @@ const SOURCE_EXTENSIONS = new Set([
   '.js',
   '.ts',
   '.tsx',
-  '.py'
+  '.py',
+  '.rs'
 ]);
 // Test trees hold the fixtures that exercise these patterns on purpose, as the other guards
 // and the write hooks already leave them alone.
@@ -53,6 +57,17 @@ const EMPTY_CATCH_RE = /\bcatch\b[^{]*{\s*}/;
 // a condition longer than this is not something a guard should be reading either.
 const CONDITION_LOOKBACK_LINES = 8;
 const CONDITION_OPENER_RE = /^\s*(?:(?:\}\s*)?else\s+)?(?:if|while)\s*\(/;
+// Rust states a substitute in one of two ways: `unwrap_or` and its relatives hand back a value
+// where a missing or failed one was, and a serde `default` lets a document that left a field out
+// deserialize as though it had been written. A `default` on an `Option` field is not a substitute:
+// the absence stays visible as `None`, so the type of the field the attribute sits on decides.
+const RUST_SUBSTITUTE_RE = /\.unwrap_or(?:_else|_default)?\s*\(/;
+const RUST_SERDE_DEFAULT_RE = /#\s*\[\s*serde\s*\([^)]*\bdefault\b/;
+const RUST_OPTION_FIELD_RE = /:\s*Option\s*</;
+const RUST_ATTRIBUTE_RE = /^\s*#\s*\[/;
+// A serde attribute names the field below it; the fields of a struct do not nest deeper than the
+// attributes stacked on one of them, so the type is found within a few lines or not at all.
+const RUST_FIELD_LOOKAHEAD_LINES = 4;
 
 const usage = usageOf('check-no-fallbacks.mjs', ' [--json]');
 const args = parseArgs(process.argv.slice(2), usage, { '--json': 'json' });
@@ -72,14 +87,17 @@ for (const file of files) {
   const documentationLines = documentationLineNumbers(lines);
   const changedLines = selectedLineNumbers(mode, file, lines, ROOT);
   if (changedLines.size === 0) continue;
+  const isRust = path.extname(file) === '.rs';
 
   for (const lineNumber of changedLines) {
     const line = lineNumber <= lines.length ? lines[lineNumber - 1] : '';
     if (documentationLines.has(lineNumber)) continue;
-    if (isCommentOnlyLine(line)) continue;
-    const code = codeWithoutInlineComment(line);
+    if (isCommentOnlyLine(line, isRust ? RUST_COMMENT_MARKERS : CODE_COMMENT_MARKERS)) continue;
+    const code = codeWithoutInlineComment(line, { hashComments: !isRust });
 
-    const rule = fallbackRule(code, insideOpenCondition(lines, lineNumber));
+    const rule = isRust
+      ? rustFallbackRule(code, lines, lineNumber)
+      : fallbackRule(code, insideOpenCondition(lines, lineNumber));
     if (!rule) continue;
 
     violations.push({
@@ -124,6 +142,38 @@ function insideOpenCondition(lines, lineNumber) {
     const earlier = codeWithoutInlineComment(lines[index]);
     depth += countOf(earlier, ')') - countOf(earlier, '(');
     if (CONDITION_OPENER_RE.test(earlier)) return depth < 0;
+  }
+  return false;
+}
+
+function rustFallbackRule(code, lines, lineNumber) {
+  if (FALLBACK_IDENTIFIER_RE.test(code)) {
+    return {
+      name: 'fallback-identifier',
+      detail: 'fallback identifiers introduce hidden alternate behavior'
+    };
+  }
+  if (RUST_SUBSTITUTE_RE.test(code)) {
+    return {
+      name: 'unwrap-or-substitute',
+      detail: 'unwrap_or hands back a substitute where a missing or failed value was'
+    };
+  }
+  if (RUST_SERDE_DEFAULT_RE.test(code) && !rustOptionFieldFollows(lines, lineNumber)) {
+    return {
+      name: 'serde-default-substitute',
+      detail: 'a serde default lets a document that left the field out deserialize as though it had not'
+    };
+  }
+  return null;
+}
+
+function rustOptionFieldFollows(lines, lineNumber) {
+  const last = Math.min(lines.length, lineNumber + RUST_FIELD_LOOKAHEAD_LINES);
+  for (let number = lineNumber + 1; number <= last; number += 1) {
+    const field = codeWithoutInlineComment(lines[number - 1]);
+    if (field.trim() === '' || RUST_ATTRIBUTE_RE.test(field)) continue;
+    return RUST_OPTION_FIELD_RE.test(field);
   }
   return false;
 }
