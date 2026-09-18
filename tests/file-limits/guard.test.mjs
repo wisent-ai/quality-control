@@ -80,12 +80,13 @@ test('a file over the line limit and a folder over the file limit are findings; 
   }
 });
 
-test('registries, manuscripts, test trees and migrations are exempt, as the write hooks exempt them', () => {
+test('registries, manuscripts, tokenizer lists, test trees and migrations are exempt, as the write hooks exempt them', () => {
   const workspace = fixtureRoot('exempt');
   try {
     const directory = repository(workspace, 'exempt', {
       'data/registry.json': `[${Array.from({ length: MAX_FILE_LINES + 1 }, () => '0').join(',\n')}]\n`,
       'paper/main.tex': sourceOf(MAX_FILE_LINES + 1),
+      'checkpoint/merges.txt': Array.from({ length: MAX_FILE_LINES + 1 }, (_, i) => `a b${i}`).join('\n') + '\n',
       ...folderOf('tests/unit', MAX_FOLDER_FILES + 1),
       ...folderOf('supabase/migrations', MAX_FOLDER_FILES + 1),
       'src/index.mjs': sourceOf(1),

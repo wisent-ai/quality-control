@@ -22,6 +22,9 @@ const LINE_LIMIT_EXEMPT_EXTENSIONS = new Set([
   '.tex', '.bib', '.sty', '.bst', '.cls',
   '.svg'
 ]);
+// A tokenizer's merge list and vocabulary are one row per token, written by the trainer
+// and read whole by the tokenizer; a checkpoint ships them as text next to its weights.
+const LINE_LIMIT_EXEMPT_BASENAMES = new Set(['merges.txt', 'vocab.txt']);
 // A binary file is recognised by a NUL byte in its first kilobytes, whatever its name.
 const BINARY_PROBE_BYTES = 8 * 1024;
 // Third-party and generated trees are nobody's modules; test trees and migration ledgers
@@ -52,6 +55,7 @@ for (const file of files) {
   const folder = segments.length === 0 ? '.' : segments.join('/');
   folderCounts.set(folder, folderCounts.has(folder) ? folderCounts.get(folder) + 1 : 1);
   if (LINE_LIMIT_EXEMPT_EXTENSIONS.has(path.extname(basename).toLowerCase())) continue;
+  if (LINE_LIMIT_EXEMPT_BASENAMES.has(basename)) continue;
   const text = readFileSync(absolute);
   if (text.subarray(0, BINARY_PROBE_BYTES).includes(0)) continue;
   const lineCount = countLines(text.toString('utf8'));
