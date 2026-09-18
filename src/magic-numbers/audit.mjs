@@ -7,7 +7,12 @@ import { createHash } from 'node:crypto';
 import { EXIT, REPORT_SCHEMA_VERSION, MAX_OUTPUT_BYTES } from '../constants.mjs';
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const CHECKER = path.join(PACKAGE_ROOT, 'src/check-no-magic-constants.mjs');
+// The guards a fleet audit can run: the script and the flags that make it read the whole tree.
+const CHECKERS = {
+  'magic-numbers': { script: 'src/check-no-magic-constants.mjs', flags: ['--all', '--numbers-only', '--json'] },
+  'file-limits': { script: 'src/check-file-limits.mjs', flags: ['--all', '--json'] },
+};
+const DEFAULT_CHECKER = 'magic-numbers';
 
 function run(command, args, cwd) {
   const result = spawnSync(command, args, { cwd, encoding: 'utf8', maxBuffer: MAX_OUTPUT_BYTES });
@@ -35,27 +40,31 @@ function parseArgs() {
       skip.add(value);
       continue;
     }
-    if (!['--workspace', '--output'].includes(key) || options[key]) throw new Error(`unknown or repeated argument: ${key}`);
+    if (!['--workspace', '--output', '--checker'].includes(key) || options[key]) throw new Error(`unknown or repeated argument: ${key}`);
     options[key] = value;
   }
   if (!options['--workspace']) throw new Error('--workspace is required');
+  const checkerName = options['--checker'] ?? DEFAULT_CHECKER;
+  if (!CHECKERS[checkerName]) throw new Error(`--checker must be one of ${Object.keys(CHECKERS).join(', ')}`);
   const workspace = realpathSync(options['--workspace']);
   const build = path.join(PACKAGE_ROOT, '.build');
   mkdirSync(build, { recursive: true });
-  const output = path.resolve(options['--output'] ?? path.join(build, `magic-numbers-${new Date().toISOString().replaceAll(':', '-')}`));
+  const output = path.resolve(options['--output'] ?? path.join(build, `${checkerName}-${new Date().toISOString().replaceAll(':', '-')}`));
   // A direct child prevents symlinked parents from writing outside the owned build directory.
   if (path.dirname(output) !== build || realpathSync(build) !== build) throw new Error('--output must be a new direct child of quality-control/.build');
   if (existsSync(output)) throw new Error(`output already exists: ${output}`);
-  return { workspace, output, skip };
+  return { workspace, output, skip, checkerName };
 }
 
 function main() {
-  const { workspace, output, skip } = parseArgs();
+  const { workspace, output, skip, checkerName } = parseArgs();
+  const checkerScript = path.join(PACKAGE_ROOT, CHECKERS[checkerName].script);
   const entries = readdirSync(workspace, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name));
   const checker = {
+    name: checkerName,
     revision: git(['rev-parse', 'HEAD'], PACKAGE_ROOT),
     status: git(['status', '--porcelain'], PACKAGE_ROOT),
-    sha256: createHash('sha256').update(readFileSync(CHECKER)).digest('hex'),
+    sha256: createHash('sha256').update(readFileSync(checkerScript)).digest('hex'),
   };
   mkdirSync(output);
   const report = { schemaVersion: REPORT_SCHEMA_VERSION, startedAt: new Date().toISOString(), workspace, checker, repositories: [], skipped: [] };
@@ -79,7 +88,7 @@ function main() {
       record.status = git(['status', '--porcelain', '--untracked-files=no'], directory);
       const origin = run('git', ['remote', 'get-url', 'origin'], directory);
       record.origin = origin.exitStatus === EXIT.clean ? origin.stdout.trim() : null;
-      const result = run(process.execPath, [CHECKER, '--all', '--numbers-only', '--json'], directory);
+      const result = run(process.execPath, [checkerScript, ...CHECKERS[checkerName].flags], directory);
       const evidence = path.join(output, entry.name);
       mkdirSync(evidence);
       writeFileSync(path.join(evidence, 'stdout.json'), result.stdout);
@@ -125,6 +134,6 @@ try {
   main();
 } catch (error) {
   console.error(error.message);
-  console.error('usage: node src/magic-numbers/audit.mjs --workspace <directory> [--output <new quality-control/.build/directory>] [--skip <repository>]...');
+  console.error('usage: node src/magic-numbers/audit.mjs --workspace <directory> [--checker magic-numbers|file-limits] [--output <new quality-control/.build/directory>] [--skip <repository>]...');
   process.exitCode = EXIT.error;
 }

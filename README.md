@@ -112,6 +112,7 @@ Quality Control serves:
 | no fallbacks | Swift, MJS, JS, TS, TSX, Python |
 | no magic constants | Swift, MJS, JS, TS, TSX, Python, Rust |
 | no desktop CLI coupling | Swift (repositories named `*-desktop` only) |
+| file limits | every tracked file except registries and manuscripts (see below) |
 
 Common exclusions include `.build/`, `.git/`, `.swiftpm/`, `.work/`,
 `node_modules/`, and test paths. Exact exclusions are the source of truth in each
@@ -282,19 +283,40 @@ test file (`test_*.py`, `*_test.py`, `*.test.*`, `*.spec.*`, `*Tests.swift`),
 a minified script (`*.min.js`), `config.py`, or a file whose first five lines say it is
 generated and not to be edited: its generator is the source that is read.
 
-### Fleet audit of magic numbers
+### File limits
 
 ```bash
-node src/magic-numbers/audit.mjs --workspace ~/Documents/CodingProjects/Wisent [--output .build/<name>] [--skip <repository>]...
+node src/check-file-limits.mjs --all
+node src/check-file-limits.mjs --all --json
 ```
 
-Runs `check-no-magic-constants --all --numbers-only --json` in every immediate
+The two size limits the workshop's write hooks enforce on every edit, applied
+to the whole tracked tree: a file over 300 lines is a `file-lines` finding and
+a folder holding more than five tracked files is a `folder-files` finding
+(`file` names the folder, `line` is `null`). The limits are properties of the
+tree, so only `--all` is accepted; asking for anything else is refused with
+`--all is required`. Registries and manuscripts are exempt from the line count
+(`.json`, `.jsonl`, `.ndjson`, `.lock`, `.csv`, `.tsv`, `.tex`, `.bib`,
+`.sty`, `.bst`, `.cls`), and a directory named `test`, `tests*`, `__tests__`,
+`Tests`, `migrations*`, `node_modules`, `vendor`, `target`, `__pycache__`,
+`.build`, `.swiftpm` or `.git` is left out of both counts wherever it sits.
+The fix is the one the hooks ask for: split the file into modules; move the
+folder's files into sub-folders.
+
+### Fleet audit of magic numbers or file limits
+
+```bash
+node src/magic-numbers/audit.mjs --workspace ~/Documents/CodingProjects/Wisent [--checker magic-numbers|file-limits] [--output .build/<name>] [--skip <repository>]...
+```
+
+Runs the chosen guard (`check-no-magic-constants --all --numbers-only --json`
+by default, `check-file-limits --all --json` with `--checker file-limits`) in every immediate
 Git repository of the workspace and writes `report.json` plus one evidence
 directory per repository (`stdout.json`, `stderr.log`, `execution.json`) under
 `quality-control/.build/`. `--skip <name>` leaves a repository out and records
 it under `skipped` with the reason `named by --skip`; the workspace's checkout
 of the upstream agent harness is audited that way. The report records the
-checker revision and SHA-256,
+checker's name, revision and SHA-256,
 each repository's revision, branch, porcelain status, origin, checked-file
 count, source digest and violations, every skipped entry with its reason, and
 `counts` (`repositories`, `clean`, `findings`, `error`, `violations`). The
