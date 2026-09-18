@@ -27,7 +27,13 @@ const LINE_LIMIT_EXEMPT_EXTENSIONS = new Set([
 ]);
 // A tokenizer's merge list and vocabulary are one row per token, written by the trainer
 // and read whole by the tokenizer; a checkpoint ships them as text next to its weights.
+// A licence text is reproduced verbatim from its author.
 const LINE_LIMIT_EXEMPT_BASENAMES = new Set(['merges.txt', 'vocab.txt']);
+const LICENCE_BASENAME_RE = /^(?:LICEN[CS]E|COPYING|NOTICE)(?:\.(?:md|txt))?$/i;
+// YAML outside a workflows folder is a registry or a configuration document, one entry per
+// decision; a workflow carries executable steps and is measured like any module.
+const YAML_EXTENSIONS = new Set(['.yml', '.yaml']);
+const WORKFLOWS_FOLDER = '.github/workflows';
 // A binary file is recognised by a NUL byte in its first kilobytes, whatever its name.
 const BINARY_PROBE_BYTES = 8 * 1024;
 // Third-party and generated trees are nobody's modules; test trees and migration ledgers
@@ -57,8 +63,10 @@ for (const file of files) {
   sourceDigest.update(file).update('\0');
   const folder = segments.length === 0 ? '.' : segments.join('/');
   folderCounts.set(folder, folderCounts.has(folder) ? folderCounts.get(folder) + 1 : 1);
-  if (LINE_LIMIT_EXEMPT_EXTENSIONS.has(path.extname(basename).toLowerCase())) continue;
-  if (LINE_LIMIT_EXEMPT_BASENAMES.has(basename)) continue;
+  const extension = path.extname(basename).toLowerCase();
+  if (LINE_LIMIT_EXEMPT_EXTENSIONS.has(extension)) continue;
+  if (LINE_LIMIT_EXEMPT_BASENAMES.has(basename) || LICENCE_BASENAME_RE.test(basename)) continue;
+  if (YAML_EXTENSIONS.has(extension) && folder !== WORKFLOWS_FOLDER) continue;
   const text = readFileSync(absolute);
   if (text.subarray(0, BINARY_PROBE_BYTES).includes(0)) continue;
   const source = text.toString('utf8');

@@ -59,6 +59,7 @@ test('a file over the line limit and a folder over the file limit are findings; 
   try {
     const directory = repository(workspace, 'crowded', {
       'src/long.mjs': sourceOf(MAX_FILE_LINES + 1),
+      '.github/workflows/gate.yml': `on: push\njobs:\n  gate:\n    steps:\n${Array.from({ length: MAX_FILE_LINES }, (_, i) => `      - run: echo ${i}`).join('\n')}\n`,
       'src/exact.mjs': sourceOf(MAX_FILE_LINES),
       ...folderOf('lib', MAX_FOLDER_FILES + 1),
       ...folderOf('ok', MAX_FOLDER_FILES),
@@ -68,9 +69,9 @@ test('a file over the line limit and a folder over the file limit are findings; 
     const report = JSON.parse(result.stdout);
     assert.deepEqual(
       report.violations.map(violation => [violation.file, violation.rule]),
-      [['lib', 'folder-files'], ['src/long.mjs', 'file-lines']]
+      [['.github/workflows/gate.yml', 'file-lines'], ['lib', 'folder-files'], ['src/long.mjs', 'file-lines']]
     );
-    assert.match(report.violations[1].detail, new RegExp(`^${MAX_FILE_LINES + 1} lines`));
+    assert.match(report.violations[2].detail, new RegExp(`^${MAX_FILE_LINES + 1} lines`));
     const text = run(process.execPath, [CHECKER, '--all'], directory);
     assert.equal(text.status, EXIT.findings);
     assert.match(text.stderr, /src\/long\.mjs: file-lines/);
@@ -80,7 +81,7 @@ test('a file over the line limit and a folder over the file limit are findings; 
   }
 });
 
-test('registries, manuscripts, tokenizer lists, rendered files, test trees and migrations are exempt, as the write hooks exempt them', () => {
+test('registries, manuscripts, tokenizer lists, rendered files, licences, YAML registries, test trees and migrations are exempt', () => {
   const workspace = fixtureRoot('exempt');
   try {
     const directory = repository(workspace, 'exempt', {
@@ -88,6 +89,8 @@ test('registries, manuscripts, tokenizer lists, rendered files, test trees and m
       'paper/main.tex': sourceOf(MAX_FILE_LINES + 1),
       'checkpoint/merges.txt': Array.from({ length: MAX_FILE_LINES + 1 }, (_, i) => `a b${i}`).join('\n') + '\n',
       'dist/bundle.py': `# Generated from src/ by tools/render.py; do not edit.\n${sourceOf(MAX_FILE_LINES + 1)}`,
+      'LICENSE': Array.from({ length: MAX_FILE_LINES + 1 }, () => 'GNU GENERAL PUBLIC LICENSE').join('\n') + '\n',
+      'brand-assets.yml': `products:\n${Array.from({ length: MAX_FILE_LINES }, (_, i) => `  - product: p${i}`).join('\n')}\n`,
       ...folderOf('tests/unit', MAX_FOLDER_FILES + 1),
       ...folderOf('supabase/migrations', MAX_FOLDER_FILES + 1),
       'src/index.mjs': sourceOf(1),
