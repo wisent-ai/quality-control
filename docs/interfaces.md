@@ -39,10 +39,13 @@ node src/check-no-fallbacks.mjs --all --json
 
 Flags selected fallback identifiers, nullish/logical defaulting, optional Swift
 `try?`, Python dictionary defaults, promise/catch substitute values, and empty
-catch blocks. A dictionary default is `.get(key, substitute)` with a
-positional second argument; `client.get(url, params=...)` is a call with a
-keyword argument and `isinstance(x.get(key), dict)` is a lookup, and neither
-is reported. Narrow source-level exceptions exist for environment lookup,
+catch blocks. A logical default is `x || value` where the value stands in for
+a missing `x`; `!query || list.includes(query)` and `count > limit || done`
+are boolean logic and are not reported. A dictionary default is
+`.get(key, substitute)` with a positional second argument;
+`client.get(url, params=...)` is a call with a keyword argument and
+`isinstance(x.get(key), dict)` is a lookup, and neither is reported. Narrow
+source-level exceptions exist for environment lookup,
 logging, and selected accumulation patterns; no file is exempt by name, so a
 `config.py` or a `profiles/` folder is scanned like any other source. A test
 tree (`test/`, `tests/`, `Tests/`, `__tests__/`) and a file whose first five

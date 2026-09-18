@@ -59,6 +59,24 @@ test('a positional dictionary substitute, a nullish substitute and an optional t
   }
 });
 
+test('boolean logic around a logical-or is not a substitute; a value on its right is', () => {
+  const directory = repository('boolean', {
+    'src/filter.js': [
+      'const visible = !query || haystack.includes(query);',
+      'const ready = count > limit || state === "done";',
+      '',
+    ].join('\n'),
+    'src/port.js': 'const port = options.port || 8080;\n',
+  });
+  try {
+    const { status, violations } = report(directory);
+    assert.equal(status, EXIT.findings);
+    assert.deepEqual(violations.map(violation => [violation.file, violation.rule]), [['src/port.js', 'logical-default']]);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test('an HTTP get with keyword arguments and a lookup compared afterwards are not dictionary substitutes', () => {
   const directory = repository('lookups', {
     'src/client.py': [

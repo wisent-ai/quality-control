@@ -40,6 +40,11 @@ const OPTIONAL_TRY_RE = /\btry\?/;
 const PY_GET_DEFAULT_RE = /\.get\(\s*[^=,()\n]+,\s*[^)=\n]+\)/;
 const PROMISE_CATCH_DEFAULT_RE = /\.catch\(\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][A-Za-z0-9_$]*)\s*=>\s*(?:["'`\[{(]|\d|true\b|false\b|null\b|undefined\b)/;
 const CATCH_RETURN_DEFAULT_RE = /\bcatch\b[^{]*{\s*return\s+(?:["'`\[{(]|\d|true\b|false\b|null\b|undefined\b)/;
+// A logical-or is a default only when the right side stands in for a missing left side. A
+// negated left operand (`!query || ...`) or a right operand that is itself a predicate
+// (`... || list.includes(x)`, `... || a === b`) is boolean logic, and stays untouched.
+const PREDICATE_CALL_RE = /\.(?:includes|startsWith|endsWith|test|has|some|every|is[A-Z][A-Za-z]*)\(/;
+const COMPARISON_RE = /(?:===|!==|==|!=|<=|>=|<|>)/;
 const EMPTY_CATCH_RE = /\bcatch\b[^{]*{\s*}/;
 
 const usage = usageOf('check-no-fallbacks.mjs', ' [--json]');
@@ -172,9 +177,14 @@ function isAllowedFallbackContext(code) {
 }
 
 function isBooleanExpression(code) {
-  return /^\s*(?:(?:\}\s*)?else\s+)?(?:if|while|for)\s*\(/.test(code)
-    || /\b(?:true|false)\b\s*(?:\|\|)\s*\b(?:true|false)\b/.test(code)
-    || /(?:&&|\|\|)\s*[A-Za-z_$][A-Za-z0-9_$]*\s*(?:&&|\|\|)/.test(code);
+  if (/^\s*(?:(?:\}\s*)?else\s+)?(?:if|while|for)\s*\(/.test(code)) return true;
+  if (/\b(?:true|false)\b\s*(?:\|\|)\s*\b(?:true|false)\b/.test(code)) return true;
+  if (/(?:&&|\|\|)\s*[A-Za-z_$][A-Za-z0-9_$]*\s*(?:&&|\|\|)/.test(code)) return true;
+  const split = code.indexOf('||');
+  if (split === -1) return false;
+  const left = code.slice(0, split);
+  const right = code.slice(split);
+  return /(?:=|return|\(|:|,)\s*!/.test(left) || PREDICATE_CALL_RE.test(right) || COMPARISON_RE.test(right);
 }
 
 function isScannedFile(file) {
