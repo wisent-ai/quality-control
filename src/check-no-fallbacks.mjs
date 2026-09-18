@@ -48,6 +48,11 @@ const CATCH_RETURN_DEFAULT_RE = /\bcatch\b[^{]*{\s*return\s+(?:["'`\[{(]|\d|true
 const PREDICATE_CALL_RE = /\.(?:includes|startsWith|endsWith|test|has|some|every|is[A-Z][A-Za-z]*)\(/;
 const COMPARISON_RE = /(?:===|!==|==|!=|<=|>=|<|>)/;
 const EMPTY_CATCH_RE = /\bcatch\b[^{]*{\s*}/;
+// A condition that spans lines: `if (` opened above and not yet closed, so a line inside it is
+// a piece of boolean logic whatever it looks like on its own. The look-back is bounded because
+// a condition longer than this is not something a guard should be reading either.
+const CONDITION_LOOKBACK_LINES = 8;
+const CONDITION_OPENER_RE = /^\s*(?:(?:\}\s*)?else\s+)?(?:if|while)\s*\(/;
 
 const usage = usageOf('check-no-fallbacks.mjs', ' [--json]');
 const args = parseArgs(process.argv.slice(2), usage, { '--json': 'json' });
@@ -74,7 +79,7 @@ for (const file of files) {
     if (isCommentOnlyLine(line)) continue;
     const code = codeWithoutInlineComment(line);
 
-    const rule = fallbackRule(code);
+    const rule = fallbackRule(code, insideOpenCondition(lines, lineNumber));
     if (!rule) continue;
 
     violations.push({
@@ -106,7 +111,24 @@ if (args.json) {
   console.log(`No-fallbacks guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
 }
 
-function fallbackRule(code) {
+function countOf(text, character) {
+  let count = 0;
+  for (const candidate of text) if (candidate === character) count += 1;
+  return count;
+}
+
+function insideOpenCondition(lines, lineNumber) {
+  let depth = 0;
+  const earliest = Math.max(0, lineNumber - 2 - CONDITION_LOOKBACK_LINES);
+  for (let index = lineNumber - 2; index >= earliest; index -= 1) {
+    const earlier = codeWithoutInlineComment(lines[index]);
+    depth += countOf(earlier, ')') - countOf(earlier, '(');
+    if (CONDITION_OPENER_RE.test(earlier)) return depth < 0;
+  }
+  return false;
+}
+
+function fallbackRule(code, inCondition) {
   if (isAllowedFallbackContext(code)) {
     return null;
   }
@@ -122,7 +144,7 @@ function fallbackRule(code) {
       detail: 'nullish coalescing hides missing data behind a substitute value'
     };
   }
-  if (LOGICAL_DEFAULT_RE.test(code) && !isBooleanExpression(code)) {
+  if (LOGICAL_DEFAULT_RE.test(code) && !inCondition && !isBooleanExpression(code)) {
     return {
       name: 'logical-default',
       detail: 'logical-or defaulting hides missing data behind a substitute value'

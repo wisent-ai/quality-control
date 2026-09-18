@@ -64,6 +64,13 @@ test('boolean logic around a logical-or is not a substitute; a value on its righ
     'src/filter.js': [
       'const visible = !query || haystack.includes(query);',
       'const ready = count > limit || state === "done";',
+      'if (',
+      '  sessionFile &&',
+      '  reason !== Shutdown &&',
+      '  (closedByHand || finished)',
+      ') {',
+      '  retire(sessionFile);',
+      '}',
       '',
     ].join('\n'),
     'src/port.js': 'const port = options.port || 8080;\n',
