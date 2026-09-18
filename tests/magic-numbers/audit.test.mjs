@@ -5,7 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-import { EXIT, MAX_OUTPUT_BYTES } from '../../src/constants.mjs';
+import { EXIT, MAX_OUTPUT_BYTES } from '../../src/lib/constants.mjs';
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const BUILD = path.join(PACKAGE_ROOT, '.build');
@@ -133,7 +133,7 @@ test('fleet audit records every repository, skips other directories, and exits w
     mkdirSync(path.join(workspace, 'notes'));
     writeFileSync(path.join(workspace, 'README.md'), 'not a repository\n');
 
-    const result = run(process.execPath, [AUDIT, '--workspace', workspace, '--output', output], PACKAGE_ROOT);
+    const result = run(process.execPath, [AUDIT, '--workspace', workspace, '--checker', 'magic-numbers', '--output', output], PACKAGE_ROOT);
     assert.equal(result.status, EXIT.findings, result.stderr);
 
     const report = JSON.parse(readFileSync(path.join(output, 'report.json'), 'utf8'));
@@ -164,7 +164,7 @@ test('fleet audit exits clean when no repository has findings', () => {
   const output = path.join(BUILD, `${path.basename(workspace)}-out`);
   try {
     repository(workspace, 'clean', { 'src/retries.mjs': CLEAN_SOURCE });
-    const result = run(process.execPath, [AUDIT, '--workspace', workspace, '--output', output], PACKAGE_ROOT);
+    const result = run(process.execPath, [AUDIT, '--workspace', workspace, '--checker', 'magic-numbers', '--output', output], PACKAGE_ROOT);
     assert.equal(result.status, EXIT.clean, result.stderr);
     const report = JSON.parse(readFileSync(path.join(output, 'report.json'), 'utf8'));
     assert.equal(report.counts.findings, [].length);
@@ -183,7 +183,7 @@ test('fleet audit refuses a missing workspace and an output outside its build di
 
   const workspace = fixtureRoot('refusal');
   try {
-    const outside = run(process.execPath, [AUDIT, '--workspace', workspace, '--output', path.join(workspace, 'out')], PACKAGE_ROOT);
+    const outside = run(process.execPath, [AUDIT, '--workspace', workspace, '--checker', 'magic-numbers', '--output', path.join(workspace, 'out')], PACKAGE_ROOT);
     assert.equal(outside.status, EXIT.error);
     assert.match(outside.stderr, /^--output must be a new direct child of quality-control\/\.build$/m);
     assert.equal(existsSync(path.join(workspace, 'out')), false);

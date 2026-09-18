@@ -9,6 +9,8 @@ const MIN_SUBJECT_LENGTH = 12;
 const MIN_SUBJECT_TOKENS = 3;
 // GitHub's largest page for pull-request commits; a shorter page is the last one.
 const COMMITS_PAGE_SIZE = 100;
+// The `typeof` a commit field has to have to be read as text.
+const TEXT_TYPE = "string";
 
 function normalizeSubject(subject) {
   return subject
@@ -20,7 +22,10 @@ function normalizeSubject(subject) {
 }
 
 function subjectFromMessage(message) {
-  return String(message ?? "")
+  if (typeof message !== TEXT_TYPE) {
+    throw new Error(`commit message must be a string, received ${message === undefined ? "nothing" : typeof message}`);
+  }
+  return message
     .split(/\r?\n/, 1)[0]
     .trim();
 }
@@ -49,7 +54,10 @@ function isMergeCommit(commit) {
 }
 
 export function evaluateCommitMessage(message, options = {}) {
-  const minInformativeWords = Number(options.minInformativeWords ?? 2);
+  const minInformativeWords = Number(options.minInformativeWords);
+  if (!Number.isInteger(minInformativeWords) || minInformativeWords < 1) {
+    throw new Error(`minInformativeWords must be a positive integer, received ${options.minInformativeWords}`);
+  }
   const subject = subjectFromMessage(message);
   const reasons = [];
 
@@ -110,7 +118,10 @@ async function githubJson(path) {
     throw new Error("GITHUB_TOKEN is required");
   }
 
-  const apiUrl = process.env.GITHUB_API_URL || "https://api.github.com";
+  const apiUrl = process.env.GITHUB_API_URL;
+  if (!apiUrl) {
+    throw new Error("GITHUB_API_URL is required; GitHub Actions sets it for every job");
+  }
   const response = await fetch(`${apiUrl}${path}`, {
     headers: {
       accept: "application/vnd.github+json",
@@ -136,36 +147,47 @@ async function collectPullRequestCommits(owner, repo, pullNumber) {
     );
     commits.push(...batch);
     if (batch.length < COMMITS_PAGE_SIZE) {
-      return commits.map((commit) => ({
-        sha: commit.sha,
-        message: commit.commit?.message,
-        parents: commit.parents,
-      }));
+      return commits.map(pullRequestCommit);
     }
   }
 }
 
+function pullRequestCommit(commit) {
+  if (typeof commit.sha !== TEXT_TYPE || typeof commit.commit?.message !== TEXT_TYPE) {
+    throw new Error(`GitHub returned a commit without sha or message: ${JSON.stringify(commit)}`);
+  }
+  return {
+    sha: commit.sha,
+    message: commit.commit.message,
+    parents: commit.parents,
+  };
+}
+
 async function collectCompareCommits(owner, repo, baseSha, headSha) {
   const compare = await githubJson(`/repos/${owner}/${repo}/compare/${baseSha}...${headSha}`);
-  return (compare.commits || []).map((commit) => ({
-    sha: commit.sha,
-    message: commit.commit?.message,
-    parents: commit.parents,
-  }));
+  if (!Array.isArray(compare.commits)) {
+    throw new Error(`GitHub compare ${baseSha}...${headSha} returned no commits array`);
+  }
+  return compare.commits.map(pullRequestCommit);
 }
 
 function collectPushCommits(event) {
-  return (event.commits || []).map((commit) => ({
-    sha: commit.id,
-    message: commit.message,
-    parents: commit.parents,
-  }));
+  return event.commits.map((commit) => {
+    if (typeof commit.id !== TEXT_TYPE || typeof commit.message !== TEXT_TYPE) {
+      throw new Error(`push event carries a commit without id or message: ${JSON.stringify(commit)}`);
+    }
+    return {
+      sha: commit.id,
+      message: commit.message,
+      parents: commit.parents,
+    };
+  });
 }
 
 async function collectCommitsFromEvent(event) {
-  const repository = process.env.GITHUB_REPOSITORY || event.repository?.full_name;
+  const repository = process.env.GITHUB_REPOSITORY;
   if (!repository || !repository.includes("/")) {
-    throw new Error("GITHUB_REPOSITORY is required");
+    throw new Error("GITHUB_REPOSITORY is required and must be owner/name");
   }
 
   const [owner, repo] = repository.split("/");
@@ -193,7 +215,10 @@ export async function main() {
 
   const event = JSON.parse(await fs.readFile(eventPath, "utf8"));
   const commits = await collectCommitsFromEvent(event);
-  const minInformativeWords = Number(process.env.MIN_INFORMATIVE_WORDS || 2);
+  if (!process.env.MIN_INFORMATIVE_WORDS) {
+    throw new Error("MIN_INFORMATIVE_WORDS is required; the action input min-informative-words sets it");
+  }
+  const minInformativeWords = Number(process.env.MIN_INFORMATIVE_WORDS);
   const failures = [];
   let skipped = 0;
 
@@ -206,7 +231,7 @@ export async function main() {
     const result = evaluateCommitMessage(commit.message, { minInformativeWords });
     if (!result.ok) {
       failures.push({ commit, result });
-      const sha = String(commit.sha || "").slice(0, 12);
+      const sha = commit.sha.slice(0, 12);
       console.log(
         `::error title=Uninformative commit message::${annotationEscape(
           `${sha} "${result.subject}" - ${result.reasons.join("; ")}`,
@@ -228,8 +253,5 @@ export async function main() {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main().catch((error) => {
-    console.error(error instanceof Error ? error.message : error);
-    process.exitCode = 1;
-  });
+  await main();
 }

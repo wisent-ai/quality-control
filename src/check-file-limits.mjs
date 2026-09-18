@@ -6,7 +6,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { EXIT, MAX_OUTPUT_BYTES, REPORT_SCHEMA_VERSION } from './constants.mjs';
+import { EXIT, MAX_OUTPUT_BYTES, REPORT_SCHEMA_VERSION } from './lib/constants.mjs';
 
 const ROOT = git(['rev-parse', '--show-toplevel']).trim();
 export const MAX_FILE_LINES = 300;
@@ -16,11 +16,14 @@ const NO_LINE = null;
 
 // A registry grows one entry per decision and a manuscript's length is set by its venue;
 // neither is a module a person navigates, so the line limit leaves them alone (the write
-// hook's own exemptions, 2026-09-10 and 2026-09-14).
+// hook's own exemptions, 2026-09-10 and 2026-09-14). An image is not text at all.
 const LINE_LIMIT_EXEMPT_EXTENSIONS = new Set([
   '.json', '.jsonl', '.ndjson', '.lock', '.csv', '.tsv',
-  '.tex', '.bib', '.sty', '.bst', '.cls'
+  '.tex', '.bib', '.sty', '.bst', '.cls',
+  '.svg'
 ]);
+// A binary file is recognised by a NUL byte in its first kilobytes, whatever its name.
+const BINARY_PROBE_BYTES = 8 * 1024;
 // Third-party and generated trees are nobody's modules; test trees and migration ledgers
 // are lists by nature (the write hook's own exemptions).
 const EXEMPT_DIRECTORIES = new Set([
@@ -28,6 +31,10 @@ const EXEMPT_DIRECTORIES = new Set([
   'migrations', 'test', 'tests', '__tests__', 'Tests'
 ]);
 const EXEMPT_DIRECTORY_RE = /^(?:tests|migrations)/;
+// The repository root holds what every toolchain looks for there (manifests, lockfiles,
+// licence, readme, dotfiles), and GitHub reads workflows only from one flat folder;
+// neither can be split into sub-folders, so the folder limit does not apply to them.
+const FOLDER_LIMIT_EXEMPT_FOLDERS = new Set(['.', '.github/workflows']);
 
 const args = parseArgs(process.argv.slice(2));
 const files = trackedFiles();
@@ -45,7 +52,9 @@ for (const file of files) {
   const folder = segments.length === 0 ? '.' : segments.join('/');
   folderCounts.set(folder, folderCounts.has(folder) ? folderCounts.get(folder) + 1 : 1);
   if (LINE_LIMIT_EXEMPT_EXTENSIONS.has(path.extname(basename).toLowerCase())) continue;
-  const lineCount = countLines(readFileSync(absolute, 'utf8'));
+  const text = readFileSync(absolute);
+  if (text.subarray(0, BINARY_PROBE_BYTES).includes(0)) continue;
+  const lineCount = countLines(text.toString('utf8'));
   if (lineCount > MAX_FILE_LINES) {
     violations.push({
       file,
@@ -57,6 +66,7 @@ for (const file of files) {
 }
 
 for (const [folder, count] of [...folderCounts.entries()].sort()) {
+  if (FOLDER_LIMIT_EXEMPT_FOLDERS.has(folder)) continue;
   if (count > MAX_FOLDER_FILES) {
     violations.push({
       file: folder,
@@ -67,7 +77,7 @@ for (const [folder, count] of [...folderCounts.entries()].sort()) {
   }
 }
 
-violations.sort((left, right) => left.file.localeCompare(right.file) || left.rule.localeCompare(right.rule));
+violations.sort(byFileThenRule);
 
 // The report is set as the exit code rather than through process.exit(): on macOS a pipe is
 // written asynchronously, and exiting right after console.log truncated reports at the pipe buffer.
@@ -85,6 +95,12 @@ if (args.json) {
   process.exitCode = EXIT.findings;
 } else {
   console.log(`File-limits guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
+}
+
+function byFileThenRule(left, right) {
+  const byFile = left.file.localeCompare(right.file);
+  if (byFile !== 0) return byFile;
+  return left.rule.localeCompare(right.rule);
 }
 
 function countLines(text) {

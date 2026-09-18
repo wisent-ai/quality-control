@@ -137,22 +137,9 @@ jobs:
           set -euo pipefail
           manifest="probierz/apps/${{ inputs.app-id }}/probierz.yaml"
           test -f "$manifest"
-          python3 - "$manifest" "$GITHUB_WORKSPACE/product" <<'PY'
-          from pathlib import Path
-          import sys
-
-          manifest = Path(sys.argv[1])
-          root = sys.argv[2]
-          lines = manifest.read_text(encoding="utf-8").splitlines()
-          replaced = False
-          for index, line in enumerate(lines):
-              if not replaced and line.startswith("  - root: "):
-                  lines[index] = f"  - root: {root}"
-                  replaced = True
-          if not replaced:
-              raise SystemExit("Probierz application manifest has no repository root")
-          manifest.write_text("\n".join(lines) + "\n", encoding="utf-8")
-          PY
+          # The first `  - root:` entry names the repository under test; no entry is a broken manifest.
+          awk -v root="$GITHUB_WORKSPACE/product" '!done && /^  - root: / { $0 = "  - root: " root; done = 1 } { print } END { if (!done) { print "Probierz application manifest has no repository root" > "/dev/stderr"; exit 1 } }' "$manifest" > "$manifest.bound"
+          mv "$manifest.bound" "$manifest"
 
       - name: Record exact source identities
         id: identity
@@ -255,19 +242,12 @@ jobs:
           set -euo pipefail
           test -r "$STADO_BRAMA_ROUTE_FILE"
           brama_url="$(tr -d '\r\n' < "$STADO_BRAMA_ROUTE_FILE")"
-          case "$brama_url" in
-            http://127.0.0.1:*|http://localhost:*) ;;
-            *)
-              printf '%s\n' "Stado published an invalid private Brama route: $brama_url"
-              exit 1
-              ;;
-          esac
-          jq -n \
-            --arg service "stado://service/brama" \
-            --arg consumer "kronika" \
-            --arg url "$brama_url" \
-            --arg source "$STADO_BRAMA_ROUTE_FILE" \
-            --arg model "${{ inputs.kronika-model }}" \
+          if [[ "$brama_url" != http://127.0.0.1:* && "$brama_url" != http://localhost:* ]]; then
+            printf '%s\n' "Stado published an invalid private Brama route: $brama_url"
+            exit 1
+          fi
+          jq -n --arg service "stado://service/brama" --arg consumer "kronika" --arg url "$brama_url" \
+            --arg source "$STADO_BRAMA_ROUTE_FILE" --arg model "${{ inputs.kronika-model }}" \
             '{service: $service, consumer: $consumer, url: $url, source: $source, authentication: "bounded_bearer", model: $model}' \
             > evidence/brama-route.json
           printf 'url=%s\n' "$brama_url" >> "$GITHUB_OUTPUT"
@@ -290,7 +270,8 @@ jobs:
           done <<< "$KRONIKA_SOURCES"
           base="${{ inputs.base-sha }}"
           if [ -z "$base" ] || [[ "$base" =~ ^0+$ ]]; then
-            base="${{ inputs.head-sha }}^"
+            printf '%s\n' "base-sha must name the commit before the change; received '$base'"
+            exit 1
           fi
           node ../kronika/dist/src/cli.js check \
             --repo . \

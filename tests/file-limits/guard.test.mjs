@@ -5,7 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-import { EXIT, MAX_OUTPUT_BYTES } from '../../src/constants.mjs';
+import { EXIT, MAX_OUTPUT_BYTES } from '../../src/lib/constants.mjs';
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const BUILD = path.join(PACKAGE_ROOT, '.build');
