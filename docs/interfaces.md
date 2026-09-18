@@ -39,12 +39,18 @@ node src/check-no-fallbacks.mjs --all --json
 
 Flags selected fallback identifiers, nullish/logical defaulting, optional Swift
 `try?`, Python dictionary defaults, promise/catch substitute values, and empty
-catch blocks. Narrow source-level exceptions exist for environment lookup,
-logging, and selected accumulation patterns. `--json` prints the same report
-object as the magic-constants guard (`schemaVersion`, `root`, `mode`,
-`checkedFiles`, `sourceDigest`, `violations`) and exits `1` on findings. The
-remedy is never a substitute value: a missing input is refused with a message
-that names it, and a failed call is an error the caller sees.
+catch blocks. A dictionary default is `.get(key, substitute)` with a
+positional second argument; `client.get(url, params=...)` is a call with a
+keyword argument and `isinstance(x.get(key), dict)` is a lookup, and neither
+is reported. Narrow source-level exceptions exist for environment lookup,
+logging, and selected accumulation patterns; no file is exempt by name, so a
+`config.py` or a `profiles/` folder is scanned like any other source. `--json`
+prints the same report object as the magic-constants guard (`schemaVersion`,
+`root`, `mode`, `checkedFiles`, `sourceDigest`, `violations`) and exits `1` on
+findings. The remedy is never a substitute value: a missing input is refused
+with a message that names it, and a failed call is an error the caller sees.
+`tests/no-fallbacks/` runs the guard against real repositories under `.build`
+to hold that boundary.
 
 ### No-magic-constants
 

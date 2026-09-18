@@ -31,7 +31,9 @@ const FALLBACK_IDENTIFIER_RE = /\b[A-Za-z_][A-Za-z0-9_]*fallback[A-Za-z0-9_]*\b/
 const NULLISH_DEFAULT_RE = /\?\?/;
 const LOGICAL_DEFAULT_RE = /(?:=|return|\(|:|,)\s*[^;\n]+(?:\|\|)\s*(?:["'`\[{(]|\d|true\b|false\b|null\b|undefined\b|[A-Za-z_$][A-Za-z0-9_$]*)/;
 const OPTIONAL_TRY_RE = /\btry\?/;
-const PY_GET_DEFAULT_RE = /\.get\(\s*[^=,\n]+,\s*[^)\n]+\)/;
+// `.get(key, substitute)`: a key with no parentheses or `=` in it, then one positional second
+// argument. `.get(url, params=...)` is an HTTP call and `.get(key)` alone is a lookup.
+const PY_GET_DEFAULT_RE = /\.get\(\s*[^=,()\n]+,\s*[^)=\n]+\)/;
 const PROMISE_CATCH_DEFAULT_RE = /\.catch\(\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][A-Za-z0-9_$]*)\s*=>\s*(?:["'`\[{(]|\d|true\b|false\b|null\b|undefined\b)/;
 const CATCH_RETURN_DEFAULT_RE = /\bcatch\b[^{]*{\s*return\s+(?:["'`\[{(]|\d|true\b|false\b|null\b|undefined\b)/;
 const EMPTY_CATCH_RE = /\bcatch\b[^{]*{\s*}/;
@@ -173,8 +175,6 @@ function isBooleanExpression(code) {
 function isScannedFile(file) {
   if (isGuardSource(ROOT, file)) return false;
   if (EXCLUDED_PREFIXES.some(prefix => file.startsWith(prefix))) return false;
-  if (file.endsWith('/config.py') || file === 'config.py') return false;
-  if (file.includes('/profiles/')) return false;
   const extension = path.extname(file);
   if (!SOURCE_EXTENSIONS.has(extension)) return false;
   if (file.includes('/node_modules/')) return false;
