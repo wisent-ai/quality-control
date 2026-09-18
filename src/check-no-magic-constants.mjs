@@ -90,10 +90,14 @@ for (const file of files) {
   for (const lineNumber of changedLines) {
     const line = withParseContinuation(lines, lineNumber - 1);
     if (documentationLines.has(lineNumber)) continue;
-    if (isCommentOnlyLine(line)) continue;
-    if (isLikelyDocumentationLine(line)) continue;
-    if (isAllowedLiteralContext(line)) continue;
-    if (!isLiteralSensitiveContext(line)) continue;
+    // A number wearing quotes for a parser is code however the line starts: a quote, a `*` or a bare call.
+    const disguised = codeWithoutInlineComment(line).search(QUOTED_NUMBER_RE) !== -1;
+    if (isCommentOnlyLine(line) && !(disguised && line.trim().startsWith('*'))) continue;
+    if (!disguised) {
+      if (isLikelyDocumentationLine(line)) continue;
+      if (isAllowedLiteralContext(line)) continue;
+      if (!isLiteralSensitiveContext(line)) continue;
+    }
 
     for (const violation of literalViolations(line)) {
       violations.push({

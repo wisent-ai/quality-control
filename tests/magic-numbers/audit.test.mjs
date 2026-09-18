@@ -63,6 +63,11 @@ const DISGUISED_SOURCE = [
   'let timeout = "120"',
   '    .parse::<u64>()',
   '    .expect("valid timeout");',
+  'fn budget() -> u32 {',
+  '    "30".parse().expect("static token budget")',
+  '}',
+  '*value ^= "54".parse::<u8>().expect("static ipad");',
+  'sleep(Duration::from_secs("15".parse().expect("static number")));',
   ''
 ].join('\n');
 
@@ -109,7 +114,10 @@ test('checker flags a number written as a string for a parser and leaves a dimen
       [1, 'number literal 127 is hidden in a string'],
       [3, 'number literal 3 is hidden in a string'],
       [4, 'number literal 8080 is hidden in a string'],
-      [5, 'number literal 120 is hidden in a string']
+      [5, 'number literal 120 is hidden in a string'],
+      [9, 'number literal 30 is hidden in a string'],
+      [11, 'number literal 54 is hidden in a string'],
+      [12, 'number literal 15 is hidden in a string']
     ]);
   } finally {
     rmSync(workspace, { recursive: true, force: true });
