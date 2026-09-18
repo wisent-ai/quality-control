@@ -60,6 +60,9 @@ const DISGUISED_SOURCE = [
   'let width = "100%";',
   'if (Int("3") > 0) {}',
   'let port: u16 = "8080".parse().unwrap();',
+  'let timeout = "120"',
+  '    .parse::<u64>()',
+  '    .expect("valid timeout");',
   ''
 ].join('\n');
 
@@ -105,7 +108,8 @@ test('checker flags a number written as a string for a parser and leaves a dimen
     assert.deepEqual(report.violations.map(violation => [violation.line, violation.detail]), [
       [1, 'number literal 127 is hidden in a string'],
       [3, 'number literal 3 is hidden in a string'],
-      [4, 'number literal 8080 is hidden in a string']
+      [4, 'number literal 8080 is hidden in a string'],
+      [5, 'number literal 120 is hidden in a string']
     ]);
   } finally {
     rmSync(workspace, { recursive: true, force: true });

@@ -49,6 +49,9 @@ const NUMBER_LITERAL_SOURCE = '(?:0x[\\da-f_]+|0b[01_]+|0o[0-7_]+|(?:\\d[\\d_]*(
 // hyphenated word (utf-8, sha-256) is part of the word; the guard leaves both alone.
 const NUMBER_LITERAL_RE = new RegExp(`(?<![A-Za-z0-9_$.]|[A-Za-z]-)[-+]?${NUMBER_LITERAL_SOURCE}(?![A-Za-z0-9_$%])`, 'gi');
 const QUOTED_NUMBER_RE = new RegExp(`\\b(?:Number|parseInt|parseFloat|Int|UInt|Double|Float|CGFloat|int|float|Decimal)\\s*\\(\\s*["'](?<value>[-+]?${NUMBER_LITERAL_SOURCE})["']|["'](?<value2>[-+]?\\d[\\d_]*(?:\\.\\d+)?)["']\\s*\\.parse(?:::<[^>]+>)?\\(`, 'gi');
+// A quoted number that ends its line, with `.parse` opening the next, is the same disguise split in two.
+const QUOTED_NUMBER_AT_END_RE = /["'][-+]?\d[\d_]*(?:\.\d+)?["']\s*$/;
+const PARSE_CONTINUATION_RE = /^\s*\.parse\b/;
 const NAMED_CONSTANT_RE = /^\s*(?:(?:pub(?:\([^)]*\))?|export|private|fileprivate|public|internal)\s+)*(?:(?:const|let|var|static(?:\s+(?:let|var))?)\s+)?_?[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=/;
 const IMPORT_RE = /^\s*(?:import|export)\b.*\bfrom\b|^\s*(?:import|require)\s*\(/;
 const LOCAL_LITERAL_ASSIGN_RE = new RegExp(`^\\s*(?:const|let|var)?\\s*[a-z_][A-Za-z0-9_]*\\s*(?::[^="'\`]+)?=\\s*(?:["'\`]|[-+]?${NUMBER_LITERAL_SOURCE}(?![A-Za-z0-9_$]))`, 'i');
@@ -85,7 +88,7 @@ for (const file of files) {
   if (changedLines.size === 0) continue;
 
   for (const lineNumber of changedLines) {
-    const line = lines[lineNumber - 1] ?? '';
+    const line = withParseContinuation(lines, lineNumber - 1);
     if (documentationLines.has(lineNumber)) continue;
     if (isCommentOnlyLine(line)) continue;
     if (isLikelyDocumentationLine(line)) continue;
@@ -120,6 +123,16 @@ if (args.json) {
   process.exitCode = 1;
 } else {
   console.log(`No-magic-constants guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
+}
+
+// `"120"` at the end of one line and `.parse::<u64>()` at the start of the next read as one line.
+function withParseContinuation(lines, index) {
+  const line = lines[index] ?? '';
+  if (!QUOTED_NUMBER_AT_END_RE.test(codeWithoutInlineComment(line))) return line;
+  let next = index + 1;
+  while (next < lines.length && lines[next].trim() === '') next += 1;
+  const continuation = lines[next] ?? '';
+  return PARSE_CONTINUATION_RE.test(continuation) ? `${line.trimEnd()}${continuation.trim()}` : line;
 }
 
 function literalViolations(line) {
