@@ -16,6 +16,8 @@ const ROOT = repositoryRoot();
 const SOURCE_EXTENSIONS = new Set([
   '.swift',
   '.mjs',
+  '.cjs',
+  '.jsx',
   '.js',
   '.ts',
   '.tsx',

@@ -66,7 +66,8 @@ node src/check-no-magic-constants.mjs --range <before>..<after>
 node src/check-no-magic-constants.mjs --all --numbers-only --json
 ```
 
-Flags selected significant literals in assignment and logic-sensitive lines.
+Flags selected significant literals in assignment and logic-sensitive lines
+in Swift, JavaScript (`.js`, `.mjs`, `.cjs`, `.jsx`, `.ts`, `.tsx`), Python and Rust.
 Name the value, derive it from typed metadata, or load it from configuration.
 `-1`, `0`, `1` and `2` are never findings; a line that names an upper-case
 constant is never a finding, so `const RETRY_LIMIT = 3` passes and
