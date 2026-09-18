@@ -96,7 +96,7 @@ a folder holding more than five tracked files is a `folder-files` finding
 (`file` names the folder, `line` is `null`). The limits are properties of the
 tree, so only `--all` is accepted; asking for anything else is refused with
 `--all is required`. Registries and manuscripts are exempt from the line count
-(`.json`, `.jsonl`, `.ndjson`, `.lock`, `.csv`, `.tsv`, `.tex`, `.bib`,
+(`.json`, `.jsonl`, `.ndjson`, `.lock`, `.csv`, `.tsv`, `.tex`, `.bib`, `.prisma`,
 `.sty`, `.bst`, `.cls`, `.svg`), as are a tokenizer's `merges.txt` and
 `vocab.txt`, a binary, and a file whose first five lines say it is generated
 and not to be edited (its generator is what has to fit); a directory named

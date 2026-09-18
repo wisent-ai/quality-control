@@ -15,12 +15,14 @@ export const MAX_FOLDER_FILES = 5;
 // A folder finding has no line of its own; the report's line field is not applicable.
 const NO_LINE = null;
 
-// A registry grows one entry per decision and a manuscript's length is set by its venue;
-// neither is a module a person navigates, so the line limit leaves them alone (the write
-// hook's own exemptions, 2026-09-10 and 2026-09-14). An image is not text at all.
+// A registry grows one entry per decision, a manuscript's length is set by its venue, and
+// a database schema holds one model per table; none is a module a person navigates, so the
+// line limit leaves them alone (the write hook's own exemptions, 2026-09-10 and
+// 2026-09-14). An image is not text at all.
 const LINE_LIMIT_EXEMPT_EXTENSIONS = new Set([
   '.json', '.jsonl', '.ndjson', '.lock', '.csv', '.tsv',
   '.tex', '.bib', '.sty', '.bst', '.cls',
+  '.prisma',
   '.svg'
 ]);
 // A tokenizer's merge list and vocabulary are one row per token, written by the trainer
