@@ -199,6 +199,17 @@ jobs:
 warnings`, and `cargo build --locked --release`. It accepts `runs-on`
 (`ubuntu-latest`), `toolchain` (`stable`), and `working-directory` (`.`).
 
+Those two compiling steps used to start from zero on every run, because the
+target directory sat inside the workspace `actions/checkout` refreshes. The job
+now exports `CARGO_TARGET_DIR=$HOME/.cache/wisent-rust-gates/<repository>/<toolchain>`
+before the first one, so a self-hosted runner keeps the compiled dependency
+graph between runs and a pull request pays for what its commit changed; a
+hosted runner gets a fresh machine anyway and pays one `mkdir`. The job also
+sets `CARGO_INCREMENTAL=0`, carries `timeout-minutes: 45` against GitHub's
+six-hour default, and cancels a superseded run of the same ref — for pull
+requests only, because a push to `main` may be the source revision an immutable
+release is already waiting for.
+
 `swift-gates.yml` runs `swift build --build-tests` and `swift test`. It accepts
 `runs-on` (the fleet's `["self-hosted", "macOS", "stado"]` runner, which holds
 the credentials that resolve this organization's private SwiftPM dependencies),

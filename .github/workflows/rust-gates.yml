@@ -50,6 +50,24 @@ permissions:
 jobs:
   gates:
     runs-on: ${{ fromJSON(startsWith(inputs.runs-on, '[') && inputs.runs-on || format('"{0}"', inputs.runs-on)) }}
+    # A superseded pull request that keeps compiling holds a self-hosted
+    # runner nobody is waiting on. Only pull requests cancel: a push to main
+    # may be the source revision an immutable release is already waiting for,
+    # which is the reason version-check.yml groups by SHA.
+    concurrency:
+      group: rust-gates-${{ github.repository }}-${{ github.ref }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    # Without this a wedged gate holds a runner for GitHub's six-hour default.
+    # The slowest repository in the pack is Stado, whose crate carries 16 MB of
+    # source, six binaries and fourteen test targets; 45 minutes is above its
+    # cold build and far below the default.
+    timeout-minutes: 45
+    env:
+      CARGO_TERM_COLOR: always
+      # Incremental artifacts are worthless to a job that never runs twice in
+      # one workspace, and they are what makes a target directory grow without
+      # bound. jeden's own ci.yml has set this since it was written.
+      CARGO_INCREMENTAL: '0'
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -71,6 +89,19 @@ jobs:
         with:
           toolchain: ${{ inputs.toolchain }}
           components: rustfmt, clippy
+
+      # The gates compile the same dependency graph twice — clippy in the dev
+      # profile, then the release build — and before this step they compiled it
+      # from zero on every run, because the target directory lived inside the
+      # workspace `actions/checkout` refreshes. Keeping it beside the runner,
+      # keyed by repository and toolchain, means a pull request recompiles what
+      # the commit changed instead of the whole graph. A hosted runner gets a
+      # fresh machine anyway, so there it costs one `mkdir`.
+      - name: Share the builder's compiled dependencies
+        run: |
+          root="$HOME/.cache/wisent-rust-gates/${GITHUB_REPOSITORY##*/}/${{ inputs.toolchain }}"
+          mkdir -p "$root"
+          printf '%s\n' "CARGO_TARGET_DIR=$root" >> "$GITHUB_ENV"
 
       # Formatting first, and it is the whole tree rather than the crate the
       # build happens to touch. This gate refused five merges in one evening
