@@ -71,9 +71,12 @@ jobs:
             *.toml)
               declared="$(sed -n 's/^version = "\(.*\)"/\1/p' "$MANIFEST" | head -1)" ;;
             *.plist)
-              declared="$(python3 -c 'import plistlib, sys; print(plistlib.load(open(sys.argv[1], "rb")).get("CFBundleShortVersionString", ""))' "$MANIFEST")" ;;
+              # The same reading Stado's release manifests use for an app's
+              # version_source: the string right after the key, whitespace and
+              # line breaks between them ignored.
+              declared="$(tr -d '\n' < "$MANIFEST" | sed -n 's|.*<key>CFBundleShortVersionString</key>[[:space:]]*<string>\([^<]*\)</string>.*|\1|p')" ;;
             package.json)
-              declared="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1])).get("version", ""))' "$MANIFEST")" ;;
+              declared="$(jq -r '.version // ""' "$MANIFEST")" ;;
             VERSION)
               declared="$(tr -d '[:space:]' < "$MANIFEST")" ;;
             *)
