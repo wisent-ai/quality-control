@@ -10,7 +10,11 @@
 // it would rewrite; with --write it rewrites and lists what it did.
 //
 //   wisent-unlaunder-numbers --repository <path> [--write] [--json]
-import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
+//   wisent-unlaunder-numbers --workspace <dir> [--skip <name>]... [--write] [--json]
+//
+// --workspace reads every Git repository directly inside <dir>, in name
+// order, and prints one summary line per repository that has any.
+import { existsSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -86,11 +90,17 @@ function git(args, cwd) {
 }
 
 function parseArgs(argv) {
-  const options = { repository: null, write: false, json: false };
+  const options = { repository: null, workspace: null, skip: new Set(), write: false, json: false };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (argument === '--repository') {
       options.repository = argv[index + 1];
+      index += 1;
+    } else if (argument === '--workspace') {
+      options.workspace = argv[index + 1];
+      index += 1;
+    } else if (argument === '--skip') {
+      options.skip.add(argv[index + 1]);
       index += 1;
     } else if (argument === '--write') {
       options.write = true;
@@ -100,7 +110,9 @@ function parseArgs(argv) {
       throw new Error(`unknown argument ${argument}`);
     }
   }
-  if (!options.repository) throw new Error('--repository is required');
+  if (Boolean(options.repository) === Boolean(options.workspace)) {
+    throw new Error('exactly one of --repository and --workspace is required');
+  }
   return options;
 }
 
@@ -109,6 +121,24 @@ function parseArgs(argv) {
 function placed(text, index, literal) {
   const before = text.slice(0, index).trimEnd().at(-1);
   return literal.startsWith('-') && (before === '-' || before === '+') ? `(${literal})` : literal;
+}
+
+// Whether `index` falls inside a quoted string or template on this line, read
+// from the quotes before it. A disguise spelled inside a string is text, such
+// as an error message or this file's own rule names, not a number in code.
+function insideString(line, index) {
+  let open = null;
+  for (let position = 0; position < index; position += 1) {
+    const character = line[position];
+    if (open !== null && character === '\\') {
+      position += 1;
+    } else if (open === null && (character === "'" || character === '"' || character === '`')) {
+      open = character;
+    } else if (character === open) {
+      open = null;
+    }
+  }
+  return open !== null;
 }
 
 /** Rewrite one file's text; answers the new text and every change made. */
@@ -122,7 +152,7 @@ export function unlaunder(text) {
       current = current.replace(rule.pattern, (...args) => {
         const groups = args.slice(0, -2);
         const offset = args.at(-2);
-        const literal = rule.literal(groups);
+        const literal = insideString(current, offset) ? null : rule.literal(groups);
         if (literal === null) return groups[0];
         const written = placed(current, offset, literal);
         changes.push({ line: lineIndex + 1, form: rule.form, from: groups[0], to: written });
@@ -134,9 +164,8 @@ export function unlaunder(text) {
   return { text: rewritten.join('\n'), changes };
 }
 
-function main() {
-  const options = parseArgs(process.argv.slice(2));
-  const root = realpathSync(options.repository);
+function repositoryReport(repository, write) {
+  const root = realpathSync(repository);
   const tracked = git(['ls-files', '-z'], root).split('\0').filter(Boolean);
   const dirty = new Set(git(['status', '--porcelain', '-z', '--untracked-files=no'], root)
     .split('\0').filter(Boolean).map((entry) => entry.slice(3)));
@@ -145,6 +174,7 @@ function main() {
   for (const relative of tracked) {
     if (!SOURCE_EXTENSIONS.has(path.extname(relative))) continue;
     const absolute = path.join(root, relative);
+    if (!existsSync(absolute)) continue;
     const original = readFileSync(absolute, 'utf8');
     const { text, changes } = unlaunder(original);
     if (!changes.length) continue;
@@ -152,23 +182,48 @@ function main() {
       skipped.push({ file: relative, reason: 'uncommitted changes', changes: changes.length });
       continue;
     }
-    if (options.write) writeFileSync(absolute, text);
+    if (write) writeFileSync(absolute, text);
     files.push({ file: relative, changes });
   }
-  const report = { repository: root, written: options.write, files, skipped };
+  return { repository: root, written: write, files, skipped };
+}
+
+function printRepository(report) {
+  for (const file of report.files) {
+    for (const change of file.changes) {
+      process.stdout.write(`${file.file}:${change.line}: ${change.from} -> ${change.to} (${change.form})\n`);
+    }
+  }
+  for (const entry of report.skipped) {
+    process.stdout.write(`skipped ${entry.file}: ${entry.reason} (${entry.changes} disguised numbers)\n`);
+  }
+  const count = report.files.reduce((sum, file) => sum + file.changes.length, 0);
+  process.stdout.write(`${report.written ? 'rewrote' : 'would rewrite'} ${count} disguised numbers in ${report.files.length} files\n`);
+}
+
+function main() {
+  const options = parseArgs(process.argv.slice(2));
+  if (options.repository) {
+    const report = repositoryReport(options.repository, options.write);
+    if (options.json) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+    else printRepository(report);
+    return;
+  }
+  const workspace = realpathSync(options.workspace);
+  const reports = readdirSync(workspace, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !options.skip.has(entry.name) && existsSync(path.join(workspace, entry.name, '.git')))
+    .map((entry) => entry.name)
+    .sort()
+    .map((name) => ({ name, ...repositoryReport(path.join(workspace, name), options.write) }))
+    .filter((report) => report.files.length || report.skipped.length);
   if (options.json) {
-    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
-  } else {
-    for (const file of files) {
-      for (const change of file.changes) {
-        process.stdout.write(`${file.file}:${change.line}: ${change.from} -> ${change.to} (${change.form})\n`);
-      }
-    }
-    for (const entry of skipped) {
-      process.stdout.write(`skipped ${entry.file}: ${entry.reason} (${entry.changes} disguised numbers)\n`);
-    }
-    const count = files.reduce((sum, file) => sum + file.changes.length, 0);
-    process.stdout.write(`${options.write ? 'rewrote' : 'would rewrite'} ${count} disguised numbers in ${files.length} files\n`);
+    process.stdout.write(`${JSON.stringify({ workspace, written: options.write, repositories: reports }, null, 2)}\n`);
+    return;
+  }
+  for (const report of reports) {
+    const count = report.files.reduce((sum, file) => sum + file.changes.length, 0);
+    const held = report.skipped.reduce((sum, entry) => sum + entry.changes, 0);
+    process.stdout.write(`${report.name}: ${options.write ? 'rewrote' : 'would rewrite'} ${count} in ${report.files.length} files; ${held} left in ${report.skipped.length} files with uncommitted changes\n`);
   }
 }
 
