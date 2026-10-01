@@ -26,11 +26,18 @@ const GIT_ROOT = ['rev-parse', '--show-toplevel'];
 const TEXT = 'utf8';
 
 export function usageOf(script, extraSyntax = '') {
-  return message => {
+  const line = `usage: node ${script} ${MODE_SYNTAX}${extraSyntax}`;
+  const refuse = message => {
     console.error(message);
-    console.error(`usage: node ${script} ${MODE_SYNTAX}${extraSyntax}`);
+    console.error(line);
     process.exit(EXIT.error);
   };
+  // --help prints the usage to stdout and checks nothing (cli.md rule 11).
+  refuse.help = () => {
+    console.log(line);
+    process.exit(EXIT.clean);
+  };
+  return refuse;
 }
 
 // `switches` names the guard's own boolean flags (`--json` → `json`); everything else is a mode flag.
@@ -39,7 +46,8 @@ export function parseArgs(raw, usage, switches = {}) {
   for (const key of Object.values(switches)) parsed[key] = false;
   for (let i = 0; i < raw.length; i += 1) {
     const arg = raw[i];
-    if (arg === '--all') parsed.all = true;
+    if (arg === '--help' || arg === '-h') usage.help();
+    else if (arg === '--all') parsed.all = true;
     else if (arg === '--staged') parsed.staged = true;
     else if (arg === '--worktree') parsed.worktree = true;
     else if (arg === '--base' || arg === '--range') {

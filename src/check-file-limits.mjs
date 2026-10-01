@@ -139,7 +139,12 @@ function countLines(text) {
 function parseArgs(raw) {
   const parsed = { all: false, json: false };
   for (const arg of raw) {
-    if (arg === '--all') parsed.all = true;
+    if (arg === '--help' || arg === '-h') {
+      // --help prints the usage to stdout and checks nothing (cli.md rule 11).
+      console.log('usage: node check-file-limits.mjs --all [--json]');
+      process.exit(EXIT.clean);
+    }
+    else if (arg === '--all') parsed.all = true;
     else if (arg === '--json') parsed.json = true;
     else usage(`unknown argument: ${arg}`);
   }
