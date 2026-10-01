@@ -164,9 +164,13 @@ script; they are not guaranteed to remain identical across policies.
   would not read back exactly is left alone.
 - **Boundary:** only tracked files without uncommitted changes are touched; a
   file with uncommitted changes is listed as `skipped <file>: uncommitted
-  changes (<n> disguised numbers)`. Comment lines are not rewritten. The
-  literals it writes are then ordinary findings for the magic-number guard,
-  to be named or justified like any other number.
+  changes (<n> disguised numbers)`. Comment lines and disguises spelled inside
+  a string or template on the same line are not rewritten. `--workspace <dir>`
+  (with `--skip <name>` per repository to leave out) runs every Git repository
+  directly inside `<dir>` and prints one line per repository with findings:
+  `<name>: would rewrite <n> in <files> files; <m> left in <k> files with
+  uncommitted changes`. The literals it writes are then ordinary findings for
+  the magic-number guard, to be named or justified like any other number.
 
 ## How it works
 
