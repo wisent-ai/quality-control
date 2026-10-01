@@ -56,8 +56,6 @@ prints the same report object as the magic-constants guard (`schemaVersion`,
 `root`, `mode`, `checkedFiles`, `sourceDigest`, `violations`) and exits `1` on
 findings. The remedy is never a substitute value: a missing input is refused
 with a message that names it, and a failed call is an error the caller sees.
-`tests/no-fallbacks/` runs the guard against real repositories under `.build`
-to hold that boundary.
 
 ### No-magic-constants
 
@@ -210,13 +208,10 @@ six-hour default, and cancels a superseded run of the same ref — for pull
 requests only, because a push to `main` may be the source revision an immutable
 release is already waiting for.
 
-`swift-gates.yml` runs `swift build --build-tests` and `swift test`. It accepts
+`swift-gates.yml` resolves the package and runs `swift build`. It accepts
 `runs-on` (the fleet's `["self-hosted", "macOS", "stado"]` runner, which holds
-the credentials that resolve this organization's private SwiftPM dependencies),
-`working-directory` (`.`), and the three `fixture-*` inputs that hand the tests
-a product binary built earlier in the same run. It exists because 51 of the
-repositories beside it carry a `Package.swift`, at least 20 carry a `Tests`
-directory, and before it none of them ran `swift test` in CI.
+the credentials that resolve this organization's private SwiftPM dependencies)
+and `working-directory` (`.`). It runs no tests until the operator approves one.
 
 `tag-on-manifest-bump.yml` tags the version declared in a manifest exactly once.
 It accepts `manifest` (`Cargo.toml`) and `runs-on` (`ubuntu-latest`).
