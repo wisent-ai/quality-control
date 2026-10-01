@@ -149,6 +149,25 @@ script; they are not guaranteed to remain identical across policies.
 - **Boundary:** the artifact reports heuristic findings; it does not prioritize,
   waive, or repair them.
 
+### Write disguised numbers back as numbers
+
+- **Actor:** a repository owner whose sources spell numbers so the
+  magic-number guards do not see them.
+- **Initial state:** tracked JavaScript or TypeScript files contain
+  `Number('8')`, `Number(true)`, `parseInt('77', 8)`, `'xxxx'.length`,
+  `const radix = 'node-radix'.length` or a unary `+''`.
+- **Outcome:** `wisent-unlaunder-numbers --repository <path>` lists each one as
+  `<file>:<line>: <disguise> -> <literal> (<form>)` and the total; with
+  `--write` it rewrites them to the literal the runtime computes (`8`, `1`,
+  `0o77`, `4`, `10`, `0`), and `--json` prints the same report as JSON. A
+  negative literal after another sign is parenthesized; a radix value that
+  would not read back exactly is left alone.
+- **Boundary:** only tracked files without uncommitted changes are touched; a
+  file with uncommitted changes is listed as `skipped <file>: uncommitted
+  changes (<n> disguised numbers)`. Comment lines are not rewritten. The
+  literals it writes are then ordinary findings for the magic-number guard,
+  to be named or justified like any other number.
+
 ## How it works
 
 ```text

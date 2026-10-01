@@ -11,7 +11,8 @@
     "wisent-check-fallbacks": "src/check-no-fallbacks.mjs",
     "wisent-check-magic-constants": "src/check-no-magic-constants.mjs",
     "wisent-check-desktop-cli-coupling": "src/check-no-desktop-cli-coupling.mjs",
-    "wisent-audit-magic-numbers": "src/magic-numbers/audit.mjs"
+    "wisent-audit-magic-numbers": "src/magic-numbers/audit.mjs",
+    "wisent-unlaunder-numbers": "src/magic-numbers/unlaunder.mjs"
   },
   "files": [
     "src/check-no-keyword-logic.mjs",
