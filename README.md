@@ -231,9 +231,9 @@ one report object, and exit `0` is clean, `1` findings, `2` a refused call.
 
 `required-pr-quality.yml` blocks a pull request only where a ruleset requires
 it. The organization-ruleset installer that used to live at
-`scripts/install-org-ruleset.mjs` was removed on 2026-09-06 (`ccb2c63`, "no
-scripts in our repositories") and nothing replaced it. Measured on 2026-09-17
-with `gh api /repos/wisent-ai/<repo>/rulesets?includes_parents=true` and
+`scripts/install-org-ruleset.mjs` was removed with the rest of the scripts
+and nothing replaced it. Measured with
+`gh api /repos/wisent-ai/<repo>/rulesets?includes_parents=true` and
 `/rules/branches/main`: `brama`, `skarbiec` and `quality-control` have no
 ruleset, organization-level or repository-level, and `main` is not protected.
 The fleet works on `main` directly, so today the workflow gates nothing.
