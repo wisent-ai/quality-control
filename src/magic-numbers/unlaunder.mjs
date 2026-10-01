@@ -90,7 +90,7 @@ function git(args, cwd) {
 }
 
 function parseArgs(argv) {
-  const options = { repository: null, workspace: null, skip: new Set(), write: false, json: false };
+  const options = { repository: null, workspace: null, skip: new Set(), write: false, json: false, commit: null };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (argument === '--repository') {
@@ -104,6 +104,10 @@ function parseArgs(argv) {
       index += 1;
     } else if (argument === '--write') {
       options.write = true;
+    } else if (argument === '--commit') {
+      options.commit = argv[index + 1];
+      options.write = true;
+      index += 1;
     } else if (argument === '--json') {
       options.json = true;
     } else {
@@ -113,6 +117,7 @@ function parseArgs(argv) {
   if (Boolean(options.repository) === Boolean(options.workspace)) {
     throw new Error('exactly one of --repository and --workspace is required');
   }
+  if (options.commit !== null && !options.commit.trim()) throw new Error('--commit needs a message');
   return options;
 }
 
@@ -123,22 +128,35 @@ function placed(text, index, literal) {
   return literal.startsWith('-') && (before === '-' || before === '+') ? `(${literal})` : literal;
 }
 
-// Whether `index` falls inside a quoted string or template on this line, read
-// from the quotes before it. A disguise spelled inside a string is text, such
-// as an error message or this file's own rule names, not a number in code.
+// Whether `index` falls inside a quoted string or template text on this
+// line, read from the quotes before it. A disguise spelled inside a string is
+// text, such as an error message or this file's own rule names, not a number
+// in code; inside a template's `${…}` it is code again.
 function insideString(line, index) {
-  let open = null;
+  const QUOTES = "'\"`";
+  const open = [];
   for (let position = 0; position < index; position += 1) {
     const character = line[position];
-    if (open !== null && character === '\\') {
-      position += 1;
-    } else if (open === null && (character === "'" || character === '"' || character === '`')) {
-      open = character;
-    } else if (character === open) {
-      open = null;
+    const top = open.at(-1);
+    if (top !== undefined && QUOTES.includes(top)) {
+      if (character === '\\') {
+        position += 1;
+      } else if (top === '`' && character === '$' && line[position + 1] === '{') {
+        open.push('{');
+        position += 1;
+      } else if (character === top) {
+        open.pop();
+      }
+    } else if (QUOTES.includes(character)) {
+      open.push(character);
+    } else if (character === '{' && top === '{') {
+      open.push('{');
+    } else if (character === '}' && top === '{') {
+      open.pop();
     }
   }
-  return open !== null;
+  const top = open.at(-1);
+  return top !== undefined && QUOTES.includes(top);
 }
 
 /** Rewrite one file's text; answers the new text and every change made. */
@@ -188,6 +206,14 @@ function repositoryReport(repository, write) {
   return { repository: root, written: write, files, skipped };
 }
 
+// Commit exactly the files this run rewrote, by path, so nothing else
+// staged or modified in the repository rides along.
+function commitRewritten(report, message) {
+  if (!report.files.length) return null;
+  git(['commit', '-q', '-m', message, '--', ...report.files.map((file) => file.file)], report.repository);
+  return git(['rev-parse', '--short', 'HEAD'], report.repository).trim();
+}
+
 function printRepository(report) {
   for (const file of report.files) {
     for (const change of file.changes) {
@@ -198,13 +224,14 @@ function printRepository(report) {
     process.stdout.write(`skipped ${entry.file}: ${entry.reason} (${entry.changes} disguised numbers)\n`);
   }
   const count = report.files.reduce((sum, file) => sum + file.changes.length, 0);
-  process.stdout.write(`${report.written ? 'rewrote' : 'would rewrite'} ${count} disguised numbers in ${report.files.length} files\n`);
+  process.stdout.write(`${report.written ? 'rewrote' : 'would rewrite'} ${count} disguised numbers in ${report.files.length} files${report.commit ? `; committed ${report.commit}` : ''}\n`);
 }
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.repository) {
     const report = repositoryReport(options.repository, options.write);
+    if (options.commit) report.commit = commitRewritten(report, options.commit);
     if (options.json) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     else printRepository(report);
     return;
@@ -215,6 +242,7 @@ function main() {
     .map((entry) => entry.name)
     .sort()
     .map((name) => ({ name, ...repositoryReport(path.join(workspace, name), options.write) }))
+    .map((report) => (options.commit ? { ...report, commit: commitRewritten(report, options.commit) } : report))
     .filter((report) => report.files.length || report.skipped.length);
   if (options.json) {
     process.stdout.write(`${JSON.stringify({ workspace, written: options.write, repositories: reports }, null, 2)}\n`);
@@ -223,7 +251,7 @@ function main() {
   for (const report of reports) {
     const count = report.files.reduce((sum, file) => sum + file.changes.length, 0);
     const held = report.skipped.reduce((sum, entry) => sum + entry.changes, 0);
-    process.stdout.write(`${report.name}: ${options.write ? 'rewrote' : 'would rewrite'} ${count} in ${report.files.length} files; ${held} left in ${report.skipped.length} files with uncommitted changes\n`);
+    process.stdout.write(`${report.name}: ${options.write ? 'rewrote' : 'would rewrite'} ${count} in ${report.files.length} files; ${held} left in ${report.skipped.length} files with uncommitted changes${report.commit ? `; committed ${report.commit}` : ''}\n`);
   }
 }
 

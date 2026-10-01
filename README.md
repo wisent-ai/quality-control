@@ -169,8 +169,11 @@ script; they are not guaranteed to remain identical across policies.
   (with `--skip <name>` per repository to leave out) runs every Git repository
   directly inside `<dir>` and prints one line per repository with findings:
   `<name>: would rewrite <n> in <files> files; <m> left in <k> files with
-  uncommitted changes`. The literals it writes are then ordinary findings for
-  the magic-number guard, to be named or justified like any other number.
+  uncommitted changes`. `--commit "<message>"` rewrites and then commits
+  exactly the rewritten files of each repository by path (`git commit --
+  <files>`), so nothing else modified or staged there is committed; it does
+  not push. The literals it writes are then ordinary findings for the
+  magic-number guard, to be named or justified like any other number.
 
 ## How it works
 
