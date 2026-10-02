@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // wisent-unlaunder-numbers: write back, as plain literals, the numbers a
-// JavaScript or TypeScript source dressed up to slip past the magic-number
-// guards: `Number('8')`, `Number(true)`, `parseInt('77', 8)`, `'xxxx'.length`,
-// `const radix = 'node-radix'.length`, unary `+''`. The value is computed the
-// way the runtime computes it, so the rewrite changes spelling, not behaviour.
+// source dressed up to slip past the magic-number guards. JavaScript and
+// TypeScript: `Number('8')`, `Number(true)`, `parseInt('77', 8)`,
+// `'xxxx'.length`, `const radix = 'node-radix'.length`, unary `+''`. Python:
+// `int("20")`, `float("0.1")`. The value is computed the way the runtime
+// computes it, so the rewrite changes spelling, not behaviour.
 //
 // Only tracked files with no uncommitted change are read, so a file somebody
 // else is editing is reported and left alone. Without --write it lists what
@@ -20,16 +21,15 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { EXIT, MAX_OUTPUT_BYTES } from '../lib/constants.mjs';
 
-const SOURCE_EXTENSIONS = new Set(['.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx', '.mts', '.cts']);
-// A decimal JavaScript writes without change: no leading zero that strict mode
+// A decimal written back without change: no leading zero that strict mode
 // would read as octal.
 const DECIMAL = '-?(?:0|[1-9]\\d*)(?:\\.\\d+)?';
+const INTEGER = '-?(?:0|[1-9]\\d*)';
 const RADIX_PREFIX = new Map([[2, '0b'], [8, '0o'], [16, '0x']]);
-const COMMENT_LINE_RE = /^\s*(?:\/\/|\/\*|\*)/;
 
 // Each rule finds one disguise and answers the literal it stands for, or
 // null when the value would not be written back exactly.
-const RULES = [
+const JAVASCRIPT_RULES = [
   {
     form: 'Number(quoted decimal)',
     pattern: new RegExp(`\\bNumber\\s*\\(\\s*(['"])(${DECIMAL})\\1\\s*\\)`, 'g'),
@@ -81,6 +81,27 @@ const RULES = [
     literal: () => '0',
   },
 ];
+
+const PYTHON_RULES = [
+  {
+    form: 'int(quoted integer)',
+    pattern: new RegExp(`(?<![\\w.])int\\s*\\(\\s*(['"])(${INTEGER})\\1\\s*\\)`, 'g'),
+    literal: (match) => match[2],
+  },
+  {
+    form: 'float(quoted decimal)',
+    pattern: new RegExp(`(?<![\\w.])float\\s*\\(\\s*(['"])(${DECIMAL})\\1\\s*\\)`, 'g'),
+    literal: (match) => (match[2].includes('.') ? match[2] : `${match[2]}.0`),
+  },
+];
+
+// The languages read, by file extension: which lines are comments and which
+// disguises the language has.
+const LANGUAGES = new Map([
+  ...['.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx', '.mts', '.cts']
+    .map((extension) => [extension, { comment: /^\s*(?:\/\/|\/\*|\*)/, rules: JAVASCRIPT_RULES }]),
+  ['.py', { comment: /^\s*#/, rules: PYTHON_RULES }],
+]);
 
 function git(args, cwd) {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8', maxBuffer: MAX_OUTPUT_BYTES });
@@ -159,14 +180,14 @@ function insideString(line, index) {
   return top !== undefined && QUOTES.includes(top);
 }
 
-/** Rewrite one file's text; answers the new text and every change made. */
-export function unlaunder(text) {
+/** Rewrite one file's text in `language`; answers the new text and every change made. */
+export function unlaunder(text, language) {
   const changes = [];
   const lines = text.split('\n');
   const rewritten = lines.map((line, lineIndex) => {
-    if (COMMENT_LINE_RE.test(line)) return line;
+    if (language.comment.test(line)) return line;
     let current = line;
-    for (const rule of RULES) {
+    for (const rule of language.rules) {
       current = current.replace(rule.pattern, (...args) => {
         const groups = args.slice(0, -2);
         const offset = args.at(-2);
@@ -190,14 +211,15 @@ function repositoryReport(repository, write) {
   const files = [];
   const skipped = [];
   for (const relative of tracked) {
-    if (!SOURCE_EXTENSIONS.has(path.extname(relative))) continue;
+    const language = LANGUAGES.get(path.extname(relative));
+    if (!language) continue;
     // A committed node_modules is somebody else's package, not this
     // repository's source.
     if (relative.split('/').includes('node_modules')) continue;
     const absolute = path.join(root, relative);
     if (!existsSync(absolute)) continue;
     const original = readFileSync(absolute, 'utf8');
-    const { text, changes } = unlaunder(original);
+    const { text, changes } = unlaunder(original, language);
     if (!changes.length) continue;
     if (dirty.has(relative)) {
       skipped.push({ file: relative, reason: 'uncommitted changes', changes: changes.length });
