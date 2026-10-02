@@ -17,8 +17,7 @@ const NO_LINE = null;
 
 // A registry grows one entry per decision, a manuscript's length is set by its venue, and
 // a database schema holds one model per table; none is a module a person navigates, so the
-// line limit leaves them alone (the write hook's own exemptions, 2026-09-10 and
-// 2026-09-14). An image is not text at all.
+// line limit leaves them alone. An image is not text at all.
 const LINE_LIMIT_EXEMPT_EXTENSIONS = new Set([
   '.json', '.jsonl', '.ndjson', '.lock', '.csv', '.tsv',
   '.prisma'
@@ -38,8 +37,8 @@ const WORKFLOWS_FOLDER = '.github/workflows';
 const BINARY_PROBE_BYTES = 8 * 1024;
 const IMAGE_EXTENSIONS = new Set(['.svg']);
 // A manuscript's folder holds the document, its bibliography and the venue's style files
-// side by side; the venue template decides that layout (the write hook's own exemption,
-// 2026-09-14), so LaTeX-family files count toward neither limit.
+// side by side; the venue template decides that layout, so LaTeX-family files
+// count toward neither limit.
 const LATEX_EXTENSIONS = new Set(['.tex', '.bib', '.sty', '.bst', '.cls']);
 // Third-party and generated trees are nobody's modules; test trees and migration ledgers
 // are lists by nature (the write hook's own exemptions).
