@@ -155,7 +155,8 @@ script; they are not guaranteed to remain identical across policies.
   magic-number guards do not see them.
 - **Initial state:** tracked JavaScript or TypeScript files contain
   `Number('8')`, `Number(true)`, `parseInt('77', 8)`, `'xxxx'.length`,
-  `const radix = 'node-radix'.length` or a unary `+''`.
+  `const radix = 'node-radix'.length` or a unary `+''`, or Python files
+  contain `int("20")` or `float("4")` (written back as `20` and `4.0`).
 - **Outcome:** `wisent-unlaunder-numbers --repository <path>` lists each one as
   `<file>:<line>: <disguise> -> <literal> (<form>)` and the total; with
   `--write` it rewrites them to the literal the runtime computes (`8`, `1`,
