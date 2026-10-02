@@ -216,11 +216,8 @@ and `working-directory` (`.`). It runs no tests until the operator approves one.
 `tag-on-manifest-bump.yml` tags the version declared in a manifest exactly once.
 It accepts `manifest` (`Cargo.toml`) and `runs-on` (`ubuntu-latest`).
 
-A caller must pin with the full forty-character commit. On 2026-09-03 nine
-repositories pinned `design-gate.yml@73dd0c7`; every run ended as "This run
-likely failed because of a workflow file issue" with zero jobs, and the same
-file at `@73dd0c7e988227eeedc91e0c9f9b9ba9c4f3ba60` ran on the first push. The
-resolver does not abbreviate.
+A caller must pin with the full forty-character commit. The workflow resolver
+does not accept an abbreviated commit as an immutable reference.
 
 `design-gate.yml` runs `wisent-design-lint`, the check shipped by
 `@wisent-ai/components`, on a web repository at the package revision that
@@ -234,18 +231,11 @@ secret `repository_token`, the same contract as `swift-gates`: a token with
 `github.com` origins (https, `ssh://git@github.com/` and `git@github.com:`,
 because npm pins `github:` dependencies over ssh) before `npm ci`. Without it
 a private dependency must resolve through the runner's own git credentials,
-and the fleet's publisher runner has none: measured on `preferences` run
-33672201154, it died on the first private package with `Permission denied
-(publickey)`. It is the first shared gate for the Node repositories; until
-2026-09-01 none existed because no check was common to them, and the design
-lint is that check.
+or dependency installation fails with `Permission denied (publickey)`.
 
 `required-pr-quality.yml` is the required pull-request workflow described above,
 and `repository-audit.yml` is the manual, always-green baseline inventory.
 
-Consumers as of 2026-09-02: `brama`, `jeden`, `skarbiec`, `transcript-lake`,
-`wisent-backend`, `wisent-integrations`, and `image-video-router` on
-`rust-gates`, `skarbiec-desktop` on `swift-gates`, and `preferences` and
-`echo-web` on `design-gate`. Pins are not synchronized automatically;
-`skarbiec` currently sits on an older `rust-gates` revision than the other six.
+Each consumer pins its workflow explicitly. Pins are not synchronized
+automatically; inspect the consumer's workflow to find the revision it uses.
 
