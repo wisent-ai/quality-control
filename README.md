@@ -181,6 +181,16 @@ script; they are not guaranteed to remain identical across policies.
   <files>`), so nothing else modified or staged there is committed; it does
   not push. The literals it writes are then ordinary findings for the
   magic-number guard, to be named or justified like any other number.
+- **What is removed and what stays:** a disguise is removed and its value
+  written plainly — `'xxxx'.length` becomes `4`, `Number(true)` becomes `1`,
+  `int("20")` becomes `20`, `"600".parse()?` becomes `600`. A number the
+  disguise stood for that nothing needs is then deleted with the behaviour it
+  drives: a retry count, a sleep, a timeout or a cap someone invented is not
+  rewritten as a constant, it goes, and a failure becomes the concrete error.
+  A number that is a fact stays as a plain literal or a named constant: a
+  file mode (`0o600`), a protocol value (HMAC's `0x36`/`0x5c` pads, a port a
+  protocol fixes), a radix, an index or count the data itself defines, and a
+  value the operator or a product's declared configuration set.
 
 ## How it works
 
