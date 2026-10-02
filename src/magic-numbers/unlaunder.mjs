@@ -191,6 +191,9 @@ function repositoryReport(repository, write) {
   const skipped = [];
   for (const relative of tracked) {
     if (!SOURCE_EXTENSIONS.has(path.extname(relative))) continue;
+    // A committed node_modules is somebody else's package, not this
+    // repository's source.
+    if (relative.split('/').includes('node_modules')) continue;
     const absolute = path.join(root, relative);
     if (!existsSync(absolute)) continue;
     const original = readFileSync(absolute, 'utf8');

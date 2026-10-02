@@ -162,7 +162,8 @@ script; they are not guaranteed to remain identical across policies.
   `0o77`, `4`, `10`, `0`), and `--json` prints the same report as JSON. A
   negative literal after another sign is parenthesized; a radix value that
   would not read back exactly is left alone.
-- **Boundary:** only tracked files without uncommitted changes are touched; a
+- **Boundary:** only tracked files without uncommitted changes, outside any
+  committed `node_modules`, are touched; a
   file with uncommitted changes is listed as `skipped <file>: uncommitted
   changes (<n> disguised numbers)`. Comment lines and disguises spelled inside
   a string or template on the same line are not rewritten. `--workspace <dir>`
