@@ -95,12 +95,59 @@ const PYTHON_RULES = [
   },
 ];
 
-// The languages read, by file extension: which lines are comments and which
-// disguises the language has.
+// Rust spells a number as a string and parses it back, then consumes the
+// Result: `"128".parse()?`, `"2".parse().expect("…")`,
+// `u32::from_str_radix("600", "8".parse()?)?`. The disguise is the parse and
+// the consumption together; a tail `.context("…")` that hands the Result back
+// becomes `Ok(literal)`.
+const RUST_CONSUMERS = [
+  { source: '\\?', wrap: false },
+  { source: '\\.ok\\(\\)\\?', wrap: false },
+  { source: '\\.unwrap\\(\\)', wrap: false },
+  { source: '\\.unwrap_or_default\\(\\)', wrap: false },
+  { source: '\\.unwrap_or\\([^()]*\\)', wrap: false },
+  { source: '\\.expect\\("(?:[^"\\\\]|\\\\.)*"\\)', wrap: false },
+  { source: '\\.context\\("(?:[^"\\\\]|\\\\.)*"\\)\\?', wrap: false },
+  { source: '\\.context\\("(?:[^"\\\\]|\\\\.)*"\\)(?=\\s*$)', wrap: true },
+];
+
+// A float target needs a decimal point the integer spelling did not carry.
+function rustNumber(value, line, type) {
+  const float = /^f(?:32|64)$/.test(type) || /\bf(?:32|64)\b/.test(line);
+  return float && !value.includes('.') ? `${value}.0` : value;
+}
+
+// Every parse is written back before any radix conversion is read, so the
+// radix argument `"8".parse()?` is already `8` when its call is matched.
+const RUST_RULES = [
+  ...RUST_CONSUMERS.map(({ source, wrap }) => ({
+    form: 'parsed quoted number',
+    pattern: new RegExp(`"(${DECIMAL})"\\s*\\.parse(?:::<\\s*(\\w+)\\s*>)?\\(\\)${source}`, 'gm'),
+    literal: (match, line) => {
+      const value = rustNumber(match[1], line, match[2]);
+      return wrap ? `Ok(${value})` : value;
+    },
+  })),
+  ...RUST_CONSUMERS.map(({ source, wrap }) => ({
+    form: 'from_str_radix of quoted digits',
+    pattern: new RegExp(`\\b[ui](?:8|16|32|64|128|size)::from_str_radix\\(\\s*"([0-9A-Za-z]+)"\\s*,\\s*(\\d+)\\s*\\)${source}`, 'gm'),
+    literal: (match) => {
+      const radix = Number.parseInt(match[2], 10);
+      const value = Number.parseInt(match[1], radix);
+      if (!Number.isSafeInteger(value) || value.toString(radix) !== match[1].toLowerCase().replace(/^0+(?=.)/, '')) return null;
+      const written = RADIX_PREFIX.has(radix) ? `${RADIX_PREFIX.get(radix)}${match[1].toLowerCase()}` : String(value);
+      return wrap ? `Ok(${written})` : written;
+    },
+  })),
+];
+
+// The languages read, by file extension: which lines are comments, which
+// characters open a string, and which disguises the language has.
 const LANGUAGES = new Map([
   ...['.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx', '.mts', '.cts']
-    .map((extension) => [extension, { comment: /^\s*(?:\/\/|\/\*|\*)/, rules: JAVASCRIPT_RULES }]),
-  ['.py', { comment: /^\s*#/, rules: PYTHON_RULES }],
+    .map((extension) => [extension, { comment: /^\s*(?:\/\/|\/\*|\*)/, quotes: "'\"`", rules: JAVASCRIPT_RULES }]),
+  ['.py', { comment: /^\s*#/, quotes: "'\"", rules: PYTHON_RULES }],
+  ['.rs', { comment: /^\s*\/\//, quotes: '"', rules: RUST_RULES }],
 ]);
 
 function git(args, cwd) {
@@ -153,8 +200,7 @@ function placed(text, index, literal) {
 // line, read from the quotes before it. A disguise spelled inside a string is
 // text, such as an error message or this file's own rule names, not a number
 // in code; inside a template's `${…}` it is code again.
-function insideString(line, index) {
-  const QUOTES = "'\"`";
+function insideString(line, index, QUOTES) {
   const open = [];
   for (let position = 0; position < index; position += 1) {
     const character = line[position];
@@ -191,7 +237,7 @@ export function unlaunder(text, language) {
       current = current.replace(rule.pattern, (...args) => {
         const groups = args.slice(0, -2);
         const offset = args.at(-2);
-        const literal = insideString(current, offset) ? null : rule.literal(groups);
+        const literal = insideString(current, offset, language.quotes) ? null : rule.literal(groups, current);
         if (literal === null) return groups[0];
         const written = placed(current, offset, literal);
         changes.push({ line: lineIndex + 1, form: rule.form, from: groups[0], to: written });

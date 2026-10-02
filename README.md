@@ -155,8 +155,13 @@ script; they are not guaranteed to remain identical across policies.
   magic-number guards do not see them.
 - **Initial state:** tracked JavaScript or TypeScript files contain
   `Number('8')`, `Number(true)`, `parseInt('77', 8)`, `'xxxx'.length`,
-  `const radix = 'node-radix'.length` or a unary `+''`, or Python files
-  contain `int("20")` or `float("4")` (written back as `20` and `4.0`).
+  `const radix = 'node-radix'.length` or a unary `+''`; Python files contain
+  `int("20")` or `float("4")` (written back as `20` and `4.0`); Rust files
+  parse a quoted number and consume the Result: `"128".parse()?`,
+  `"2".parse().expect("…")`, `.unwrap_or(…)`, `.ok()?`, `.context("…")?`,
+  `u32::from_str_radix("600", "8".parse()?)?` (written back as `128`, `2`,
+  `0o600`; a tail `.context("…")` that returns the Result becomes `Ok(…)`, and
+  a float target gets `.0`).
 - **Outcome:** `wisent-unlaunder-numbers --repository <path>` lists each one as
   `<file>:<line>: <disguise> -> <literal> (<form>)` and the total; with
   `--write` it rewrites them to the literal the runtime computes (`8`, `1`,
