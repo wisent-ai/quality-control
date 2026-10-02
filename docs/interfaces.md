@@ -139,18 +139,22 @@ least one has, and `2` means a repository could not be audited or the arguments
 were refused: `--workspace is required`, `--checker is required`, `--output is
 required`; `--checker must be one of magic-numbers, file-limits, fallbacks`;
 `--output must be a new direct child of quality-control/.build`; `output
-already exists: <path>`.
+already exists: <path>`. `--help` prints the usage and these exit statuses.
 
 ```bash
-node src/magic-numbers/combine.mjs <audit output directory>...
+node src/magic-numbers/combine.mjs [--json] <audit output directory>...
 ```
 
 Joins several fleet audits into one tab-separated table on stdout: a `total`
 column, one column per guard (named by the report's `checker.name`) and the
 repository, one row per repository with at least one finding, smallest total
-first, so a clean-up can be ordered by all the work a repository needs. An
-audit that could not read a repository stops the join with that repository's
-error rather than counting it as zero.
+first, so a clean-up can be ordered by all the work a repository needs. With
+`--json` the same rows are one object: `checkers` and `repositories`, each with
+`name`, `counts` per guard and `total`. Exit `2`, with the usage, for an
+unknown argument, no directory, a `report.json` that cannot be read or parsed
+(`combine: <file>: <reason>`), or an audit that could not read a repository
+(`combine: <checker> could not audit <repository>: <error>`), which stops the
+join rather than counting it as zero. `--help` prints the usage.
 
 ### No-desktop-cli-coupling
 

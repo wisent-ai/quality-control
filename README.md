@@ -181,6 +181,8 @@ script; they are not guaranteed to remain identical across policies.
   <files>`), so nothing else modified or staged there is committed; it does
   not push. The literals it writes are then ordinary findings for the
   magic-number guard, to be named or justified like any other number.
+  `--help` prints both usage lines; an unknown argument or a missing
+  `--repository`/`--workspace` exits 2 with the reason and the usage.
 - **What is removed and what stays:** a disguise is removed and its value
   written plainly — `'xxxx'.length` becomes `4`, `Number(true)` becomes `1`,
   `int("20")` becomes `20`, `"600".parse()?` becomes `600`. A number the

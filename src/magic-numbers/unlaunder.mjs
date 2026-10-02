@@ -326,11 +326,20 @@ function main() {
   }
 }
 
+const USAGE = [
+  'usage: wisent-unlaunder-numbers --repository <path> [--write | --commit <message>] [--json]',
+  '       wisent-unlaunder-numbers --workspace <dir> [--skip <name>]... [--write | --commit <message>] [--json]',
+].join('\n');
+
 if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
-  try {
-    main();
-  } catch (error) {
-    process.stderr.write(`wisent-unlaunder-numbers: ${error.message}\n`);
-    process.exitCode = EXIT.error;
+  if (process.argv.slice(2).includes('--help')) {
+    process.stdout.write(`${USAGE}\nWithout --write it lists what it would rewrite. Exit 0: done; 2: wrong invocation or a repository it could not read.\n`);
+  } else {
+    try {
+      main();
+    } catch (error) {
+      process.stderr.write(`wisent-unlaunder-numbers: ${error.message}\n${USAGE}\n`);
+      process.exitCode = EXIT.error;
+    }
   }
 }

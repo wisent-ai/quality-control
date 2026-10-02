@@ -148,10 +148,17 @@ function byFindingsThenName(left, right) {
   return left.name.localeCompare(right.name);
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(error.message);
-  console.error(`usage: node src/magic-numbers/audit.mjs --workspace <directory> --checker ${Object.keys(CHECKERS).join('|')} --output <new quality-control/.build/directory> [--skip <repository>]...`);
-  process.exitCode = EXIT.error;
+const USAGE = `usage: node src/magic-numbers/audit.mjs --workspace <directory> --checker ${Object.keys(CHECKERS).join('|')} --output <new quality-control/.build/directory> [--skip <repository>]...`;
+
+if (process.argv.slice(2).includes('--help')) {
+  console.log(USAGE);
+  console.log('Exit 0: every repository clean; 1: findings; 2: wrong invocation or a repository the guard could not read.');
+} else {
+  try {
+    main();
+  } catch (error) {
+    console.error(error.message);
+    console.error(USAGE);
+    process.exitCode = EXIT.error;
+  }
 }
