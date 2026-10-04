@@ -19,8 +19,6 @@ const LOCAL_LITERAL_ASSIGN_RE = new RegExp(`^\\s*(?:const|let|var)?\\s*[a-z_][A-
 // A bare `<` or `>` is a comparison when written with spaces around it; `Vec<u8>`, `<code>` and `->` are not.
 const LOGIC_LITERAL_RE = /^\s*(?:if|elif|while|for|return|assert)\b|(?:[=!<>]=|\s[<>]\s)|[-+*/%]=|\b(?:range|sleep|timeout|limit|max|min)\s*\(/;
 const ALLOWED_NUMBER_LITERALS = new Set(['-1', '0', '1', '2']);
-const ELLIPSIS = '...';
-const DETAIL_EXCERPT_LIMIT = 32;
 const SCHEMA_KEY_CONTEXT_BEFORE = 8;
 const SCHEMA_KEY_CONTEXT_AFTER = 4;
 
@@ -45,7 +43,7 @@ export function literalViolations(line, numbersOnly) {
     if (isSchemaKeyAccess(code, match.index, match[0].length)) continue;
     found.push({
       rule: 'magic-string',
-      detail: `string literal "${abbreviate(value)}" is embedded in logic`
+      detail: `string literal "${value}" is embedded in logic`
     });
   }
 
@@ -150,9 +148,4 @@ export function isLikelyDocumentationLine(line) {
 
 function normalizeNumberLiteral(value) {
   return String(Number(value.replace(/_?(?:[ui](?:8|16|32|64|128|size)|f(?:32|64))$/i, '').replaceAll('_', '')));
-}
-
-function abbreviate(value, limit = DETAIL_EXCERPT_LIMIT) {
-  if (value.length <= limit) return value;
-  return `${value.slice(0, limit - ELLIPSIS.length)}${ELLIPSIS}`;
 }

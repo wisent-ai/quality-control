@@ -41,10 +41,6 @@ const EXCLUDED_DIRECTORIES = new Set([
   'profiles'
 ]);
 const EXCLUDED_BASENAME_RE = /(?:^config\.py|^test_.*\.py|_test\.py|\.test\.[cm]?[jt]sx?|\.spec\.[cm]?[jt]sx?|Tests\.swift|\.min\.[cm]?js)$/;
-// A finding quotes its line only up to this many characters, so a minified line stays one finding, not a report.
-const SOURCE_EXCERPT_LIMIT = 160;
-const ELLIPSIS = '...';
-
 const usage = usageOf('check-no-magic-constants.mjs', ' [--numbers-only] [--json]');
 const args = parseArgs(process.argv.slice(2), usage, { '--json': 'json', '--numbers-only': 'numbersOnly' });
 const mode = resolveMode(args, usage);
@@ -81,7 +77,7 @@ for (const file of files) {
         file,
         line: lineNumber,
         ...violation,
-        source: abbreviate(line.trim(), SOURCE_EXCERPT_LIMIT)
+        source: line.trim()
       });
     }
   }
@@ -104,11 +100,6 @@ if (args.json) {
   process.exitCode = EXIT.findings;
 } else {
   console.log(`No-magic-constants guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
-}
-
-function abbreviate(value, limit) {
-  if (value.length <= limit) return value;
-  return `${value.slice(0, limit - ELLIPSIS.length)}${ELLIPSIS}`;
 }
 
 function isScannedFile(file) {
