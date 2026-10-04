@@ -5,9 +5,17 @@ inputs:
     description: GitHub token used to read pull request commits.
     required: true
   min-informative-words:
-    description: Minimum number of non-generic words required in each commit subject.
+    description: Minimum number of distinct words in each commit subject. Empty means the rule is not applied.
     required: false
-    default: "2"
+  min-subject-characters:
+    description: Minimum length of each commit subject in characters. Empty means the rule is not applied.
+    required: false
+  min-subject-words:
+    description: Minimum number of words in a subject without a Conventional Commit prefix. Empty means the rule is not applied.
+    required: false
+  min-word-characters:
+    description: Length from which a word counts as specific; a subject needs one such word or an identifier. Empty means the rule is not applied.
+    required: false
 runs:
   using: composite
   steps:
@@ -16,4 +24,7 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         MIN_INFORMATIVE_WORDS: ${{ inputs.min-informative-words }}
+        MIN_SUBJECT_CHARACTERS: ${{ inputs.min-subject-characters }}
+        MIN_SUBJECT_WORDS: ${{ inputs.min-subject-words }}
+        MIN_WORD_CHARACTERS: ${{ inputs.min-word-characters }}
       run: node "$GITHUB_ACTION_PATH/check-informative-commits.mjs"

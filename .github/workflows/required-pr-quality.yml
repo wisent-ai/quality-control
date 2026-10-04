@@ -17,6 +17,10 @@ jobs:
         uses: wisent-ai/quality-control/.github/actions/informative-commits@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          min-informative-words: ${{ vars.QUALITY_CONTROL_MIN_INFORMATIVE_WORDS }}
+          min-subject-characters: ${{ vars.QUALITY_CONTROL_MIN_SUBJECT_CHARACTERS }}
+          min-subject-words: ${{ vars.QUALITY_CONTROL_MIN_SUBJECT_WORDS }}
+          min-word-characters: ${{ vars.QUALITY_CONTROL_MIN_WORD_CHARACTERS }}
 
   lexical-policy:
     name: Lexical policy

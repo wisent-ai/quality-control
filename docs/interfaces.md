@@ -183,12 +183,23 @@ a linked library instead of its command-line interface.
 - uses: wisent-ai/quality-control/.github/actions/informative-commits@main
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
-    min-informative-words: "2"
+    min-informative-words: ${{ vars.QUALITY_CONTROL_MIN_INFORMATIVE_WORDS }}
+    min-subject-characters: ${{ vars.QUALITY_CONTROL_MIN_SUBJECT_CHARACTERS }}
+    min-subject-words: ${{ vars.QUALITY_CONTROL_MIN_SUBJECT_WORDS }}
+    min-word-characters: ${{ vars.QUALITY_CONTROL_MIN_WORD_CHARACTERS }}
 ```
 
 The action checks the subject (first line), ignores merge commits, recognizes a
-Conventional Commit prefix, requires at least 12 characters, and applies token
-specificity rules. The token threshold alone is not the full acceptance rule.
+Conventional Commit prefix and refuses an empty subject. Every other rule is a
+threshold the operator states, here through repository or organisation
+variables: `min-subject-characters` (subject length), `min-subject-words`
+(words in a subject without a Conventional Commit prefix),
+`min-informative-words` (distinct words) and `min-word-characters` (a subject
+needs an identifier — a `.`, `_`, `/` or `-` — or one word at least that long).
+The action chooses no value: an input left empty is not applied, and the run
+prints `Not applied, because no value was stated:` with the names of those
+inputs' variables. A stated value that is not a positive whole number fails
+the run with the input's name. Each annotation names the commit's whole SHA.
 
 ### Reusable workflows
 

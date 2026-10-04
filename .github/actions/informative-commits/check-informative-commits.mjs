@@ -2,11 +2,15 @@ import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 const CONVENTIONAL_PREFIX = /^[a-z]+(\([^)]+\))?!?:\s+(.+)$/i;
-// A token of this length or more is a word rather than an article or abbreviation.
-const LONG_TOKEN_LENGTH = 4;
-const MIN_SUBJECT_LENGTH = 12;
-// Object, action and one qualifier: the shortest subject that says what changed.
-const MIN_SUBJECT_TOKENS = 3;
+// The thresholds a subject is held to, each an action input the operator states (through
+// repository or organisation variables); a threshold nobody stated is not applied, and the
+// report names it as such.
+const THRESHOLDS = Object.freeze({
+  minInformativeWords: "MIN_INFORMATIVE_WORDS",
+  minSubjectCharacters: "MIN_SUBJECT_CHARACTERS",
+  minSubjectWords: "MIN_SUBJECT_WORDS",
+  minWordCharacters: "MIN_WORD_CHARACTERS",
+});
 // GitHub's largest page for pull-request commits; a shorter page is the last one.
 const COMMITS_PAGE_SIZE = 100;
 // The `typeof` a commit field has to have to be read as text.
@@ -53,11 +57,20 @@ function isMergeCommit(commit) {
   return /^merge (branch|pull request)\b/i.test(subject);
 }
 
-export function evaluateCommitMessage(message, options = {}) {
-  const minInformativeWords = Number(options.minInformativeWords);
-  if (!Number.isInteger(minInformativeWords) || minInformativeWords < 1) {
-    throw new Error(`minInformativeWords must be a positive integer, received ${options.minInformativeWords}`);
+// A stated threshold is a positive whole number; an absent or empty one is `null`.
+function statedThreshold(name, raw) {
+  if (raw === undefined || raw === null || String(raw).trim() === "") return null;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`${name} must be a positive integer, received ${raw}`);
   }
+  return value;
+}
+
+export function evaluateCommitMessage(message, options = {}) {
+  const stated = Object.fromEntries(
+    Object.keys(THRESHOLDS).map((name) => [name, statedThreshold(name, options[name])]),
+  );
   const subject = subjectFromMessage(message);
   const reasons = [];
 
@@ -73,25 +86,31 @@ export function evaluateCommitMessage(message, options = {}) {
   const { hasConventionalPrefix, scoringSubject } = stripConventionalPrefix(subject);
   const tokens = tokenize(scoringSubject);
   const uniqueTokens = new Set(tokens);
-  const longTokens = tokens.filter((token) => token.length >= LONG_TOKEN_LENGTH);
-  const hasSpecificMarker = /[._/-]/.test(scoringSubject);
 
-  if (subject.length < MIN_SUBJECT_LENGTH) {
-    reasons.push(`subject is shorter than ${MIN_SUBJECT_LENGTH} characters`);
+  if (stated.minSubjectCharacters !== null && subject.length < stated.minSubjectCharacters) {
+    reasons.push(`subject is shorter than ${stated.minSubjectCharacters} characters`);
   }
 
-  if (!hasConventionalPrefix && tokens.length < MIN_SUBJECT_TOKENS) {
-    reasons.push("subject should describe the changed object and action");
-  }
-
-  if (uniqueTokens.size < minInformativeWords) {
+  if (stated.minSubjectWords !== null && !hasConventionalPrefix && tokens.length < stated.minSubjectWords) {
     reasons.push(
-      `subject has ${uniqueTokens.size} distinct word(s); expected at least ${minInformativeWords}`,
+      `subject has ${tokens.length} word(s); describing the changed object and action takes at least ${stated.minSubjectWords}`,
     );
   }
 
-  if (longTokens.length === 0 && !hasSpecificMarker) {
-    reasons.push("subject lacks a specific identifier or descriptive word");
+  if (stated.minInformativeWords !== null && uniqueTokens.size < stated.minInformativeWords) {
+    reasons.push(
+      `subject has ${uniqueTokens.size} distinct word(s); expected at least ${stated.minInformativeWords}`,
+    );
+  }
+
+  if (stated.minWordCharacters !== null) {
+    const longTokens = tokens.filter((token) => token.length >= stated.minWordCharacters);
+    const hasSpecificMarker = /[._/-]/.test(scoringSubject);
+    if (longTokens.length === 0 && !hasSpecificMarker) {
+      reasons.push(
+        `subject has no identifier and no word of ${stated.minWordCharacters} or more characters`,
+      );
+    }
   }
 
   return {
@@ -100,6 +119,7 @@ export function evaluateCommitMessage(message, options = {}) {
     subject,
     reasons,
     informativeTokens: [...uniqueTokens],
+    unstated: Object.keys(THRESHOLDS).filter((name) => stated[name] === null),
   };
 }
 
@@ -215,10 +235,15 @@ export async function main() {
 
   const event = JSON.parse(await fs.readFile(eventPath, "utf8"));
   const commits = await collectCommitsFromEvent(event);
-  if (!process.env.MIN_INFORMATIVE_WORDS) {
-    throw new Error("MIN_INFORMATIVE_WORDS is required; the action input min-informative-words sets it");
+  const options = Object.fromEntries(
+    Object.entries(THRESHOLDS).map(([name, variable]) => [name, process.env[variable]]),
+  );
+  const unstated = Object.entries(THRESHOLDS)
+    .filter(([name]) => statedThreshold(name, options[name]) === null)
+    .map(([, variable]) => variable);
+  if (unstated.length > 0) {
+    console.log(`Not applied, because no value was stated: ${unstated.join(", ")}.`);
   }
-  const minInformativeWords = Number(process.env.MIN_INFORMATIVE_WORDS);
   const failures = [];
   let skipped = 0;
 
@@ -228,13 +253,12 @@ export async function main() {
       continue;
     }
 
-    const result = evaluateCommitMessage(commit.message, { minInformativeWords });
+    const result = evaluateCommitMessage(commit.message, options);
     if (!result.ok) {
       failures.push({ commit, result });
-      const sha = commit.sha.slice(0, 12);
       console.log(
         `::error title=Uninformative commit message::${annotationEscape(
-          `${sha} "${result.subject}" - ${result.reasons.join("; ")}`,
+          `${commit.sha} "${result.subject}" - ${result.reasons.join("; ")}`,
         )}`,
       );
     }
