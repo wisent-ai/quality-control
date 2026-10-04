@@ -88,15 +88,22 @@ generated and not to be edited: its generator is the source that is read.
 ### File limits
 
 ```bash
-node src/check-file-limits.mjs --all
-node src/check-file-limits.mjs --all --json
+node src/check-file-limits.mjs --all --limits ~/Documents/CodingProjects/Wisent/tama/rust/crates/tama-hook-tools/src/ports/stated_numbers/numeric-provenance.json
+node src/check-file-limits.mjs --all --limits <numeric-provenance.json> --json
 ```
 
 The two size limits the workshop's write hooks enforce on every edit, applied
-to the whole tracked tree: a file over 300 lines is a `file-lines` finding and
-a folder holding more than five tracked files is a `folder-files` finding
-(`file` names the folder, `line` is `null`). The limits are properties of the
-tree, so only `--all` is accepted; asking for anything else is refused with
+to the whole tracked tree: a file over the operator's `max_file_lines` is a
+`file-lines` finding and a folder holding more than his `max_folder_files`
+tracked files is a `folder-files` finding (`file` names the folder, `line` is
+`null`). Both numbers are read from the `numeric-provenance.json` named by
+`--limits` — the file Tama's hooks are built from, each value beside the
+operator's own words — so a changed limit reaches this guard and the hooks
+alike; the JSON report carries them as `limits` with their source. Without
+`--limits` the guard refuses with `--limits is required`; an unreadable file
+or one that states no positive whole number for either name is refused with
+the path and the entry, exit `2`. The limits are properties of the tree, so
+only `--all` is accepted; asking for anything else is refused with
 `--all is required`. Registries are exempt from the line count (`.json`,
 `.jsonl`, `.ndjson`, `.lock`, `.csv`, `.tsv`, `.prisma`), and so are a
 tokenizer's `merges.txt` and
@@ -119,11 +126,11 @@ folder's files into sub-folders.
 ### Fleet audit of magic numbers, file limits or fallbacks
 
 ```bash
-node src/magic-numbers/audit.mjs --workspace ~/Documents/CodingProjects/Wisent --checker magic-numbers|file-limits|fallbacks --output .build/<name> [--skip <repository>]...
+node src/magic-numbers/audit.mjs --workspace ~/Documents/CodingProjects/Wisent --checker magic-numbers|file-limits|fallbacks --output .build/<name> [--limits <numeric-provenance.json>] [--skip <repository>]...
 ```
 
 Runs the named guard (`check-no-magic-constants --all --numbers-only --json`,
-`check-file-limits --all --json` or `check-no-fallbacks --all --json`) in every immediate
+`check-file-limits --all --json --limits <path>` or `check-no-fallbacks --all --json`) in every immediate
 Git repository of the workspace and writes `report.json` plus one evidence
 directory per repository (`stdout.json`, `stderr.log`, `execution.json`) under
 `quality-control/.build/`. `--skip <name>` leaves a repository out and records

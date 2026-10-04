@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 // The two size limits the workshop's write hooks enforce on every edit, applied to a whole
-// repository: no source file over 300 lines, no folder holding more than five files. The
-// hooks stop a new violation at the editor; this guard finds the ones that already exist.
+// repository: no source file over the operator's `max_file_lines`, no folder holding more
+// than his `max_folder_files`. Both are read from the numeric-provenance.json named by
+// --limits — Tama's own statement of them — so a changed limit reaches this guard and the
+// hooks alike. The hooks stop a new violation at the editor; this guard finds the ones that
+// already exist.
 import { closeSync, existsSync, openSync, readFileSync, readSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -10,8 +13,7 @@ import { EXIT, MAX_OUTPUT_BYTES, REPORT_SCHEMA_VERSION } from './lib/constants.m
 import { isGeneratedSource } from './lib/source-lines.mjs';
 
 const ROOT = git(['rev-parse', '--show-toplevel']).trim();
-export const MAX_FILE_LINES = 300;
-export const MAX_FOLDER_FILES = 5;
+const USAGE = 'usage: node check-file-limits.mjs --all --limits <numeric-provenance.json> [--json]';
 // A folder finding has no line of its own; the report's line field is not applicable.
 const NO_LINE = null;
 
@@ -53,6 +55,7 @@ const EXEMPT_DIRECTORY_RE = /^(?:tests|migrations)/;
 const FOLDER_LIMIT_EXEMPT_FOLDERS = new Set(['.', '.github/workflows']);
 
 const args = parseArgs(process.argv.slice(2));
+const { maxFileLines, maxFolderFiles } = statedLimits(args.limits);
 const files = trackedFiles();
 const violations = [];
 const sourceDigest = createHash('sha256');
@@ -81,24 +84,24 @@ for (const file of files) {
   const source = text.toString('utf8');
   if (isGeneratedSource(source.split(/\r?\n/))) continue;
   const lineCount = countLines(source);
-  if (lineCount > MAX_FILE_LINES) {
+  if (lineCount > maxFileLines) {
     violations.push({
       file,
-      line: MAX_FILE_LINES + 1,
+      line: maxFileLines + 1,
       rule: 'file-lines',
-      detail: `${lineCount} lines; the limit is ${MAX_FILE_LINES}`
+      detail: `${lineCount} lines; the limit is ${maxFileLines}`
     });
   }
 }
 
 for (const [folder, count] of [...folderCounts.entries()].sort()) {
   if (FOLDER_LIMIT_EXEMPT_FOLDERS.has(folder)) continue;
-  if (count > MAX_FOLDER_FILES) {
+  if (count > maxFolderFiles) {
     violations.push({
       file: folder,
       line: NO_LINE,
       rule: 'folder-files',
-      detail: `${count} files; the limit is ${MAX_FOLDER_FILES}`
+      detail: `${count} files; the limit is ${maxFolderFiles}`
     });
   }
 }
@@ -108,7 +111,7 @@ violations.sort(byFileThenRule);
 // The report is set as the exit code rather than through process.exit(): on macOS a pipe is
 // written asynchronously, and exiting right after console.log truncated reports at the pipe buffer.
 if (args.json) {
-  console.log(JSON.stringify({ schemaVersion: REPORT_SCHEMA_VERSION, root: ROOT, mode: 'all', checkedFiles: files.length, sourceDigest: sourceDigest.digest('hex'), violations }));
+  console.log(JSON.stringify({ schemaVersion: REPORT_SCHEMA_VERSION, root: ROOT, mode: 'all', limits: { maxFileLines, maxFolderFiles, source: args.limits }, checkedFiles: files.length, sourceDigest: sourceDigest.digest('hex'), violations }));
   process.exitCode = violations.length > 0 ? EXIT.findings : EXIT.clean;
 } else if (violations.length > 0) {
   console.error('File-limits guard failed.');
@@ -117,7 +120,7 @@ if (args.json) {
     console.error(`${violation.file}: ${violation.rule}: ${violation.detail}`);
   }
   console.error('');
-  console.error(`Split a file over ${MAX_FILE_LINES} lines into modules; move the files of a folder holding more than ${MAX_FOLDER_FILES} into sub-folders.`);
+  console.error(`Split a file over ${maxFileLines} lines into modules; move the files of a folder holding more than ${maxFolderFiles} into sub-folders.`);
   process.exitCode = EXIT.findings;
 } else {
   console.log(`File-limits guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
@@ -136,24 +139,49 @@ function countLines(text) {
 }
 
 function parseArgs(raw) {
-  const parsed = { all: false, json: false };
-  for (const arg of raw) {
+  const parsed = { all: false, json: false, limits: null };
+  for (let index = 0; index < raw.length; index += 1) {
+    const arg = raw[index];
     if (arg === '--help' || arg === '-h') {
       // --help prints the usage to stdout and checks nothing (cli.md rule 11).
-      console.log('usage: node check-file-limits.mjs --all [--json]');
+      console.log(USAGE);
       process.exit(EXIT.clean);
     }
     else if (arg === '--all') parsed.all = true;
     else if (arg === '--json') parsed.json = true;
+    else if (arg === '--limits') {
+      const value = raw[index + 1];
+      if (!value || value.startsWith('--')) usage('--limits requires the path of a numeric-provenance.json');
+      parsed.limits = path.resolve(value);
+      index += 1;
+    }
     else usage(`unknown argument: ${arg}`);
   }
   if (!parsed.all) usage('--all is required: the limits are properties of the whole tree, not of a change');
+  if (!parsed.limits) usage('--limits is required: the limits are the operator\'s, stated in Tama\'s numeric-provenance.json');
   return parsed;
+}
+
+// One stated limit: a positive whole number under `<name>.value`, or a refusal naming the
+// file and the entry, never a number chosen here.
+function statedLimits(file) {
+  let declared;
+  try {
+    declared = JSON.parse(readFileSync(file, 'utf8'));
+  } catch (error) {
+    usage(`cannot read the stated limits in ${file}: ${error.message}`);
+  }
+  const stated = name => {
+    const value = declared?.[name]?.value;
+    if (!Number.isInteger(value) || value < 1) usage(`${file} states no positive whole number for ${name}`);
+    return value;
+  };
+  return { maxFileLines: stated('max_file_lines'), maxFolderFiles: stated('max_folder_files') };
 }
 
 function usage(message) {
   console.error(message);
-  console.error('usage: node check-file-limits.mjs --all [--json]');
+  console.error(USAGE);
   process.exit(EXIT.error);
 }
 

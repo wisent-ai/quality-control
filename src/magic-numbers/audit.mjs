@@ -7,11 +7,12 @@ import { createHash } from 'node:crypto';
 import { EXIT, REPORT_SCHEMA_VERSION, MAX_OUTPUT_BYTES, RESULT } from '../lib/constants.mjs';
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-// The guards a fleet audit can run: the script and the flags that make it read the whole tree.
+// The guards a fleet audit can run: the script, the flags that make it read the whole tree,
+// and the input files it must be given (forwarded as absolute paths).
 const CHECKERS = {
-  'magic-numbers': { script: 'src/check-no-magic-constants.mjs', flags: ['--all', '--numbers-only', '--json'] },
-  'file-limits': { script: 'src/check-file-limits.mjs', flags: ['--all', '--json'] },
-  'fallbacks': { script: 'src/check-no-fallbacks.mjs', flags: ['--all', '--json'] },
+  'magic-numbers': { script: 'src/check-no-magic-constants.mjs', flags: ['--all', '--numbers-only', '--json'], inputs: [] },
+  'file-limits': { script: 'src/check-file-limits.mjs', flags: ['--all', '--json'], inputs: ['--limits'] },
+  'fallbacks': { script: 'src/check-no-fallbacks.mjs', flags: ['--all', '--json'], inputs: [] },
 };
 
 // A command that could not be started at all is an error here and now, not a record
@@ -42,7 +43,7 @@ function parseArgs() {
       skip.add(value);
       continue;
     }
-    if (!['--workspace', '--output', '--checker'].includes(key) || options[key]) throw new Error(`unknown or repeated argument: ${key}`);
+    if (!['--workspace', '--output', '--checker', '--limits'].includes(key) || options[key]) throw new Error(`unknown or repeated argument: ${key}`);
     options[key] = value;
   }
   for (const required of ['--workspace', '--checker', '--output']) {
@@ -50,6 +51,11 @@ function parseArgs() {
   }
   const checkerName = options['--checker'];
   if (!CHECKERS[checkerName]) throw new Error(`--checker must be one of ${Object.keys(CHECKERS).join(', ')}`);
+  const inputs = [];
+  for (const input of CHECKERS[checkerName].inputs) {
+    if (!options[input]) throw new Error(`${input} is required for --checker ${checkerName}`);
+    inputs.push(input, path.resolve(options[input]));
+  }
   const workspace = realpathSync(options['--workspace']);
   const build = path.join(PACKAGE_ROOT, '.build');
   mkdirSync(build, { recursive: true });
@@ -57,11 +63,11 @@ function parseArgs() {
   // A direct child prevents symlinked parents from writing outside the owned build directory.
   if (path.dirname(output) !== build || realpathSync(build) !== build) throw new Error('--output must be a new direct child of quality-control/.build');
   if (existsSync(output)) throw new Error(`output already exists: ${output}`);
-  return { workspace, output, skip, checkerName };
+  return { workspace, output, skip, checkerName, inputs };
 }
 
 function main() {
-  const { workspace, output, skip, checkerName } = parseArgs();
+  const { workspace, output, skip, checkerName, inputs } = parseArgs();
   const checkerScript = path.join(PACKAGE_ROOT, CHECKERS[checkerName].script);
   const entries = readdirSync(workspace, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name));
   const checker = {
@@ -92,7 +98,7 @@ function main() {
       record.status = git(['status', '--porcelain', '--untracked-files=no'], directory);
       const origin = run('git', ['remote', 'get-url', 'origin'], directory);
       record.origin = origin.exitStatus === EXIT.clean ? origin.stdout.trim() : null;
-      const result = run(process.execPath, [checkerScript, ...CHECKERS[checkerName].flags], directory);
+      const result = run(process.execPath, [checkerScript, ...CHECKERS[checkerName].flags, ...inputs], directory);
       const evidence = path.join(output, entry.name);
       mkdirSync(evidence);
       writeFileSync(path.join(evidence, 'stdout.json'), result.stdout);
@@ -148,7 +154,7 @@ function byFindingsThenName(left, right) {
   return left.name.localeCompare(right.name);
 }
 
-const USAGE = `usage: node src/magic-numbers/audit.mjs --workspace <directory> --checker ${Object.keys(CHECKERS).join('|')} --output <new quality-control/.build/directory> [--skip <repository>]...`;
+const USAGE = `usage: node src/magic-numbers/audit.mjs --workspace <directory> --checker ${Object.keys(CHECKERS).join('|')} --output <new quality-control/.build/directory> [--limits <numeric-provenance.json> (file-limits)] [--skip <repository>]...`;
 
 if (process.argv.slice(2).includes('--help')) {
   console.log(USAGE);
