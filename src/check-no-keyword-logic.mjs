@@ -37,13 +37,17 @@ const EXCLUDED_PREFIXES = [
 
 const KEYWORD_IDENTIFIER_RE = /\b[A-Za-z_][A-Za-z0-9_]*(?:keyword|keywords)[A-Za-z0-9_]*\b/i;
 const SUSPICIOUS_LIST_NAME_RE = /\b(?:signals?|fragments?|phrases?|prefixes?|suffixes?|triggers?|words?|terms?|markers?|patterns?)\b/i;
-const DECLARES_LIST_RE = /\b(?:let|var|const|static\s+let|static\s+var)\s+[A-Za-z_][A-Za-z0-9_]*\s*(?::[^=]+)?=\s*(?:\[|Set\s*\(|new\s+Set\s*\()/;
+const DECLARES_LIST_RE = /\b(?:let|var|const|static\s+let|static\s+var)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=]+)?=\s*(?:\[|Set\s*\(|new\s+Set\s*\()/;
+const IDENTIFIER_RE = /\b[A-Za-z_][A-Za-z0-9_]*\b/g;
 const LEXICAL_GATE_RE = /\.(?:contains|hasPrefix|hasSuffix|localizedCaseInsensitiveContains|range|includes|startsWith|endsWith|some|every|test|match)\b|\b(?:contains|hasPrefix|startswith|endswith|includes|re\.search|RegExp|NSRegularExpression|localizedLowercase|lowercased|toLowerCase|lower)\b/;
 const DIRECT_LITERAL_GATE_RE = /\.(?:contains|hasPrefix|hasSuffix|localizedCaseInsensitiveContains|includes|startsWith|endsWith|test|match)\s*\(\s*(["'`])([^"'`]{3,})\1/;
 const REGEX_ALTERNATION_RE = /\/[^/\n]*(?:[A-Za-z][A-Za-z0-9_-]{2,}\|){2,}[A-Za-z][A-Za-z0-9_-]{2,}[^/\n]*\/|#["'][^"'\n]*(?:[A-Za-z][A-Za-z0-9_-]{2,}\|){2,}[A-Za-z][A-Za-z0-9_-]{2,}[^"'\n]*["']/;
-// A string-list gate is judged over the lines around the suspicious one, and needs three literals to count.
-const GATE_WINDOW_RADIUS = 12;
-const GATE_LITERAL_COUNT = 3;
+// A string-list gate is a declared list of words that the file tests text against: the list is
+// read from its declaration up to the bracket that closes it, and its name must meet a lexical
+// operation somewhere in the file. A list is two or more literals; one is a comparison.
+const LIST_LITERAL_COUNT = 2;
+const OPENERS = '([{';
+const CLOSERS = ')]}';
 
 const usage = usageOf('check-no-keyword-logic.mjs');
 const args = parseArgs(process.argv.slice(2), usage);
@@ -98,15 +102,13 @@ for (const file of files) {
       continue;
     }
 
-    if (!isPotentialStringListGateLine(line)) continue;
-
-    const window = sourceWindow(lines, lineNumber, GATE_WINDOW_RADIUS);
-    if (isStringListGate(window.text)) {
+    const gate = stringListGate(lines, lineNumber);
+    if (gate) {
       violations.push({
         file,
         line: lineNumber,
         rule: 'string-list-keyword-gate',
-        detail: 'string lists cannot drive lexical contains/prefix/match decisions',
+        detail: `string list ${gate} drives lexical contains/prefix/match decisions`,
         source: line.trim()
       });
     }
@@ -138,33 +140,73 @@ function isScannedFile(file) {
   return true;
 }
 
-function sourceWindow(lines, lineNumber, radius) {
-  const start = Math.max(1, lineNumber - radius);
-  const end = Math.min(lines.length, lineNumber + radius);
-  return {
-    start,
-    end,
-    text: lines
-      .slice(start - 1, end)
-      .filter(line => !isCommentOnlyLine(line, MARKUP_COMMENT_MARKERS))
-      .filter(line => !isLikelyDocumentationLine(line))
-      .join('\n')
-  };
-}
-
-function isStringListGate(text) {
-  const literalCount = naturalLanguageLiterals(text).length;
-  if (literalCount < GATE_LITERAL_COUNT) return false;
-  if (!LEXICAL_GATE_RE.test(text)) return false;
-  if (SUSPICIOUS_LIST_NAME_RE.test(text)) return true;
-  return false;
-}
-
-function isPotentialStringListGateLine(line) {
+function bracketBalance(line) {
   const code = codeWithoutStrings(line);
-  if (SUSPICIOUS_LIST_NAME_RE.test(code)) return true;
-  if (DECLARES_LIST_RE.test(code)) return true;
-  return LEXICAL_GATE_RE.test(code) && naturalLanguageLiterals(line).length > 0;
+  let balance = 0;
+  for (const character of code) {
+    if (OPENERS.includes(character)) balance += 1;
+    else if (CLOSERS.includes(character)) balance -= 1;
+  }
+  return balance;
+}
+
+/** The text of a declaration from its line to the bracket that closes what it opens. */
+function declarationExtent(lines, lineNumber) {
+  let open = 0;
+  const extent = [];
+  for (let number = lineNumber; number <= lines.length; number += 1) {
+    const line = lines[number - 1];
+    extent.push(line);
+    open += bracketBalance(line);
+    if (open <= 0) break;
+  }
+  return extent.join('\n');
+}
+
+/** The line declaring `name` as a list, or 0 when the file declares no such list. */
+function listDeclarationLine(lines, name) {
+  for (let number = 1; number <= lines.length; number += 1) {
+    const match = codeWithoutStrings(lines[number - 1]).match(DECLARES_LIST_RE);
+    if (match && match[1] === name) return number;
+  }
+  return 0;
+}
+
+/**
+ * Whether the list declared at `declaration` holds words, is named or used as a word list
+ * (SUSPICIOUS_LIST_NAME_RE on the declaration or a use), and its name meets a lexical test.
+ */
+function isWordListTestedLexically(lines, declaration, name) {
+  const extent = declarationExtent(lines, declaration);
+  if (naturalLanguageLiterals(extent).length < LIST_LITERAL_COUNT) return false;
+  const named = new RegExp(`\\b${name}\\b`);
+  const uses = lines.filter((line, index) => {
+    const code = codeWithoutStrings(line);
+    return index + 1 !== declaration && named.test(code) && LEXICAL_GATE_RE.test(code);
+  });
+  if (uses.length === 0) return false;
+  return [extent, ...uses].some(text => SUSPICIOUS_LIST_NAME_RE.test(codeWithoutStrings(text)));
+}
+
+/**
+ * The list that makes `lineNumber` a string-list gate, or null. The line is one when it declares
+ * such a list, tests text against a list declared elsewhere in the file, or tests text against a
+ * list written inline on the line itself.
+ */
+function stringListGate(lines, lineNumber) {
+  const line = lines[lineNumber - 1];
+  const code = codeWithoutStrings(line);
+  const declared = code.match(DECLARES_LIST_RE);
+  if (declared) {
+    return isWordListTestedLexically(lines, lineNumber, declared[1]) ? declared[1] : null;
+  }
+  if (!LEXICAL_GATE_RE.test(code)) return null;
+  if (code.includes('[') && SUSPICIOUS_LIST_NAME_RE.test(code) && naturalLanguageLiterals(line).length >= LIST_LITERAL_COUNT) return 'written inline';
+  for (const [name] of code.matchAll(IDENTIFIER_RE)) {
+    const declaration = listDeclarationLine(lines, name);
+    if (declaration && isWordListTestedLexically(lines, declaration, name)) return name;
+  }
+  return null;
 }
 
 function directGateHasNaturalLanguageLiteral(line) {
@@ -182,7 +224,7 @@ function naturalLanguageLiterals(text) {
 }
 
 function isNaturalLanguageToken(value) {
-  if (value.length < GATE_LITERAL_COUNT) return false;
+  if (value.length === 0) return false;
   if (!/[A-Za-z]/.test(value)) return false;
   if (/[/_]/.test(value)) return false;
   if (/^[A-Z0-9_./:-]+$/.test(value)) return false;

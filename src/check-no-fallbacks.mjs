@@ -53,9 +53,9 @@ const PREDICATE_CALL_RE = /\.(?:includes|startsWith|endsWith|test|has|some|every
 const COMPARISON_RE = /(?:===|!==|==|!=|<=|>=|<|>)/;
 const EMPTY_CATCH_RE = /\bcatch\b[^{]*{\s*}/;
 // A condition that spans lines: `if (` opened above and not yet closed, so a line inside it is
-// a piece of boolean logic whatever it looks like on its own. The look-back is bounded because
-// a condition longer than this is not something a guard should be reading either.
-const CONDITION_LOOKBACK_LINES = 8;
+// a piece of boolean logic whatever it looks like on its own. The innermost parenthesis still
+// open above the line decides: the line is inside a condition exactly when that parenthesis
+// opens one.
 const CONDITION_OPENER_RE = /^\s*(?:(?:\}\s*)?else\s+)?(?:if|while)\s*\(/;
 // Rust states a substitute in one of two ways: `unwrap_or` and its relatives hand back a value
 // where a missing or failed one was, and a serde `default` lets a document that left a field out
@@ -65,9 +65,8 @@ const RUST_SUBSTITUTE_RE = /\.unwrap_or(?:_else|_default)?\s*\(/;
 const RUST_SERDE_DEFAULT_RE = /#\s*\[\s*serde\s*\([^)]*\bdefault\b/;
 const RUST_OPTION_FIELD_RE = /:\s*Option\s*</;
 const RUST_ATTRIBUTE_RE = /^\s*#\s*\[/;
-// A serde attribute names the field below it; the fields of a struct do not nest deeper than the
-// attributes stacked on one of them, so the type is found within a few lines or not at all.
-const RUST_FIELD_LOOKAHEAD_LINES = 4;
+// A serde attribute names the field below it: the first line after the stacked attributes and
+// blank lines is that field.
 
 const usage = usageOf('check-no-fallbacks.mjs', ' [--json]');
 const args = parseArgs(process.argv.slice(2), usage, { '--json': 'json' });
@@ -137,11 +136,10 @@ function countOf(text, character) {
 
 function insideOpenCondition(lines, lineNumber) {
   let depth = 0;
-  const earliest = Math.max(0, lineNumber - 2 - CONDITION_LOOKBACK_LINES);
-  for (let index = lineNumber - 2; index >= earliest; index -= 1) {
+  for (let index = lineNumber - 2; index >= 0; index -= 1) {
     const earlier = codeWithoutInlineComment(lines[index]);
     depth += countOf(earlier, ')') - countOf(earlier, '(');
-    if (CONDITION_OPENER_RE.test(earlier)) return depth < 0;
+    if (depth < 0) return CONDITION_OPENER_RE.test(earlier);
   }
   return false;
 }
@@ -169,8 +167,7 @@ function rustFallbackRule(code, lines, lineNumber) {
 }
 
 function rustOptionFieldFollows(lines, lineNumber) {
-  const last = Math.min(lines.length, lineNumber + RUST_FIELD_LOOKAHEAD_LINES);
-  for (let number = lineNumber + 1; number <= last; number += 1) {
+  for (let number = lineNumber + 1; number <= lines.length; number += 1) {
     const field = codeWithoutInlineComment(lines[number - 1]);
     if (field.trim() === '' || RUST_ATTRIBUTE_RE.test(field)) continue;
     return RUST_OPTION_FIELD_RE.test(field);
