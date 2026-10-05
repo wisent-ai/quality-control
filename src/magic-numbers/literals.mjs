@@ -19,8 +19,6 @@ const LOCAL_LITERAL_ASSIGN_RE = new RegExp(`^\\s*(?:const|let|var)?\\s*[a-z_][A-
 // A bare `<` or `>` is a comparison when written with spaces around it; `Vec<u8>`, `<code>` and `->` are not.
 const LOGIC_LITERAL_RE = /^\s*(?:if|elif|while|for|return|assert)\b|(?:[=!<>]=|\s[<>]\s)|[-+*/%]=|\b(?:range|sleep|timeout|limit|max|min)\s*\(/;
 const ALLOWED_NUMBER_LITERALS = new Set(['-1', '0', '1', '2']);
-const SCHEMA_KEY_CONTEXT_BEFORE = 8;
-const SCHEMA_KEY_CONTEXT_AFTER = 4;
 
 // `"120"` at the end of one line and `.parse::<u64>()` at the start of the next read as one line.
 export function withParseContinuation(lines, index) {
@@ -120,9 +118,9 @@ export function isLiteralSensitiveContext(line) {
 }
 
 function isSchemaKeyAccess(code, start, length) {
-  const before = code.slice(Math.max(0, start - SCHEMA_KEY_CONTEXT_BEFORE), start);
-  const beforeFull = code.slice(0, start).trimEnd();
-  const after = code.slice(start + length, start + length + SCHEMA_KEY_CONTEXT_AFTER).trimStart();
+  const before = code.slice(0, start);
+  const beforeFull = before.trimEnd();
+  const after = code.slice(start + length).trimStart();
   if (before.endsWith('[') && after.startsWith(']')) return true;
   if (before.endsWith('.get(') && (after.startsWith(',') || after.startsWith(')'))) return true;
   if (/getattr\([^,\n]+,\s*$/.test(beforeFull) && (after.startsWith(',') || after.startsWith(')'))) return true;

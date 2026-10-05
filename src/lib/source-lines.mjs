@@ -7,6 +7,9 @@ export const CODE_COMMENT_MARKERS = ['//', '///', '#', '*', '/*'];
 export const MARKUP_COMMENT_MARKERS = [...CODE_COMMENT_MARKERS, '<!--'];
 export const SWIFT_COMMENT_MARKERS = ['//', '///', '*', '/*'];
 export const RUST_COMMENT_MARKERS = ['//', '///', '//!', '*', '/*'];
+// The lines a file's head may hold before its code: comments of any language a guard reads,
+// SQL `--` comments and Python docstring delimiters.
+const HEADER_COMMENT_MARKERS = [...MARKUP_COMMENT_MARKERS, '--', '"""', "'''"];
 
 export const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|`([^`\\]*(?:\\.[^`\\]*)*)`/g;
 
@@ -23,12 +26,14 @@ export function codeWithoutInlineComment(line, { hashComments = true } = {}) {
 }
 
 // A file whose head says it is generated is the generator's output; the generator's source
-// is what a guard reads, so every guard leaves the rendered file alone.
-const GENERATED_HEADER_LINES = 5;
+// is what a guard reads, so every guard leaves the rendered file alone. The head is the
+// leading run of comment and blank lines, wherever it ends.
 const GENERATED_HEADER_RE = /generated\b[\s\S]*do not edit/i;
 
 export function isGeneratedSource(lines) {
-  return GENERATED_HEADER_RE.test(lines.slice(0, GENERATED_HEADER_LINES).join('\n'));
+  const firstCode = lines.findIndex(line => line.trim() !== '' && !isCommentOnlyLine(line, HEADER_COMMENT_MARKERS));
+  const head = firstCode === -1 ? lines : lines.slice(0, firstCode);
+  return GENERATED_HEADER_RE.test(head.join('\n'));
 }
 
 // The one-based numbers of every line inside or touching a Python triple-quoted string.
