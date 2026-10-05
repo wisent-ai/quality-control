@@ -33,10 +33,9 @@ const LICENCE_BASENAME_RE = /^(?:LICEN[CS]E|COPYING|NOTICE)(?:\.(?:md|txt))?$/i;
 // decision; a workflow carries executable steps and is measured like any module.
 const YAML_EXTENSIONS = new Set(['.yml', '.yaml']);
 const WORKFLOWS_FOLDER = '.github/workflows';
-// A binary file is recognised by a NUL byte in its first kilobytes, whatever its name. An
+// A binary file is recognised by a NUL byte anywhere in it, whatever its name. An
 // image, binary or `.svg`, is an asset a folder holds beside its modules and counts toward
 // neither limit: a figures folder of thirty plots is not thirty modules.
-const BINARY_PROBE_BYTES = 8 * 1024;
 const IMAGE_EXTENSIONS = new Set(['.svg']);
 // A manuscript's folder holds the document, its bibliography and the venue's style files
 // side by side; the venue template decides that layout, so LaTeX-family files
@@ -70,18 +69,14 @@ for (const file of files) {
   sourceDigest.update(file).update('\0');
   const folder = segments.length === 0 ? '.' : segments.join('/');
   const extension = path.extname(basename).toLowerCase();
-  const head = Buffer.alloc(BINARY_PROBE_BYTES);
-  const descriptor = openSync(absolute, 'r');
-  const headLength = readSync(descriptor, head, 0, BINARY_PROBE_BYTES, 0);
-  closeSync(descriptor);
-  if (IMAGE_EXTENSIONS.has(extension) || head.subarray(0, headLength).includes(0)) continue;
+  const bytes = readFileSync(absolute);
+  if (IMAGE_EXTENSIONS.has(extension) || bytes.includes(0)) continue;
   if (LATEX_EXTENSIONS.has(extension)) continue;
   folderCounts.set(folder, folderCounts.has(folder) ? folderCounts.get(folder) + 1 : 1);
   if (LINE_LIMIT_EXEMPT_EXTENSIONS.has(extension)) continue;
   if (LINE_LIMIT_EXEMPT_BASENAMES.has(basename) || LICENCE_BASENAME_RE.test(basename)) continue;
   if (YAML_EXTENSIONS.has(extension) && folder !== WORKFLOWS_FOLDER) continue;
-  const text = readFileSync(absolute);
-  const source = text.toString('utf8');
+  const source = bytes.toString('utf8');
   if (isGeneratedSource(source.split(/\r?\n/))) continue;
   const lineCount = countLines(source);
   if (lineCount > maxFileLines) {
