@@ -12,7 +12,6 @@ import { createHash } from 'node:crypto';
 import { EXIT, MAX_OUTPUT_BYTES, REPORT_SCHEMA_VERSION } from './lib/constants.mjs';
 import { isGeneratedSource } from './lib/source-lines.mjs';
 
-const ROOT = git(['rev-parse', '--show-toplevel']).trim();
 const USAGE = 'usage: node check-file-limits.mjs --all --limits <numeric-provenance.json> [--json]';
 // A folder finding has no line of its own; the report's line field is not applicable.
 const NO_LINE = null;
@@ -54,6 +53,7 @@ const EXEMPT_DIRECTORY_RE = /^(?:tests|migrations)/;
 const FOLDER_LIMIT_EXEMPT_FOLDERS = new Set(['.', '.github/workflows']);
 
 const args = parseArgs(process.argv.slice(2));
+const ROOT = git(['rev-parse', '--show-toplevel']).trim();
 const { maxFileLines, maxFolderFiles } = statedLimits(args.limits);
 const files = trackedFiles();
 const violations = [];
@@ -70,6 +70,7 @@ for (const file of files) {
   const folder = segments.length === 0 ? '.' : segments.join('/');
   const extension = path.extname(basename).toLowerCase();
   const bytes = readFileSync(absolute);
+  sourceDigest.update(bytes).update('\0');
   if (IMAGE_EXTENSIONS.has(extension) || bytes.includes(0)) continue;
   if (LATEX_EXTENSIONS.has(extension)) continue;
   folderCounts.set(folder, folderCounts.has(folder) ? folderCounts.get(folder) + 1 : 1);

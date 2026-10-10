@@ -110,9 +110,9 @@ tokenizer's `merges.txt` and
 `vocab.txt`, a licence text (`LICENSE`, `LICENCE`, `COPYING`, `NOTICE`, with
 or without `.md`/`.txt`), a `.yml`/`.yaml` file outside `.github/workflows`
 (a registry or configuration document; a workflow carries executable steps and
-is measured), and a file whose first five lines say it is generated and not
+is measured), and a file whose leading comment run says it is generated and not
 to be edited (its generator is what has to fit). An image or any other
-binary, recognised by a NUL byte in its first kilobytes or by the `.svg`
+binary, recognised by a NUL byte anywhere in its contents or by the `.svg`
 extension, is an asset rather than a module and counts toward neither limit,
 so a figures folder of thirty plots is not a finding; a manuscript's
 LaTeX-family files (`.tex`, `.bib`, `.sty`, `.bst`, `.cls`) count toward
@@ -122,6 +122,9 @@ neither limit either, as the write hook exempts them. A directory named
 of both counts wherever it sits.
 The fix is the one the hooks ask for: split the file into modules; move the
 folder's files into sub-folders.
+`--help` and `-h` print usage before looking for a Git checkout. The JSON
+`sourceDigest` includes both tracked paths and complete file bytes for the
+non-excluded tree, so an in-place content change changes the digest.
 
 ### Fleet audit of magic numbers, file limits or fallbacks
 
