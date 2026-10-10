@@ -59,6 +59,7 @@ const files = trackedFiles();
 const violations = [];
 const sourceDigest = createHash('sha256');
 const folderCounts = new Map();
+let checkedFiles = 0;
 
 for (const file of files) {
   const absolute = path.join(ROOT, file);
@@ -70,6 +71,7 @@ for (const file of files) {
   const folder = segments.length === 0 ? '.' : segments.join('/');
   const extension = path.extname(basename).toLowerCase();
   const bytes = readFileSync(absolute);
+  checkedFiles += 1;
   sourceDigest.update(bytes).update('\0');
   if (IMAGE_EXTENSIONS.has(extension) || bytes.includes(0)) continue;
   if (LATEX_EXTENSIONS.has(extension)) continue;
@@ -107,7 +109,7 @@ violations.sort(byFileThenRule);
 // The report is set as the exit code rather than through process.exit(): on macOS a pipe is
 // written asynchronously, and exiting right after console.log truncated reports at the pipe buffer.
 if (args.json) {
-  console.log(JSON.stringify({ schemaVersion: REPORT_SCHEMA_VERSION, root: ROOT, mode: 'all', limits: { maxFileLines, maxFolderFiles, source: args.limits }, checkedFiles: files.length, sourceDigest: sourceDigest.digest('hex'), violations }));
+  console.log(JSON.stringify({ schemaVersion: REPORT_SCHEMA_VERSION, root: ROOT, mode: 'all', limits: { maxFileLines, maxFolderFiles, source: args.limits }, checkedFiles, sourceDigest: sourceDigest.digest('hex'), violations }));
   process.exitCode = violations.length > 0 ? EXIT.findings : EXIT.clean;
 } else if (violations.length > 0) {
   console.error('File-limits guard failed.');
@@ -119,7 +121,7 @@ if (args.json) {
   console.error(`Split a file over ${maxFileLines} lines into modules; move the files of a folder holding more than ${maxFolderFiles} into sub-folders.`);
   process.exitCode = EXIT.findings;
 } else {
-  console.log(`File-limits guard passed (${files.length} file${files.length === 1 ? '' : 's'} checked).`);
+  console.log(`File-limits guard passed (${checkedFiles} file${checkedFiles === 1 ? '' : 's'} checked).`);
 }
 
 function byFileThenRule(left, right) {
