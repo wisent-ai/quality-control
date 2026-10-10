@@ -125,6 +125,9 @@ folder's files into sub-folders.
 `--help` and `-h` print usage before looking for a Git checkout. The JSON
 `sourceDigest` includes both tracked paths and complete file bytes for the
 non-excluded tree, so an in-place content change changes the digest.
+Tracked paths are read from Git's NUL-delimited output without trimming or
+unquoting heuristics. Spaces, tabs, newlines and non-ASCII names therefore retain
+their actual filesystem identity for inspection and digesting.
 
 ### Fleet audit of magic numbers, file limits or fallbacks
 

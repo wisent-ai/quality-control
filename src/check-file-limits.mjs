@@ -5,7 +5,7 @@
 // --limits — Tama's own statement of them — so a changed limit reaches this guard and the
 // hooks alike. The hooks stop a new violation at the editor; this guard finds the ones that
 // already exist.
-import { closeSync, existsSync, openSync, readFileSync, readSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -182,9 +182,8 @@ function usage(message) {
 }
 
 function trackedFiles() {
-  return git(['ls-files'])
-    .split('\n')
-    .map(line => line.trim())
+  return git(['ls-files', '-z'])
+    .split('\0')
     .filter(Boolean);
 }
 
