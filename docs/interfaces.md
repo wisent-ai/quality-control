@@ -48,8 +48,8 @@ are boolean logic and are not reported. A dictionary default is
 source-level exceptions exist for environment lookup,
 logging, and selected accumulation patterns; no file is exempt by name, so a
 `config.py` or a `profiles/` folder is scanned like any other source. A test
-tree (`test/`, `tests/`, `Tests/`, `__tests__/`) and a file whose first five
-lines say it is generated and not to be edited are left alone, as the other
+tree (`test/`, `tests/`, `Tests/`, `__tests__/`) and a file whose leading
+comment run says it is generated and not to be edited are left alone, as the other
 guards leave them: the fixtures exercise these patterns on purpose, and the
 generator is the source that is read. `--json`
 prints the same report object as the magic-constants guard (`schemaVersion`,
@@ -82,8 +82,26 @@ alone. `--numbers-only` ignores string literals.
 `target`, `node_modules`, `vendor`, `_catalog`, `profiles`, `.build`,
 `.swiftpm` or `.work` is never scanned wherever it sits, and neither is a
 test file (`test_*.py`, `*_test.py`, `*.test.*`, `*.spec.*`, `*Tests.swift`),
-a minified script (`*.min.js`), `config.py`, or a file whose first five lines say it is
-generated and not to be edited: its generator is the source that is read.
+a minified script (`*.min.js`), `config.py`, or a file whose leading comment
+run says it is generated and not to be edited: its generator is the source
+that is read. The shared recognizer retains multiline block-comment and
+docstring bodies through their closing delimiter, including bodies without
+per-line comment markers. It stops at actual code, not a fixed line count;
+a declaration occurring only after that code does not exempt the file.
+
+`node tests/source-lines/generated.mjs` qualifies the actual file-limit CLI
+against a caller-selected real repository, without modifying its worktree or
+creating another checkout. `QUALITY_CONTROL_HEADER_FIXTURE` names JSON with
+the checker `revision`, `repository`, `limits`, and `cases` (`block`,
+`docstring`, `afterCode`). Each case names a tracked root `.js` or `.py` file
+that exceeds the declared line limit. The block and docstring cases begin
+with their multiline delimiter and place `generated` and `do not edit` on
+unprefixed interior lines. The after-code case begins with a JavaScript
+`const` declaration and carries the notice later.
+The command must exempt the generated cases but still report the ordinary
+source. Actual revisions, file hashes, commands, exit statuses and the full
+guard report are retained under `.build/header-qualification/<run-id>/`.
+This test does not run or alter Tama's installed hooks.
 
 ### File limits
 

@@ -7,9 +7,11 @@ export const CODE_COMMENT_MARKERS = ['//', '///', '#', '*', '/*'];
 export const MARKUP_COMMENT_MARKERS = [...CODE_COMMENT_MARKERS, '<!--'];
 export const SWIFT_COMMENT_MARKERS = ['//', '///', '*', '/*'];
 export const RUST_COMMENT_MARKERS = ['//', '///', '//!', '*', '/*'];
-// The lines a file's head may hold before its code: comments of any language a guard reads,
-// SQL `--` comments and Python docstring delimiters.
-const HEADER_COMMENT_MARKERS = [...MARKUP_COMMENT_MARKERS, '--', '"""', "'''"];
+const HEADER_LINE_COMMENTS = ['//', '#', '--'];
+const HEADER_BLOCK_COMMENTS = {
+  '/*': '*/', '<!--': '-->', '"""': '"""', "'''": "'''",
+};
+const HEADER_BLOCK_OPENERS = Object.keys(HEADER_BLOCK_COMMENTS);
 
 export const STRING_LITERAL_RE = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|`([^`\\]*(?:\\.[^`\\]*)*)`/g;
 
@@ -31,9 +33,33 @@ export function codeWithoutInlineComment(line, { hashComments = true } = {}) {
 const GENERATED_HEADER_RE = /generated\b[\s\S]*do not edit/i;
 
 export function isGeneratedSource(lines) {
-  const firstCode = lines.findIndex(line => line.trim() !== '' && !isCommentOnlyLine(line, HEADER_COMMENT_MARKERS));
-  const head = firstCode === -1 ? lines : lines.slice(0, firstCode);
-  return GENERATED_HEADER_RE.test(head.join('\n'));
+  const header = [];
+  let closing;
+  for (const line of lines) {
+    let remaining = line.trimStart();
+    while (remaining) {
+      if (closing) {
+        const end = remaining.indexOf(closing);
+        if (end === -1) {
+          header.push(remaining);
+          break;
+        }
+        header.push(remaining.slice(0, end));
+        remaining = remaining.slice(end + closing.length).trimStart();
+        closing = undefined;
+        continue;
+      }
+      if (HEADER_LINE_COMMENTS.some(marker => remaining.startsWith(marker))) {
+        header.push(remaining);
+        break;
+      }
+      const opener = HEADER_BLOCK_OPENERS.find(marker => remaining.startsWith(marker));
+      if (!opener) return GENERATED_HEADER_RE.test(header.join('\n'));
+      closing = HEADER_BLOCK_COMMENTS[opener];
+      remaining = remaining.slice(opener.length);
+    }
+  }
+  return GENERATED_HEADER_RE.test(header.join('\n'));
 }
 
 // The one-based numbers of every line inside or touching a Python triple-quoted string.
