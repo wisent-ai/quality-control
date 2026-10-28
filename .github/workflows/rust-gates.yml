@@ -1,16 +1,8 @@
-# The gates every Rust repository in the pack runs, in one place.
-#
-# Measured before this existed: four Rust repositories with CI, four different
-# gate sets. skarbiec ran `cargo fmt --check` and `clippy --all-targets`,
-# image-video-router ran `fmt --all -- --check` and `clippy --all-targets
-# --all-features`, brama built and checked nothing, and jeden ran
-# `cargo check` with neither fmt nor clippy. Across the whole pack there were
-# 111 workflow files, which is 111 places for a gate to drift, and the fix
-# applied to one of them protected exactly one repository.
-#
-# The desktop side already proved the alternative: nine applications share a
-# single reusable release workflow and each carries a fourteen-line caller.
-# This is the same shape for the gate side.
+# The gates every Rust repository runs, in one place: rustfmt's form over the
+# whole tree, clippy with warnings denied, and a locked release build. A
+# repository calls this workflow by a pinned revision instead of carrying a
+# gate set of its own, so a gate changed here reaches each caller when that
+# caller moves its pin.
 #
 # The gates are FIXED. There is no input to skip fmt, relax clippy, or pick a
 # different build profile, because an input like that is how a repository
@@ -24,9 +16,9 @@ on:
     inputs:
       runs-on:
         description: >-
-          Runner label set. Defaults to GitHub-hosted Linux; pass a
-          self-hosted label where the account's hosted minutes matter, which
-          on this fleet they do.
+          Runner label, or a JSON list of labels. Defaults to GitHub-hosted
+          Linux; pass a self-hosted label set where the account's hosted
+          minutes matter.
         type: string
         default: ubuntu-latest
       toolchain:
@@ -49,25 +41,21 @@ permissions:
 
 jobs:
   gates:
-    runs-on: ${{ fromJSON(startsWith(inputs.runs-on, '[') && inputs.runs-on || format('"{0}"', inputs.runs-on)) }}
-    # A superseded pull request that keeps compiling holds a self-hosted
-    # runner nobody is waiting on. Only pull requests cancel: a push to main
-    # may be the source revision an immutable release is already waiting for,
-    # which is the reason version-check.yml groups by SHA.
+    # A JSON list of labels is read as a list; any other value is one label.
+    runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on }}
+    # A superseded pull request that keeps compiling holds a runner nobody is
+    # waiting on. Only pull requests cancel: a push to main may be the source
+    # revision an immutable release is already waiting for, which is the
+    # reason version-check.yml groups by SHA.
     concurrency:
       group: rust-gates-${{ github.repository }}-${{ github.ref }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-    # Without this a wedged gate holds a runner for GitHub's six-hour default.
-    # The slowest repository in the pack is Stado, whose crate carries 16 MB of
-    # source, six binaries and fourteen test targets; 45 minutes is above its
-    # cold build and far below the default.
-    timeout-minutes: 45
+    # Incremental compilation is off because the toolchain action below sets
+    # CARGO_INCREMENTAL to off for later steps whenever the runner has not
+    # set it; the action is pinned to one revision, so that step cannot change
+    # under the gates, and a runner whose own environment sets it decides.
     env:
       CARGO_TERM_COLOR: always
-      # Incremental artifacts are worthless to a job that never runs twice in
-      # one workspace, and they are what makes a target directory grow without
-      # bound. jeden's own ci.yml has set this since it was written.
-      CARGO_INCREMENTAL: '0'
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
@@ -79,13 +67,39 @@ jobs:
         env:
           REPOSITORY_TOKEN: ${{ secrets.repository_token }}
         run: |
-          [ -z "$REPOSITORY_TOKEN" ] && exit 0
-          git config --global \
-            url."https://x-access-token:${REPOSITORY_TOKEN}@github.com/".insteadOf \
-            https://github.com/
-          printf '%s\n' 'CARGO_NET_GIT_FETCH_WITH_CLI=true' >> "$GITHUB_ENV"
+          if [ -n "$REPOSITORY_TOKEN" ]; then
+            git config --global \
+              url."https://x-access-token:${REPOSITORY_TOKEN}@github.com/".insteadOf \
+              https://github.com/
+            printf '%s\n' 'CARGO_NET_GIT_FETCH_WITH_CLI=true' >> "$GITHUB_ENV"
+          fi
 
-      - uses: dtolnay/rust-toolchain@stable
+      # The toolchain action below runs rustup's installer when rustup is not
+      # on the PATH, and on Unix that installer writes the account's shell
+      # profile, which a self-hosted runner account may not own. A runner's
+      # steps run without reading that profile, so a rustup installed the usual
+      # way can sit in Cargo's bin directory while the PATH does not name it.
+      # This step names that directory to later steps when it holds rustup,
+      # and installs rustup there with --no-modify-path only when neither the
+      # PATH nor that directory has one. On Windows the action's own installer
+      # already passes --no-modify-path, so the step leaves Windows to it.
+      - name: Find or install rustup without changing the runner's shell profile
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          bin="${CARGO_HOME:-$HOME/.cargo}/bin"
+          if ! command -v rustup >/dev/null; then
+            if [ ! -x "$bin/rustup" ]; then
+              curl --proto '=https' --tlsv1.2 --location --silent --show-error --fail https://sh.rustup.rs \
+                | sh -s -- -y --no-modify-path --default-toolchain none
+            fi
+            printf '%s\n' "$bin" >> "$GITHUB_PATH"
+          fi
+
+      # Pinned to one revision of its stable branch: the gates rely on its
+      # rustup check and its incremental step, which a moving branch could
+      # change without a commit here.
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: ${{ inputs.toolchain }}
           components: rustfmt, clippy
@@ -104,9 +118,8 @@ jobs:
           printf '%s\n' "CARGO_TARGET_DIR=$root" >> "$GITHUB_ENV"
 
       # Formatting first, and it is the whole tree rather than the crate the
-      # build happens to touch. This gate refused five merges in one evening
-      # on skarbiec, each one red on main, because the formatter had not been
-      # run on new files - which is exactly what it is for.
+      # build happens to touch: a formatter nobody ran on new files is exactly
+      # what this gate is for.
       - name: cargo fmt
         run: cargo fmt --all --check
 

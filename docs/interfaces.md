@@ -244,18 +244,27 @@ jobs:
 
 `rust-gates.yml` runs `cargo fmt --all --check`, `cargo clippy --all-targets -- -D
 warnings`, and `cargo build --locked --release`. It accepts `runs-on`
-(`ubuntu-latest`), `toolchain` (`stable`), and `working-directory` (`.`).
+(`ubuntu-latest`; one label, or a JSON list of labels such as
+`'["self-hosted", "linux"]'`), `toolchain` (`stable`), and
+`working-directory` (`.`).
 
-Those two compiling steps used to start from zero on every run, because the
+The gates never write the runner account's shell profile. Off Windows, when
+rustup is not on the PATH, the job hands `$CARGO_HOME/bin` (or `~/.cargo/bin`)
+to later steps through `GITHUB_PATH` and installs rustup there with
+`--no-modify-path` when that directory holds none; on Windows the toolchain
+action's own installer already passes that flag.
+
+Clippy and the release build used to start from zero on every run, because the
 target directory sat inside the workspace `actions/checkout` refreshes. The job
 now exports `CARGO_TARGET_DIR=$HOME/.cache/wisent-rust-gates/<repository>/<toolchain>`
 before the first one, so a self-hosted runner keeps the compiled dependency
 graph between runs and a pull request pays for what its commit changed; a
-hosted runner gets a fresh machine anyway and pays one `mkdir`. The job also
-sets `CARGO_INCREMENTAL=0`, carries `timeout-minutes: 45` against GitHub's
-six-hour default, and cancels a superseded run of the same ref — for pull
-requests only, because a push to `main` may be the source revision an immutable
-release is already waiting for.
+hosted runner gets a fresh machine anyway and pays one `mkdir`. Incremental
+compilation is off because the toolchain action turns `CARGO_INCREMENTAL` off
+for later steps whenever the runner has not set it; a runner that sets it
+decides. The job sets no time limit of its own, so GitHub's default job limit holds,
+and it cancels a superseded run of the same ref — for pull requests only,
+because a push to `main` may be what an immutable release is waiting for.
 
 `swift-gates.yml` resolves the package and runs `swift build`. It accepts
 `runs-on` (the fleet's `["self-hosted", "macOS", "stado"]` runner, which holds
