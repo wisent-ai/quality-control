@@ -242,11 +242,13 @@ jobs:
     uses: wisent-ai/quality-control/.github/workflows/tag-on-manifest-bump.yml@<sha>
 ```
 
-`rust-gates.yml` runs `cargo fmt --all --check`, `cargo clippy --all-targets -- -D
-warnings`, and `cargo build --locked --release`. It accepts `runs-on`
-(`ubuntu-latest`; one label, or a JSON list of labels such as
-`'["self-hosted", "linux"]'`), `toolchain` (`stable`), and
-`working-directory` (`.`).
+`rust-gates.yml` runs a format check (`format-command`, by default `cargo fmt
+--all --check`), `cargo clippy --all-targets -- -D warnings`, and `cargo build
+--locked --release`. It accepts `runs-on` (`ubuntu-latest`; one label, or a JSON
+list of labels such as `'["self-hosted", "linux"]'`), `toolchain` (`stable`),
+`working-directory` (`.`), and `format-command`: a repository whose release
+declares its own format gate, one that reaches files `cargo fmt` cannot, passes
+it here so CI refuses exactly what the release refuses.
 
 The gates never write the runner account's shell profile. Off Windows, when
 rustup is not on the PATH, the job hands `$CARGO_HOME/bin` (or `~/.cargo/bin`)

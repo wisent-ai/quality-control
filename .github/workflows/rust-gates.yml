@@ -31,6 +31,15 @@ on:
           the root.
         type: string
         default: .
+      format-command:
+        description: >-
+          The command that checks formatting, run in working-directory. A
+          repository whose release declares its own format gate (one that
+          reaches files `cargo fmt` does not, such as modules declared through
+          a macro) passes that gate here, so CI refuses what its release
+          refuses.
+        type: string
+        default: cargo fmt --all --check
     secrets:
       repository_token:
         description: Token used only when Cargo must read a private Git dependency.
@@ -119,9 +128,10 @@ jobs:
 
       # Formatting first, and it is the whole tree rather than the crate the
       # build happens to touch: a formatter nobody ran on new files is exactly
-      # what this gate is for.
-      - name: cargo fmt
-        run: cargo fmt --all --check
+      # what this gate is for. A caller that declares its own format gate
+      # names it in format-command.
+      - name: Format check
+        run: ${{ inputs.format-command }}
 
       # Warnings are errors. A warning nobody is forced to read is a warning
       # nobody reads.
