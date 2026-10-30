@@ -36,6 +36,13 @@ on:
       repository_token:
         description: Token used only when SwiftPM must read a private Git dependency.
         required: false
+      repository_deploy_keys:
+        description: >-
+          Read-only deploy keys for the private Git dependencies, one line per
+          repository: `<owner>/<repository> <base64 of the OpenSSH private
+          key>`. Each key is added as a read-only deploy key on that one
+          repository, so no personal or organization-wide token is involved.
+        required: false
 
 permissions:
   contents: read
@@ -68,6 +75,78 @@ jobs:
             url."https://x-access-token:${REPOSITORY_TOKEN}@github.com/".insteadOf \
             https://github.com/
 
+      # A deploy key reads exactly one repository and nothing else, so it is
+      # how a private dependency is read without anyone's personal token. Each
+      # key gets its own ssh host alias, because GitHub picks the repository a
+      # deploy key may read by the key and refuses one key on two repositories,
+      # and git sends `https://github.com/<owner>/<repository>.git` to that
+      # alias through `GIT_CONFIG_*` entries added to the job's environment,
+      # leaving the runner's own git configuration as it is. GitHub's host keys
+      # come from GitHub's own API over TLS, never from a first connection.
+      - name: Configure private Git dependency deploy keys
+        env:
+          REPOSITORY_DEPLOY_KEYS: ${{ secrets.repository_deploy_keys }}
+        run: |
+          set -eu
+          if [ -z "$REPOSITORY_DEPLOY_KEYS" ]; then
+            printf '%s\n' "No repository_deploy_keys; no deploy key is configured."
+            exit 0
+          fi
+          keys="$RUNNER_TEMP/swift-gates-deploy-keys"
+          rm -rf "$keys"
+          mkdir -m 700 "$keys"
+          ssh_config="$keys/config"
+          known_hosts="$keys/known_hosts"
+          : > "$ssh_config"
+          count=0
+          while read -r repository key rest; do
+            [ -n "$repository" ] || continue
+            case "$repository" in
+              */*/*|/*|*/|*[!A-Za-z0-9._/-]*) shape=invalid ;;
+              */*) shape=valid ;;
+              *) shape=invalid ;;
+            esac
+            if [ "$shape" != valid ] || [ -z "$key" ] || [ -n "$rest" ]; then
+              printf '%s\n' \
+                "repository_deploy_keys holds a line for '$repository' that is not '<owner>/<repository> <base64 of the OpenSSH private key>'." \
+                "Each line names one repository and its key, separated by one space; write the secret again in that form." >&2
+              exit 1
+            fi
+            alias="github.com-$(printf '%s' "$repository" | tr '/' '-')"
+            identity="$keys/$alias"
+            if ! printf '%s' "$key" | base64 --decode > "$identity" 2> "$identity.why"; then
+              printf '%s\n' \
+                "The deploy key for $repository in repository_deploy_keys is not base64: $(cat "$identity.why")" \
+                "Encode the OpenSSH private key with base64 on one line and write the secret again." >&2
+              exit 1
+            fi
+            chmod 600 "$identity"
+            if ! ssh-keygen -y -f "$identity" > "$identity.pub" 2> "$identity.why"; then
+              printf '%s\n' \
+                "The deploy key for $repository in repository_deploy_keys is not an OpenSSH private key ssh-keygen can read: $(cat "$identity.why")" \
+                "Write the secret again with the private half of the key added to $repository as a deploy key." >&2
+              exit 1
+            fi
+            printf 'Host %s\n  HostName github.com\n  User git\n  IdentityFile %s\n  IdentitiesOnly yes\n  UserKnownHostsFile %s\n  StrictHostKeyChecking yes\n' \
+              "$alias" "$identity" "$known_hosts" >> "$ssh_config"
+            printf 'GIT_CONFIG_KEY_%s=url.ssh://%s/%s.git.insteadOf\nGIT_CONFIG_VALUE_%s=https://github.com/%s.git\n' \
+              "$count" "$alias" "$repository" "$count" "$repository" >> "$GITHUB_ENV"
+            count=$((count + 1))
+            printf '%s\n' "Deploy key configured for $repository."
+          done <<EOF
+          $REPOSITORY_DEPLOY_KEYS
+          EOF
+          if ! curl --fail --silent --show-error https://api.github.com/meta > "$keys/meta.json" 2> "$keys/meta.why"; then
+            printf '%s\n' \
+              "GitHub's published ssh host keys could not be read from https://api.github.com/meta: $(cat "$keys/meta.why")" \
+              "Without them no deploy key connection is trusted; rerun once api.github.com answers." >&2
+            exit 1
+          fi
+          python3 -c 'import json, sys
+          for key in json.load(open(sys.argv[1]))["ssh_keys"]:
+              print("github.com", key)' "$keys/meta.json" > "$known_hosts"
+          printf 'GIT_CONFIG_COUNT=%s\nGIT_SSH_COMMAND=ssh -F %s\n' "$count" "$ssh_config" >> "$GITHUB_ENV"
+
       # Resolution is its own step so that a credential problem is reported as a
       # credential problem. Measured on skarbiec-desktop run 33581106456: the
       # fleet's macOS builder resolved four public dependencies and then died on
@@ -96,12 +175,16 @@ jobs:
               "Resolution failed on authentication, not on a version." \
               "" \
               "A dependency above is private to this organization and this runner" \
-              "cannot read it. Two ways out:" \
-              "  1. Install the credential helper on this host:" \
+              "cannot read it. Three ways out:" \
+              "  1. Pass repository_deploy_keys to this workflow: one line" \
+              "     '<owner>/<repository> <base64 OpenSSH private key>' per private" \
+              "     package, each key added to that repository as a read-only" \
+              "     deploy key." \
+              "  2. Install the credential helper on this host:" \
               "     stado host install-secret, then" \
               "     stado/deploy/configure_git_credentials.sh. Run" \
               "     stado/deploy/report_git_auth.sh to see what is present now." \
-              "  2. Or pass repository_token to this workflow, holding a" \
+              "  3. Or pass repository_token to this workflow, holding a" \
               "     fine-grained personal access token or GitHub App installation" \
               "     token with Contents: read on the private packages this" \
               "     Package.swift names."

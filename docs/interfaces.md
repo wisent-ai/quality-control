@@ -273,6 +273,22 @@ because a push to `main` may be what an immutable release is waiting for.
 the credentials that resolve this organization's private SwiftPM dependencies)
 and `working-directory` (`.`). It runs no tests until the operator approves one.
 
+A private SwiftPM dependency is read through `repository_deploy_keys`, a secret
+holding one line per private package: `<owner>/<repository> <base64 of the
+OpenSSH private key>`, each key added to that one repository as a read-only
+deploy key. The job writes each key under `$RUNNER_TEMP` with its own ssh host
+alias, trusts only the host keys GitHub publishes at `api.github.com/meta`, and
+sends `https://github.com/<owner>/<repository>.git` to the alias through
+`GIT_CONFIG_*` entries in the job's environment, so no personal or
+organization-wide token is involved and the runner's own git configuration is
+left as it is. A line that is not in that form, a key that is not base64 and a
+key `ssh-keygen` cannot read are each refused naming the repository and how to
+write the secret again. `node tests/swift-gates/deploy-keys.mjs`, with the
+secret's text in `QUALITY_CONTROL_DEPLOY_KEYS`, runs the committed step against
+those refusals and then reads every named repository through plain git. The
+older `repository_token` secret still rewrites every `github.com` origin with
+one token.
+
 `tag-on-manifest-bump.yml` tags the version declared in a manifest exactly once.
 It accepts `manifest` (`Cargo.toml`) and `runs-on` (`ubuntu-latest`).
 
